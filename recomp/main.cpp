@@ -1,11 +1,11 @@
-#include "Entity.h"
-#include "Timer.h"
-#include "Camera.h"
-
 #include "Window.h"
+#include "Stopwatch.h"
 
 #include <fstream> //file reader?
 #include <thread>
+
+#include "Surface.h"
+#include "GPUSprite.h"
 
 static nlohmann::json* initJSON(const char* path) {
     //look into assurances that the path is a json so we catch exception early
@@ -54,28 +54,23 @@ int main() {
     Window window(windowConfig.json);
 
     //initialize EntityFactory
-    EntityFactory entityFactory(entityConfig.json, window.getRenderer()) ;
-
-    if (!entityFactory.isInitalized()) {
-        entityFactory.wipeMemory();
-        return -1;
-    }
-
-    //player
-    //WRAP THIS SHIT UP
-    Player* player = entityFactory.createPlayer(HKey::ENTITY_TYPE::PLAYER_MAIN);
-    int x, y;
-    SDL_GetWindowSize(window.getWindow(), &x, &y);
-    Camera2DSDL camera(x,y);
-    //###################################################################
 
     bool gameRunning = true;
     SDL_Event event;
+    FrameTimer frameTimer;
+
+    // TEST SURFACE TO GPU BULLSHIT
+    Surface* worldmap = new Surface("../Textures/worldmap.bmp");
+    Sprite sprite(*worldmap, *window.getRenderer());
+
+    delete worldmap;
+    worldmap = nullptr;
+    //delete worldmap;
+    //worldmap = nullptr;
+    //###############################
 
     while (gameRunning) {
-       
-        FrameTimer gameLogicTimer;
-        gameLogicTimer.start();
+        frameTimer.MarkFloat();
 
         window.displayClear();
 
@@ -84,77 +79,28 @@ int main() {
             if (event.type == SDL_EVENT_QUIT) {
                 gameRunning = false;
             }
-            if (event.type == SDL_EVENT_MOUSE_WHEEL) {
-
-                if (event.wheel.y > 0) {
-                    printf("zoomzoom\n");
-                    camera.zoom(1.03f);
-                }
-                else if (event.wheel.y < 0) {
-                    camera.zoom(0.97f);
-                }
-            }
-
         }
         //###############################################################################
 
-        //BULLSHIT
-
-        player->WASD_PlayerVelocity(5.0f);
-        player->state.isMoving = isMoving(player->hitbox.velocity);
-        SMS::Facing safetyCheck = facingDirection(player->hitbox.velocity);
-        
-        if (safetyCheck != SMS::Facing::UNKNOWN) {
-            player->state.facing = safetyCheck;
-        }
-
-        TSA::AnimationID animationID = animationIDTable(player->state);
-        
-        if (animationID != TSA::AnimationID::UNKNOWN && player->sprite.getCurrentAnimationID() != animationID) {
-            if (!player->sprite.setNewAnimation(animationID)) {
-                printf("\nerror: attempt to set invalid animation id");
-            }
-        }
-        player->sprite.play();
-        setCoordinates(player->hitbox);
-        //###############################################################################
-        
-
-        //COLLISION
-        //...        
-        //#################################################################################
-        
-        //CAMERA
-        camera.centerOn(player->hitbox.rectangle);
-        //#################################################################################
-
-        //MAIN LOGIC ENDING
-        TSA::setTTransferField_coordinates(player->sprite.getAnimatedTextureSource(), player->sprite.source);
-        TSA::setTTransferField_coordinates(player->hitbox.rectangle, player->sprite.dest);
-
-        SDL_FRect adjustedDest = camera.worldToScreen(player->sprite.dest);
-        SDL_RenderTexture(window.getRenderer(), player->sprite.texture.get(), &player->sprite.source, &adjustedDest);
-        player->hitbox.velocity = { 0.f, 0.f };//temporary bullshit
-
+        SDL_RenderTexture(window.getRenderer(), &sprite.getTexture(), nullptr, nullptr);
         window.displayPresent();
-        gameLogicTimer.end();
         //#################################################################################
         
         //HANDLE TASKS BETWEEN FRAMES
-        if (gameLogicTimer.isSpareTime()) {
+        auto dt = frameTimer.MarkMilliSec();
+        auto limit = frameTimer.getLimitMilliSec();
+        if (dt < limit) {
 
-            const auto spareTime = gameLogicTimer.getMaxFrameDuration_milliseconds() - gameLogicTimer.getDuration_millisecond();
+            const auto spareTime = limit - dt;
 
-            Timer supplementaryLogicTimer;
-            supplementaryLogicTimer.start();
-
+            Stopwatch timeIntermediary;
             //DO SHIT HERE.. ALSO IF LOOPITY ACTION THEN THE TIMER SHOULD PROBABLY BE PART OF THE LOOP INSTEAD 
 
             //#################################################################################
 
-            supplementaryLogicTimer.end();
+            auto idt = timeIntermediary.MarkMilliSec();
 
-            const auto remainingTime = spareTime - supplementaryLogicTimer.getDuration_millisecond();
+            const auto remainingTime = spareTime - idt;
             
             if (remainingTime.count() > 0) {
                 std::this_thread::sleep_for(remainingTime);
@@ -164,7 +110,6 @@ int main() {
         
     }
     SDL_Quit();
-    delete player;
 
     return 0;
 }

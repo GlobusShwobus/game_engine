@@ -1,12 +1,9 @@
 #pragma once
-
+/*
 #include "SDL3/SDL.h"
 #include "SDL3_image/SDL_image.h"
 #include "json.hpp"
 
-#include "Sprite.h"
-#include "HashKeys.h"
-#include "CCPRect.h"
 #include "State.h"
 
 namespace badEngine {
@@ -86,3 +83,4 @@ namespace badEngine {
 	bool isMoving(const SDL_FPoint& velocity);
 	TSA::AnimationID animationIDTable(const SMS::State& state);
 }
+*/

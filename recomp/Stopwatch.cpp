@@ -33,8 +33,14 @@ namespace badEngine {
 		fps = FPS;
 		limit = std::chrono::duration<float>(ONE_SECOND / fps);
 	}
-	const float FrameTimer::getLimit()const {
+	float FrameTimer::getLimitFloat()const {
 		return limit.count();
+	}
+	std::chrono::milliseconds FrameTimer::getLimitMilliSec()const {
+		return std::chrono::duration_cast<std::chrono::milliseconds>(limit);
+	}
+	std::chrono::microseconds FrameTimer::getLimitMicroSec()const {
+		return std::chrono::duration_cast<std::chrono::microseconds>(limit);
 	}
 
 }

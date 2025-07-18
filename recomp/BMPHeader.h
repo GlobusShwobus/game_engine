@@ -2,6 +2,8 @@
 
 #include <inttypes.h>
 
+static constexpr unsigned int static_BI_RGB = 0x0000;
+
 #pragma pack(push, 1)
 
 struct BMPFileHeader {

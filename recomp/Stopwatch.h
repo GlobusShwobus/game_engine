@@ -29,6 +29,8 @@ namespace badEngine {
 
 		uint32_t getFPS()const;
 		void setFPS(uint32_t FPS);
-		const float getLimit()const;
+		float getLimitFloat()const;
+		std::chrono::milliseconds getLimitMilliSec()const;
+		std::chrono::microseconds getLimitMicroSec()const;
 	};
 }
