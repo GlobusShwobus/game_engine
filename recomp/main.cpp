@@ -63,7 +63,7 @@ int main() {
     // TEST SURFACE TO GPU BULLSHIT
     Stopwatch shittest;
 
-    Surface* worldmap = new Surface("../Textures/worldmap.bmp",2);
+    Surface* worldmap = new Surface("../Textures/worldmap.bmp",4);
     Sprite sprite(*worldmap, *window.getRenderer());
 
     delete worldmap;

@@ -23,125 +23,35 @@ namespace badEngine {
 		width = bmInfoHeader.biWidth;
 		height = bmInfoHeader.biHeight;
 
-		//handle case if height is negative, otherwise we read ass up
-		int yStart;
-		int yEnd;
-		int dy;
-
-		if (height < 0) {
-			yStart = 0;
-			yEnd = -height;
-			dy = 1;
-			height = -height;
-		}
-		else {
-			yStart = height - 1;
-			yEnd = -1;
-			dy = -1;
-		}
 		pPixels = new Color[width * height];
 
-		file.seekg(bmFileHeader.bfOffBits);
-		// padding is per row not per pixel
-		// if width is 123 pixels, 3 bytes per pixel (24 bits) == 369 bytes
-		// 369 modulated by 4 is 1, 1 byte 'overweight'
-		// 4-1 = 3. need to add 3 bytes of padding
-		// edge case is if the row is already a multiple of 4, in which case it becomes 4-0 = 4 bytes padding
-		// in this case the second modulation saves the day. the second modulation does jackshit otherwise
-		//padding also only makes sense for 24 bit things
-		const int padding = (4 - (width * 3) % 4) % 4;
+		const int padding = (4 - (width * 3) % 4) % 4;//padding in case bytes are not multiple of 4
 		const bool is32b = bmInfoHeader.biBitCount == 32;
 
-		for (int y = yStart; y != yEnd; y += dy)
-		{
-			for (int x = 0; x < width; x++)
-			{
-				unsigned char b = file.get();
-				unsigned char g = file.get();
-				unsigned char r = file.get();
+		const int bytesPerPixel = is32b ? 4 : 3;
+		const int rowStride = is32b ? width * 4 : width * 3 + padding;//bytes per row
+		const int imageSize = rowStride * height;
 
-				if (is32b) {
-					unsigned char a = file.get();
-					putPixel(x, y, Color(a, r, g, b));
-				}
-				else {
-					putPixel(x, y, Color(255, r, g, b));
-				}
-			}
-
-			if (!is32b)
-				file.seekg(padding, std::ios::cur);
-		}
-	}
-
-	Surface::Surface(const std::string& filePath, int deleteThisLol)
-	{
-		BMPFileHeader bmFileHeader;
-		BMPInfoHeader bmInfoHeader;
-
-		std::ifstream file(filePath, std::ios::binary);
-		assert(file);
-
-		file.read(reinterpret_cast<char*>(&bmFileHeader), sizeof(bmFileHeader));
-		file.read(reinterpret_cast<char*>(&bmInfoHeader), sizeof(bmInfoHeader));
-
-		assert(bmInfoHeader.biBitCount == 24 || bmInfoHeader.biBitCount == 32);
-		assert(bmInfoHeader.biCompression == static_BI_RGB);
-
-		width = bmInfoHeader.biWidth;
-		height = bmInfoHeader.biHeight;
-
-		//handle case if height is negative, otherwise we read ass up
-		int yStart;
-		int yEnd;
-		int dy;
-
-		if (height < 0) {
-			yStart = 0;
-			yEnd = -height;
-			dy = 1;
-			height = -height;
-		}
-		else {
-			yStart = height - 1;
-			yEnd = -1;
-			dy = -1;
-		}
-		pPixels = new Color[width * height];
+		std::vector<unsigned char> buffer(imageSize);
 
 		file.seekg(bmFileHeader.bfOffBits);
-		// padding is per row not per pixel
-		// if width is 123 pixels, 3 bytes per pixel (24 bits) == 369 bytes
-		// 369 modulated by 4 is 1, 1 byte 'overweight'
-		// 4-1 = 3. need to add 3 bytes of padding
-		// edge case is if the row is already a multiple of 4, in which case it becomes 4-0 = 4 bytes padding
-		// in this case the second modulation saves the day. the second modulation does jackshit otherwise
-		//padding also only makes sense for 24 bit things
-		const int padding = (4 - (width * 3) % 4) % 4;
-		const bool is32b = bmInfoHeader.biBitCount == 32;
+		file.read(reinterpret_cast<char*>(buffer.data()), imageSize);
 
+		for (int y = 0; y < height; ++y) {
+			int bmpY = (bmInfoHeader.biHeight > 0) ? (height - 1 - y) : y;//handle both positive or negative pixel layout
+			unsigned char* row = buffer.data() + bmpY * rowStride;//beginning of buffer + (height*width) == row
 
-
-		std::vector<unsigned char> rowData(width * (is32b ? 4 : 3));//bytes in row
-
-		for (int y = yStart; y != yEnd; y += dy)
-		{
-			file.read(reinterpret_cast<char*>(rowData.data()), rowData.size());//into rowData for the amount of bytes
-			for (int x = 0; x < width; x++)
-			{
-				size_t i = x * (is32b ? 4 : 3);//bit index
-				unsigned char b = rowData[i];
-				unsigned char g = rowData[i+1];
-				unsigned char r = rowData[i+2];
-				unsigned char a = is32b ? rowData[i + 3] : 255u;
-				putPixel(x, y, Color(a, r, g, b));
+			for (int x = 0; x < width; ++x) {
+				size_t i = x * bytesPerPixel;
+				unsigned char b = row[i];
+				unsigned char g = row[i + 1];
+				unsigned char r = row[i + 2];
+				unsigned char a = is32b ? row[i + 3] : 255u;
+				pPixels[y * width + x] = (a << 24u) | (r << 16u) | (g << 8u) | b;
 			}
 
-			if (!is32b)
-				file.seekg(padding, std::ios::cur);
 		}
 	}
-
 	Surface::Surface(int width, int height) :
 		width(width), height(height), pPixels(new Color[width * height])
 	{}

@@ -12,9 +12,7 @@ namespace badEngine {
 		int height;
 
 	public:
-
 		Surface(const std::string&);
-		Surface(const std::string&, int deleteThisLol);
 		Surface(int width, int height);
 		Surface(const Surface&);
 		~Surface();
