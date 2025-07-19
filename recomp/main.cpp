@@ -6,6 +6,7 @@
 
 #include "Surface.h"
 #include "GPUSprite.h"
+#include <iostream>
 
 static nlohmann::json* initJSON(const char* path) {
     //look into assurances that the path is a json so we catch exception early
@@ -60,13 +61,15 @@ int main() {
     FrameTimer frameTimer;
 
     // TEST SURFACE TO GPU BULLSHIT
-    Surface* worldmap = new Surface("../Textures/worldmap.bmp");
+    Stopwatch shittest;
+
+    Surface* worldmap = new Surface("../Textures/worldmap.bmp",2);
     Sprite sprite(*worldmap, *window.getRenderer());
 
     delete worldmap;
     worldmap = nullptr;
-    //delete worldmap;
-    //worldmap = nullptr;
+    auto shit = shittest.MarkMicroSec();
+    std::cout << "shit version: " << shit << "\n";
     //###############################
 
     while (gameRunning) {
