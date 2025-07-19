@@ -63,11 +63,8 @@ int main() {
     // TEST SURFACE TO GPU BULLSHIT
     Stopwatch shittest;
 
-    Surface* worldmap = new Surface("../Textures/worldmap.bmp",4);
-    Sprite sprite(*worldmap, *window.getRenderer());
+    Sprite sprite("../Textures/enemy_sword1.bmp", window.getRenderer());
 
-    delete worldmap;
-    worldmap = nullptr;
     auto shit = shittest.MarkMicroSec();
     std::cout << "shit version: " << shit << "\n";
     //###############################
@@ -85,7 +82,7 @@ int main() {
         }
         //###############################################################################
 
-        SDL_RenderTexture(window.getRenderer(), &sprite.getTexture(), nullptr, nullptr);
+        sprite.DrawTexture(window.getRenderer());
         window.displayPresent();
         //#################################################################################
         

@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include "Rectangle.h"
 #include "Colors.h"
 
 namespace badEngine {
