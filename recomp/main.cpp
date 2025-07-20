@@ -6,6 +6,7 @@
 
 #include "Surface.h"
 #include "GPUSprite.h"
+#include "Font.h"
 #include <iostream>
 
 static nlohmann::json* initJSON(const char* path) {
@@ -63,7 +64,8 @@ int main() {
     // TEST SURFACE TO GPU BULLSHIT
     Stopwatch shittest;
 
-    Sprite sprite("../Textures/enemy_sword1.bmp", window.getRenderer());
+    //Sprite sprite("../Fonts/Fixedsys16x28.bmp", window.getRenderer());
+    Font font("../Fonts/Fixedsys16x28.bmp", window.getRenderer(), 32, 3);
 
     auto shit = shittest.MarkMicroSec();
     std::cout << "shit version: " << shit << "\n";
@@ -81,8 +83,8 @@ int main() {
             }
         }
         //###############################################################################
-
-        sprite.DrawTexture(window.getRenderer());
+        font.DrawFont("i like mega tits", window.getRenderer(), 100, 100);
+        //sprite.DrawTexture(window.getRenderer());
         window.displayPresent();
         //#################################################################################
         

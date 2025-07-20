@@ -1,4 +1,3 @@
-
 #include "Surface.h"
 #include "BMPHeader.h"
 #include <cassert>
@@ -6,12 +5,13 @@
 #include <vector>
 
 namespace badEngine {
-	Surface::Surface(const std::string& filePath)
+	
+	Surface::Surface(std::string_view path)
 	{
 		BMPFileHeader bmFileHeader;
 		BMPInfoHeader bmInfoHeader;
 
-		std::ifstream file(filePath, std::ios::binary);
+		std::ifstream file(path.data(), std::ios::binary);
 		assert(file);
 
 		file.read(reinterpret_cast<char*>(&bmFileHeader), sizeof(bmFileHeader));
@@ -52,6 +52,7 @@ namespace badEngine {
 
 		}
 	}
+	
 	Surface::Surface(int width, int height) :
 		width(width), height(height), pPixels(new Color[width * height])
 	{}

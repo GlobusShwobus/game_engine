@@ -2,58 +2,45 @@
 #include <assert.h>
 
 namespace badEngine {
-	/*
-	Font::Font(const std::string& filename, Color chroma)
-		:surface(filename),
-		gylphWidth(surface.GetWidth() / nColumns),
-		gylphHeight(surface.GetHeight() / nRows),
-		chroma(chroma)
+
+	Font::Font(std::string_view path, SDL_Renderer* renderer, int columns, int rows)
+		:sprite(path, renderer),
+		nColumns(columns),
+		nRows(rows),
+		gylphWidth(sprite.getSurfaceWidth()/columns),
+		gylphHeight(sprite.getSurfaceHeight()/rows)
 	{
-		assert(gylphWidth * nColumns == surface.GetWidth());
-		assert(gylphHeight * nRows == surface.GetHeight());
+		assert(gylphWidth * nColumns == sprite.getSurfaceWidth());
+		assert(gylphHeight * nRows == sprite.getSurfaceHeight());
+
+		sprite.setSourceW(gylphWidth);
+		sprite.setSourceH(gylphHeight);
+		sprite.setStretchWidth(gylphWidth);
+		sprite.setStretchHeight(gylphHeight);
 	}
 
-	REC::Rectangle Font::MapGylphRect(char c) const
+	void Font::DrawFont(std::string_view text, SDL_Renderer* renderer, int x, int y)
 	{
-		assert(c >= firstChar && c <= lastChar);
-		const int gylphIndex = c - firstChar;
-		const int yGylph = gylphIndex / nColumns;
-		const int xGylph = gylphIndex % nColumns;
+		int curX = x;
+		int curY = y;
 
-		return REC::Rectangle(float(xGylph * gylphWidth), float(yGylph * gylphHeight), float(gylphWidth), float(gylphHeight));
-	}
-
-	void Font::DrawText(const std::string& text, const Point& pos, Graphics& gfx) const
-	{
-		auto curPos = pos;
-		for (auto c : text) {
+		for (char c : text) {
 			if (c == '\n') {
-				curPos.x = pos.x;
-				curPos.y += gylphHeight;
+				curX = x;
+				curY += gylphHeight;
 				continue;
 			}
 			else if (c >= firstChar + 1 && c <= lastChar) {
-				gfx.DrawSurface(curPos.x, curPos.y, MapGylphRect(c), { 0,0,800,600 }, surface, chroma);
+				const int gylphIndex = c - firstChar;
+				const int yGylph = gylphIndex / nColumns;
+				const int xGylph = gylphIndex % nColumns;
+
+				sprite.setSourceX(xGylph * gylphWidth);
+				sprite.setSourceY(yGylph * gylphHeight);
+
+				sprite.DrawTexture(renderer, curX, curY);
 			}
-			curPos.x += gylphWidth;
+			curX += gylphWidth;//if char is the empty space key, this by default skips over it and adds padding as well
 		}
 	}
-
-	void Font::DrawText(const std::string& text, const Point& pos, Graphics& gfx, Color substitute) const
-	{
-		auto curPos = pos;
-		for (auto c : text) {
-			if (c == '\n') {
-				curPos.x = pos.x;
-				curPos.y += gylphHeight;
-				continue;
-			}
-			else if (c >= firstChar + 1 && c <= lastChar) {
-
-				gfx.DrawSpriteSubstitute(curPos.x, curPos.y, substitute, MapGylphRect(c), { 0,0,800,600 }, surface, chroma);
-			}
-			curPos.x += gylphWidth;
-		}
-	}
-	*/
 }

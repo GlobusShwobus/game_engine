@@ -14,7 +14,7 @@ namespace badEngine {
 			:dword((r << 16u) | (g << 8u) | b) {}
 		
 
-		Color& operator =(uint32_t color) {
+		Color& operator =(unsigned int color) {
 			dword = color;
 			return *this;
 		}

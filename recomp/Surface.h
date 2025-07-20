@@ -1,5 +1,5 @@
 #pragma once
-#include <string>
+#include <string_view>
 #include "Colors.h"
 
 namespace badEngine {
@@ -11,7 +11,7 @@ namespace badEngine {
 		int height;
 
 	public:
-		Surface(const std::string&);
+		Surface(std::string_view path);
 		Surface(int width, int height);
 		Surface(const Surface&);
 		~Surface();

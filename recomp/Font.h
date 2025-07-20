@@ -1,30 +1,27 @@
 #pragma once
-#include "Surface.h"
-#include "Vek2.h"
-#include "Rectangle.h"
+
+#include <string_view>
+#include "GPUSprite.h"
 
 namespace badEngine {
-/*
+
 	class Font {
-		Surface surface;
+
+		Sprite sprite;
 
 		int gylphWidth;
 		int gylphHeight;
 
-		int nColumns = 32;
-		int nRows = 3;
-
-		Color chroma;
+		int nColumns;
+		int nRows;
 
 		static constexpr char firstChar = ' ';
 		static constexpr char lastChar = '~';
 
-		Rectangle MapGylphRect(char c)const;
-
 	public:
-		Font(const std::string& filename, Color chroma = Colors::White);
-		void DrawText(const std::string& text, const Point& pos, Graphics& gfx)const;
-		void DrawText(const std::string& text, const Point& pos, Graphics& gfx, Color substitute)const;
+		Font(std::string_view path, SDL_Renderer* renderer, int columns, int rows);
+
+		void DrawFont(std::string_view text, SDL_Renderer* renderer, int x, int y);
 	};
-	*/
+
 }
