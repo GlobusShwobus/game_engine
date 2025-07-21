@@ -2,14 +2,14 @@
 #include <assert.h>
 
 namespace badEngine {
-	Animation::Animation(const Vek2& pos, const Vek2& imageSize, int frameWidth, int frameHeight, int count, float holdTime)
+	Animation::Animation(const Vec2i& pos, const Vec2i& imageSize, int frameWidth, int frameHeight, int count, float holdTime)
 		:holdTime(holdTime)
 	{
 		assert((imageSize.x / frameWidth) <= count);
 		assert(imageSize.y >= frameHeight);
 
 		for (int i = 0; i < count; i++) {
-			frames.emplace_back(Vek2((float)pos.x + (frameWidth * i), (float)pos.y));
+			frames.emplace_back(Vec2i( pos.x + (frameWidth * i), pos.y ));
 		}
 	}
 	void Animation::advance() {
@@ -25,7 +25,7 @@ namespace badEngine {
 			curFrameTime -= holdTime;
 		}
 	}
-	Vek2 Animation::getFrame() {
-		return Vek2(frames[curFrame].x, frames[curFrame].y);
+	Vec2i Animation::getFrame() {
+		return frames[curFrame];
 	}
 }

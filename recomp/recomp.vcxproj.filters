@@ -85,9 +85,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Rectangle.cpp">
-      <Filter>planeStuff</Filter>
-    </ClCompile>
     <ClCompile Include="Transform.cpp">
       <Filter>planeStuff</Filter>
     </ClCompile>

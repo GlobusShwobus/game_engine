@@ -10,28 +10,28 @@ namespace badEngine {
 
 	class Transform {
 
-		Rectangle rectangle;
-		Vek2 velocity;
+		RectF rectangle;
+		Vec2f velocity;
 
 	public:
 
 		Transform() = default;
-		Transform(const Rectangle& rectangle, Vek2 velocity) :rectangle(rectangle), velocity(velocity) {}
+		Transform(const RectF& rectangle, Vec2f velocity) :rectangle(rectangle), velocity(velocity) {}
 
-		inline const Rectangle& getRectangle()const
+		inline const RectF& getRectangle()const
 		{
 			return rectangle;
 		}
-		inline const Vek2& getVelocity()const
+		inline const Vec2f& getVelocity()const
 		{
 			return velocity;
 		}
 
-		inline Rectangle* DataRectangle()
+		inline RectF* DataRectangle()
 		{
 			return &rectangle;
 		}
-		inline Vek2* DataVelocity()
+		inline Vec2f* DataVelocity()
 		{
 			return &velocity;
 		}
@@ -40,7 +40,7 @@ namespace badEngine {
 		{
 			rectangle = { x,y,w,h };
 		}
-		inline void setRectangle(const Rectangle& rectangle)
+		inline void setRectangle(const RectF& rectangle)
 		{
 			this->rectangle = rectangle;
 		}
@@ -48,7 +48,7 @@ namespace badEngine {
 		{
 			velocity = { x,y };
 		}
-		inline void setVelocity(const Vek2& velocity)
+		inline void setVelocity(const Vec2f& velocity)
 		{
 			this->velocity = velocity;
 		}
@@ -58,7 +58,7 @@ namespace badEngine {
 			rectangle.x = x;
 			rectangle.y = y;
 		}
-		inline void setPositionManual(const Vek2& position)
+		inline void setPositionManual(const Vec2f& position)
 		{
 			rectangle.x = position.x;
 			rectangle.y = position.y;
@@ -69,11 +69,11 @@ namespace badEngine {
 			rectangle.y += velocity.y;
 		}
 
-		static bool rayCollision(const Vek2& rayOrigin, const Vek2& rayVector, const Rectangle& target, float& hitTime, Vek2* contantPoint = nullptr, Vek2* contactNormal = nullptr);
-		bool rayCollisionEnhanced(const Rectangle& bRect, const Vek2& bVel, float& hitTime, Vek2* contactPoint = nullptr, Vek2* contactNormal = nullptr)const;
-		bool rayCollisionEnhanced(const Transform& target, float& hitTime, Vek2* contactPoint = nullptr, Vek2* contactNormal = nullptr)const;
-		static bool rayCollisionEnhanced(const Transform& a, const Transform& b, float& hitTime, Vek2* contactPoint = nullptr, Vek2* contactNormal = nullptr);
-		static bool rayCollisionEnhanced(const Rectangle& aRect, const Vek2& aVel, const Rectangle& bRect, const Vek2& bVel, float& hitTime, Vek2* contactPoint = nullptr, Vek2* contactNormal = nullptr);
+		static bool rayCollision(const Vec2f& rayOrigin, const Vec2f& rayVector, const RectF& target, float& hitTime, Vec2f* contantPoint = nullptr, Vec2i* contactNormal = nullptr);
+		bool rayCollisionEnhanced(const RectF& bRect, const Vec2f& bVel, float& hitTime, Vec2f* contactPoint = nullptr, Vec2i* contactNormal = nullptr)const;
+		bool rayCollisionEnhanced(const Transform& target, float& hitTime, Vec2f* contactPoint = nullptr, Vec2i* contactNormal = nullptr)const;
+		static bool rayCollisionEnhanced(const Transform& a, const Transform& b, float& hitTime, Vec2f* contactPoint = nullptr, Vec2i* contactNormal = nullptr);
+		static bool rayCollisionEnhanced(const RectF& aRect, const Vec2f& aVel, const RectF& bRect, const Vec2f& bVel, float& hitTime, Vec2f* contactPoint = nullptr, Vec2i* contactNormal = nullptr);
 
 	private:
 

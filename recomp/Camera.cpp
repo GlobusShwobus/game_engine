@@ -2,44 +2,44 @@
 
 namespace badEngine {
 
-	Vek2 Camera2D::worldToScreen(const Vek2& position) const
+	Vec2f Camera2D::worldToScreen(const Vec2f& position) const
 	{
-		Vek2 p;
+		Vec2f p;
 		worldToScreen(position.x, position.y, p.x, p.y);
 		return p;
 	}
-	Vek2 Camera2D::worldToScreen(float x, float y) const
+	Vec2f Camera2D::worldToScreen(float x, float y) const
 	{
-		Vek2 p;
+		Vec2f p;
 		worldToScreen(x, y, p.x, p.y);
 		return p;
 	}
-	Rectangle Camera2D::worldToScreen(const Rectangle& rect)const
+	RectF Camera2D::worldToScreen(const RectF& rect)const
 	{
-		Vek2 p = worldToScreen(rect.x, rect.y);
+		Vec2f p = worldToScreen(rect.x, rect.y);
 		float w = rect.w * scaleX;
 		float h = rect.h * scaleY;
 
 		return { p.x, p.y, w,h };
 	}
-	Vek2 Camera2D::screenToWorld(const Vek2& position) const
+	Vec2i Camera2D::screenToWorld(const Vec2i& position) const
 	{
-		Vek2 p;
+		Vec2i p;
 		screenToWorld(position.x, position.y, p.x, p.y);
 		return p;
 	}
-	Vek2 Camera2D::screenToWorld(float x, float y) const
+	Vec2i Camera2D::screenToWorld(int x, int y) const
 	{
-		Vek2 p;
+		Vec2i p;
 		screenToWorld(x, y, p.x, p.y);
 		return p;
 	}
-	Rectangle Camera2D::screenToWorld(const Rectangle& rect)const
+	RectF Camera2D::screenToWorld(const RectF& rect)const
 	{
-		Vek2 p = screenToWorld(rect.x, rect.y);
+		Vec2i p = screenToWorld(rect.x, rect.y);
 		float w = rect.w / scaleX;
 		float h = rect.h / scaleY;
 
-		return { p.x, p.y, w,h };
+		return { (float)p.x, (float)p.y, w,h };
 	}
 }

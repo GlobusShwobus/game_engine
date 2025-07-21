@@ -18,7 +18,6 @@ namespace badEngine {
 		file.read(reinterpret_cast<char*>(&bmInfoHeader), sizeof(bmInfoHeader));
 
 		assert(bmInfoHeader.biBitCount == 24 || bmInfoHeader.biBitCount == 32);
-		//assert(bmInfoHeader.biCompression == static_BI_RGB);
 
 		width = bmInfoHeader.biWidth;
 		height = bmInfoHeader.biHeight;

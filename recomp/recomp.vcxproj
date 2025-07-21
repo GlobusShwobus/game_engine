@@ -164,7 +164,6 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Font.cpp" />
-    <ClCompile Include="Rectangle.cpp" />
     <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="Animation.cpp" />
     <ClCompile Include="main.cpp" />

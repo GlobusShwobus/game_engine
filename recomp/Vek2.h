@@ -2,106 +2,109 @@
 #include <cmath>
 namespace badEngine {
 
-	class Vek2 {
+	template <typename T> 
+	class Vec2 {
 
 	public:
-		float x = 0.0f;
-		float y = 0.0f;
+		T x;
+		T y;
 
-		Vek2() = default;
-		Vek2(float x, float y) :x(x), y(y) {}
+		Vec2() :x(), y(){}
+		Vec2(T x, T y) :x(x), y(y) {}
 
-		inline Vek2 operator+(const Vek2& p)const
+		inline Vec2 operator+(const Vec2& p)const
 		{
 			return{ x + p.x, y + p.y };
 		}
-		inline Vek2& operator+=(const Vek2& p)
+		inline Vec2& operator+=(const Vec2& p)
 		{
 			x += p.x; y += p.y;
 			return *this;
 		}
-		inline Vek2 operator-(const Vek2& p)const
+		inline Vec2 operator-(const Vec2& p)const
 		{
 			return{ x - p.x, y - p.y };
 		}
-		inline Vek2& operator-=(const Vek2& p)
+		inline Vec2& operator-=(const Vec2& p)
 		{
 			x -= p.x; y -= p.y;
 			return *this;
 		}
-		inline Vek2 operator*(const float scalar)const
+		inline Vec2 operator*(const T scalar)const
 		{
 			return{ x * scalar, y * scalar };
 		}
-		inline Vek2& operator*=(const float scalar)
+		inline Vec2& operator*=(const T scalar)
 		{
 			x *= scalar; y *= scalar;
 			return *this;
 		}
-		inline Vek2 operator/(const float scalar)const
+		inline Vec2 operator/(const T scalar)const
 		{
 			return{ x / scalar, y / scalar };
 		}
-		inline Vek2& operator/=(const float scalar)
+		inline Vec2& operator/=(const T scalar)
 		{
 			x /= scalar; y /= scalar;
 			return *this;
 		}
-		inline bool operator==(const Vek2& p)const
+		inline bool operator==(const Vec2& p)const
 		{
 			return x == p.x && y == p.y;
 		}
-		inline bool operator!=(const Vek2& p)const
+		inline bool operator!=(const Vec2& p)const
 		{
 			return x != p.x || y != p.y;
 		}
 
-		inline float dot()const
+		inline T dot()const
 		{
-			return Vek2::dot(*this);
+			return Vec2::dot(*this);
 		}
-		static inline float dot(const Vek2& p)
+		static inline T dot(const Vec2& p)
 		{
 			return(p.x * p.x) + (p.y * p.y);
 		}
 
-		inline float lenght()const
+		inline T lenght()const
 		{
-			return Vek2::lenght(*this);
+			return Vec2::lenght(*this);
 		}
-		static inline float lenght(const Vek2& p)
+		static inline T lenght(const Vec2& p)
 		{
 			return std::sqrtf(dot(p));
 		}
 
-		inline Vek2 inverse()const
+		inline Vec2 inverse()const
 		{
-			return Vek2::inverse(*this);
+			return Vec2::inverse(*this);
 		}
-		static inline Vek2 inverse(const Vek2& p) {
+		static inline Vec2 inverse(const Vec2& p) {
 			return{ 1.0f / p.x, 1.0f / p.y };
 		}
 
-		inline Vek2 unitVector()const
+		inline Vec2 unitVector()const
 		{
-			return Vek2::unitVector(*this);
+			return Vec2::unitVector(*this);
 		}
-		static inline Vek2 unitVector(const Vek2& p)
+		static inline Vec2 unitVector(const Vec2& p)
 		{
-			float len = Vek2::lenght(p);
+			T len = Vec2::lenght(p);
 			if (len == 0.0f)
-				return{ 0.0f,0.0f };
+				return Vec2();
 			else
 				return { p.x / len, p.y / len };
 		}
 
-		inline Vek2 signVector()const
+		/*
+		* DEPRICATED FOR NOW
+		inline Vec2 signVector()const
 		{
-			return Vek2::signVector(*this);
+			return Vec2::signVector(*this);
 		}
-		static inline Vek2 signVector(const Vek2& p)
+		static inline Vec2 signVector(const Vec2& p)
 		{
-			Vek2 z{ 0.0f,0.0f };
+			Vec2 z{ 0.0f,0.0f };
 			if (p.x > 0.0f)
 				z.x = 1.0f;
 			else if (p.x < 0.0f)
@@ -112,6 +115,10 @@ namespace badEngine {
 				z.y = -1.0f;
 			return z;
 		}
+		*/
 	};
+	using Vec2f = Vec2<float>;
+	using Vec2i = Vec2<int>;
+	using Vec2d = Vec2<double>;
 }
 
