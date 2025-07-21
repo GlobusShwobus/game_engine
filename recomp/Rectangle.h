@@ -14,10 +14,11 @@ namespace badEngine {
 
 		Rectangle() :x(), y(), w(), h() {}
 		Rectangle(T x, T y, T w, T h) :x(x), y(y), w(w), h(h) {}
-		Rectangle(const Vec2<T>& position, const Vec2<T>& dimensions) :x(position.x), y(position.y), w(dimensions.x), h(dimensions.y) {}
+		
+		template <typename S>
+		explicit Rectangle(const Rectangle<S>& rect) :x(T(rect.x)), y(T(rect.y)), w(T(rect.w)), h(T(rect.h)) {}
+		
 		Rectangle(const Vec2<T>& position, T w, T h) :x(position.x), y(position.y), w(w), h(h) {}
-		Rectangle(T x, T y, const Vec2<T>& dimensions) :x(x), y(y), w(dimensions.x), h(dimensions.y) {}
-
 
 		static inline bool containsPoint(const Rectangle& rect, T cordX, T cordY)
 		{

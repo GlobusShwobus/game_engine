@@ -67,13 +67,13 @@ namespace badEngine {
 			scaleY *= factor;
 		}
 
-		inline void worldToScreen(float worldX, float worldY, float& screenX, float& screenY) const
+		inline void worldToScreen(int worldX, int worldY, float& screenX, float& screenY) const
 		{
 			screenX = (worldX - offsetX) * scaleX;
 			screenY = (worldY - offsetY) * scaleY;
 		}
-		Vec2f worldToScreen(const Vec2f& position)const;
-		Vec2f worldToScreen(float x, float y)const;
+		Vec2f worldToScreen(const Vec2i& position)const;
+		Vec2f worldToScreen(int x, int y)const;
 		RectF worldToScreen(const RectF& rect)const;
 
 		inline void screenToWorld(float screenX, float screenY, int& worldX, int& worldY) const
@@ -81,8 +81,8 @@ namespace badEngine {
 			worldX = screenX / scaleX + offsetX;
 			worldY = screenY / scaleY + offsetY;
 		}
-		Vec2i screenToWorld(const Vec2i& position) const;
-		Vec2i screenToWorld(int x, int y) const;
+		Vec2i screenToWorld(const Vec2f& position) const;
+		Vec2i screenToWorld(float x, float y) const;
 		RectF screenToWorld(const RectF& rect)const;
 
 		inline float getScaleX() const { return scaleX; }

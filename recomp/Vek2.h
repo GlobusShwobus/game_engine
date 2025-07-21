@@ -12,6 +12,9 @@ namespace badEngine {
 		Vec2() :x(), y(){}
 		Vec2(T x, T y) :x(x), y(y) {}
 
+		template <typename S>
+		explicit Vec2(const Vec2<S>& v) :x(T(v.x)), y(T(v.y)) {}
+
 		inline Vec2 operator+(const Vec2& p)const
 		{
 			return{ x + p.x, y + p.y };
@@ -72,7 +75,7 @@ namespace badEngine {
 		}
 		static inline T lenght(const Vec2& p)
 		{
-			return std::sqrtf(dot(p));
+			return (T)std::sqrt(dot(p));
 		}
 
 		inline Vec2 inverse()const
@@ -80,7 +83,7 @@ namespace badEngine {
 			return Vec2::inverse(*this);
 		}
 		static inline Vec2 inverse(const Vec2& p) {
-			return{ 1.0f / p.x, 1.0f / p.y };
+			return{ (T)1 / p.x, (T)1 / p.y };
 		}
 
 		inline Vec2 unitVector()const
@@ -90,7 +93,7 @@ namespace badEngine {
 		static inline Vec2 unitVector(const Vec2& p)
 		{
 			T len = Vec2::lenght(p);
-			if (len == 0.0f)
+			if (len == (T)0)
 				return Vec2();
 			else
 				return { p.x / len, p.y / len };
