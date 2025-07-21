@@ -18,7 +18,7 @@ namespace badEngine {
 		file.read(reinterpret_cast<char*>(&bmInfoHeader), sizeof(bmInfoHeader));
 
 		assert(bmInfoHeader.biBitCount == 24 || bmInfoHeader.biBitCount == 32);
-		assert(bmInfoHeader.biCompression == static_BI_RGB);
+		//assert(bmInfoHeader.biCompression == static_BI_RGB);
 
 		width = bmInfoHeader.biWidth;
 		height = bmInfoHeader.biHeight;
@@ -42,14 +42,13 @@ namespace badEngine {
 			unsigned char* row = buffer.data() + bmpY * rowStride;//beginning of buffer + (height*width) == row
 
 			for (int x = 0; x < width; ++x) {
-				size_t i = x * bytesPerPixel;
+				unsigned int i = x * bytesPerPixel;
 				unsigned char b = row[i];
 				unsigned char g = row[i + 1];
 				unsigned char r = row[i + 2];
 				unsigned char a = is32b ? row[i + 3] : 255u;
 				pPixels[y * width + x] = (a << 24u) | (r << 16u) | (g << 8u) | b;
 			}
-
 		}
 	}
 	
@@ -57,12 +56,8 @@ namespace badEngine {
 		width(width), height(height), pPixels(new Color[width * height])
 	{}
 	Surface::Surface(const Surface& rhs)
-		:Surface(rhs.width, rhs.height)
 	{
-		const int nPixels = width * height;
-		for (int i = 0; i < nPixels; i++) {
-			pPixels[i] = rhs.pPixels[i];
-		}
+		*this = rhs;
 	}
 	Surface::~Surface()
 	{

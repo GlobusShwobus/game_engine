@@ -10,11 +10,11 @@ namespace badEngine {
 	class Sprite {
 
 		std::shared_ptr<SDL_Texture> texture = nullptr;
-	
-		SDL_FRect source;
 		
-		float destWidth;
-		float destHeight;
+		SDL_FRect source{0,0,0,0};
+		
+		float destWidth=0.0f;
+		float destHeight=0.0f;
 
 	public:
 		

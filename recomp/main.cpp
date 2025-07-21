@@ -7,6 +7,7 @@
 #include "Surface.h"
 #include "GPUSprite.h"
 #include "Font.h"
+#include "Animation.h"
 #include <iostream>
 
 static nlohmann::json* initJSON(const char* path) {
@@ -64,14 +65,20 @@ int main() {
     // TEST SURFACE TO GPU BULLSHIT
     Stopwatch shittest;
 
-    //Sprite sprite("../Fonts/Fixedsys16x28.bmp", window.getRenderer());
-    Font font("../Fonts/Fixedsys16x28.bmp", window.getRenderer(), 32, 3);
+    Sprite sprite("../Textures/player_sheet.png", window.getRenderer());
+    sprite.setSourceW(32);
+    sprite.setSourceH(32);
+    sprite.setStretchWidth(32);
+    sprite.setStretchHeight(32);
+    Animation anime(Vek2(0.f, 32.f), Vek2(sprite.getSurfaceWidth(), sprite.getSurfaceHeight()), 32, 32, 8);
 
     auto shit = shittest.MarkMicroSec();
     std::cout << "shit version: " << shit << "\n";
     //###############################
 
+    Stopwatch deltaTime;
     while (gameRunning) {
+        float dt1 = deltaTime.MarkFloat();
         frameTimer.MarkFloat();
 
         window.displayClear();
@@ -83,8 +90,12 @@ int main() {
             }
         }
         //###############################################################################
-        font.DrawFont("i like mega tits", window.getRenderer(), 100, 100);
-        //sprite.DrawTexture(window.getRenderer());
+        anime.update(dt1);
+        printf("infinite loop\n");
+        Vek2 pos = anime.getFrame();
+        sprite.setSourceX(pos.x);
+        sprite.setSourceY(pos.y);
+        sprite.DrawTexture(window.getRenderer(), 0,0);
         window.displayPresent();
         //#################################################################################
         

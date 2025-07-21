@@ -23,13 +23,12 @@ namespace badEngine {
 
 	Sprite::Sprite(std::string_view path, SDL_Renderer* renderer)
 	{
-		SDL_Texture* raw  = IMG_LoadTexture(renderer, path.data());
+		SDL_Texture* raw = IMG_LoadTexture(renderer, path.data());
 		texture = std::shared_ptr<SDL_Texture>(raw, SDL_DestroyTexture);
-		if (raw) {
-			source = { 0,0, (float)raw->w, (float)raw->h };
-			destWidth = (float)raw->w;
-			destHeight = (float)raw->h;
-		}
+
+		source = { 0,0, (float)raw->w, (float)raw->h };
+		destWidth = (float)raw->w;
+		destHeight = (float)raw->h;
 	}
 
 	bool Sprite::isGood()const
@@ -39,7 +38,7 @@ namespace badEngine {
 
 	void Sprite::DrawTexture(SDL_Renderer* renderer, int x, int y)
 	{
-		SDL_FRect dest{ x,y,destWidth,destHeight };
+		SDL_FRect dest{ (float)x,(float)y,destWidth,destHeight };
 		SDL_RenderTexture(renderer, texture.get(), &source, &dest);
 	}
 }

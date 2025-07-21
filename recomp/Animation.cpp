@@ -3,7 +3,7 @@
 
 namespace badEngine {
 	Animation::Animation(const Vek2& pos, const Vek2& imageSize, int frameWidth, int frameHeight, int count, float holdTime)
-		:holdTime(holdTime), frameWidth(frameWidth), frameHeight(frameHeight)
+		:holdTime(holdTime)
 	{
 		assert((imageSize.x / frameWidth) <= count);
 		assert(imageSize.y >= frameHeight);
@@ -22,10 +22,10 @@ namespace badEngine {
 		curFrameTime += dt;
 		while (curFrameTime >= holdTime) {
 			advance();
-			curFrameTime = holdTime;
+			curFrameTime -= holdTime;
 		}
 	}
-	Rectangle Animation::getFrame() {
-		return Rectangle(frames[curFrame].x, frames[curFrame].y, frameWidth, frameHeight);
+	Vek2 Animation::getFrame() {
+		return Vek2(frames[curFrame].x, frames[curFrame].y);
 	}
 }

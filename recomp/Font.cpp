@@ -13,10 +13,10 @@ namespace badEngine {
 		assert(gylphWidth * nColumns == sprite.getSurfaceWidth());
 		assert(gylphHeight * nRows == sprite.getSurfaceHeight());
 
-		sprite.setSourceW(gylphWidth);
-		sprite.setSourceH(gylphHeight);
-		sprite.setStretchWidth(gylphWidth);
-		sprite.setStretchHeight(gylphHeight);
+		sprite.setSourceW((float)gylphWidth);
+		sprite.setSourceH((float)gylphHeight);
+		sprite.setStretchWidth((float)gylphWidth);
+		sprite.setStretchHeight((float)gylphHeight);
 	}
 
 	void Font::DrawFont(std::string_view text, SDL_Renderer* renderer, int x, int y)
@@ -35,8 +35,8 @@ namespace badEngine {
 				const int yGylph = gylphIndex / nColumns;
 				const int xGylph = gylphIndex % nColumns;
 
-				sprite.setSourceX(xGylph * gylphWidth);
-				sprite.setSourceY(yGylph * gylphHeight);
+				sprite.setSourceX(float(xGylph * gylphWidth));
+				sprite.setSourceY(float(yGylph * gylphHeight));
 
 				sprite.DrawTexture(renderer, curX, curY);
 			}
