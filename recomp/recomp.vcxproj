@@ -166,7 +166,6 @@
     <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="Animation.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="NumberGenerator.cpp" />
     <ClCompile Include="GPUSprite.cpp" />
     <ClCompile Include="Stopwatch.cpp" />
     <ClCompile Include="Surface.cpp" />

@@ -33,7 +33,7 @@ namespace badEngine {
 		template <typename S>
 		inline void focusPoint(const Vec2<S>& position)
 		{
-			focusPoint(position.x, position.y);
+			focusPoint((float)position.x, (float)position.y);
 		}
 		inline void focusPoint(float x, float y, float w, float h)
 		{
@@ -42,7 +42,7 @@ namespace badEngine {
 		template <typename S>
 		inline void focusPoint(const Rectangle<S>& rect)
 		{
-			focusPoint(rect.x + rect.halfWidth(), rect.y + rect.halfHeight());
+			focusPoint(float(rect.x + rect.halfWidth()), float(rect.y + rect.halfHeight()));
 		}
 
 		inline void move(float deltaX, float deltaY)

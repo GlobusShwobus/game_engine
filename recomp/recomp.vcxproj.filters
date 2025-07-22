@@ -91,9 +91,6 @@
     <ClCompile Include="Stopwatch.cpp">
       <Filter>utilitiez</Filter>
     </ClCompile>
-    <ClCompile Include="NumberGenerator.cpp">
-      <Filter>utilitiez</Filter>
-    </ClCompile>
     <ClCompile Include="Animation.cpp">
       <Filter>Drawable</Filter>
     </ClCompile>

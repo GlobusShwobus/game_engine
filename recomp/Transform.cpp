@@ -105,7 +105,7 @@ namespace badEngine {
 			return false;
 
 		//adjust target rectangle since ray origin is from the center not top left
-		Rectangle expandedTarget = {
+		RectF expandedTarget = {
 			bRect.x - aRect.halfWidth(),
 			bRect.y - aRect.halfHeight(),
 			bRect.w + aRect.w,
