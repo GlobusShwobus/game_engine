@@ -20,13 +20,23 @@ namespace badEngine {
 		
 		Rectangle(const Vec2<T>& position, T w, T h) :x(position.x), y(position.y), w(w), h(h) {}
 
+		bool operator ==(const Rectangle& o)const
+		{
+			return x == o.x && y == o.y && w == o.w && h == o.h;
+		}
+		bool operator!=(const Rectangle& o)const
+		{
+			return !(*this == o);
+		}
+
 		static inline bool containsPoint(const Rectangle& rect, T cordX, T cordY)
 		{
 			return (
-				cordX >= rect.x &&
-				cordY >= rect.y &&
-				cordX < rect.x + rect.w &&
-				cordY < rect.y + rect.h);
+				(cordX >= rect.x)           &&
+				(cordY >= rect.y)           &&
+				(cordX < (rect.x + rect.w)) &&
+				(cordY < (rect.y + rect.h))
+				);
 		}
 		static inline bool containsPoint(const Rectangle& rect, const Vec2<T>& position)
 		{
@@ -44,10 +54,11 @@ namespace badEngine {
 		static inline bool containsRect(const Rectangle& larger, const Rectangle& smaller)
 		{
 			return (
-				smaller.x >= larger.x &&
-				smaller.y >= larger.y &&
-				smaller.x + smaller.w <= larger.x + larger.w &&
-				smaller.y + smaller.h <= larger.y + larger.h);
+				smaller.x >= larger.x                            &&
+				smaller.y >= larger.y                            &&
+				(smaller.x + smaller.w) <= (larger.x + larger.w) &&
+				(smaller.y + smaller.h) <= (larger.y + larger.h)
+				);
 		}
 		inline bool        containsRect(const Rectangle& other)const
 		{
@@ -57,10 +68,10 @@ namespace badEngine {
 		static inline bool intersects(const Rectangle& a, const Rectangle& b)
 		{
 			return (
-				a.x < b.x + b.w &&
-				a.x + a.w > b.x &&
-				a.y < b.y + b.h &&
-				a.y + a.h > b.y
+				(a.x < (b.x + b.w)) &&
+				((a.x + a.w) > b.x) &&
+				(a.y < (b.y + b.h)) &&
+				((a.y + a.h) > b.y)
 				);
 		}
 		inline bool        intersects(const Rectangle& other)const
@@ -70,13 +81,13 @@ namespace badEngine {
 
 		static bool        intersectsEnhanced(const Rectangle& a, const Rectangle& b, Rectangle* output = nullptr)
 		{
-			float dx = center(a.x, a.w) - center(b.x, b.w);
-			float dy = center(a.y, a.h) - center(b.y, b.h);
+			T dx = center(a.x, a.w) - center(b.x, b.w);
+			T dy = center(a.y, a.h) - center(b.y, b.h);
 
-			float overlapX = overlap(a.w, b.w, dx);
-			float overlapY = overlap(a.h, b.h, dy);
+			T overlapX = overlap(a.w, b.w, dx);
+			T overlapY = overlap(a.h, b.h, dy);
 
-			if (overlapX < 0.0f && overlapY < 0.0f)
+			if (overlapX < T(0) && overlapY < T(0))
 				return false;
 
 			if (output)
@@ -89,36 +100,27 @@ namespace badEngine {
 			return Rectangle::intersectsEnhanced(*this, other, output);
 		}
 
-		inline float centerX()const
-		{
-			return Rectangle::center(x, w);
-		}
-		inline float centerY()const
-		{
-			return Rectangle::center(y, h);
-		}
-		inline float halfWidth()const
-		{
-			return Rectangle::half(w);
-		}
-		inline float halfHeight()const
-		{
-			return Rectangle::half(h);
-		}
+		inline T centerX()const    { return Rectangle::center(x, w); }
+		inline T centerY()const    { return Rectangle::center(y, h); }
+		inline T halfWidth()const  { return Rectangle::half(w); }
+		inline T halfHeight()const { return Rectangle::half(h); }
+
+		inline Vec2<T> getPosition() const{ return {x,y}; }
+		inline Vec2<T> getSize()const { return{ w,h }; }
 
 	private:
 
-		static inline float half(T lenght)
+		constexpr static inline T half(T lenght)
 		{
-			return lenght * 0.5f;
+			return T(lenght * 0.5f);
 		}
-		static inline float center(T pos, T lenght)
+		static inline T center(T pos, T lenght)
 		{
-			return pos + Rectangle::half(lenght);
+			return T(pos + Rectangle::half(lenght));
 		}
-		static inline float overlap(T dim1, T dim2, float dx)
+		static inline T overlap(T dim1, T dim2, T dx)
 		{
-			return Rectangle::half(dim1) + Rectangle::half(dim2) - std::fabs(dx);
+			return Rectangle::half(dim1) + Rectangle::half(dim2) - std::fabs((float)dx);
 		}
 
 	};
