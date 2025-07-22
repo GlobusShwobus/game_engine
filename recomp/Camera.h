@@ -24,17 +24,14 @@ namespace badEngine {
 			screenW = width;
 			screenH = height;
 		}
-		inline void updateScreenSize(const Vec2i& dimensions)
-		{
-			updateScreenSize(dimensions.x, dimensions.y);
-		}
 
 		inline void focusPoint(float x, float y)
 		{
 			offsetX = x - (screenW * 0.5f) / scaleX;	
 			offsetY = y - (screenH * 0.5f) / scaleY;	
 		}
-		inline void focusPoint(const Vec2f& position)
+		template <typename S>
+		inline void focusPoint(const Vec2<S>& position)
 		{
 			focusPoint(position.x, position.y);
 		}
@@ -42,13 +39,10 @@ namespace badEngine {
 		{
 			focusPoint(x + (w * 0.5f), y + (h * 0.5f));
 		}
-		inline void focusPoint(const RectF& rect)
+		template <typename S>
+		inline void focusPoint(const Rectangle<S>& rect)
 		{
 			focusPoint(rect.x + rect.halfWidth(), rect.y + rect.halfHeight());
-		}
-		inline void focusPoint(const RectI& rect)
-		{
-			focusPoint(float(rect.x + rect.halfWidth()), float(rect.y + rect.halfHeight()));
 		}
 
 		inline void move(float deltaX, float deltaY)
@@ -56,7 +50,8 @@ namespace badEngine {
 			offsetX += deltaX / scaleX;
 			offsetY += deltaY / scaleY;
 		}
-		inline void move(const Vec2f& delta)
+		template <typename S>
+		inline void move(const Vec2<S>& delta)
 		{
 			move(delta.x, delta.y);
 		}
@@ -72,18 +67,56 @@ namespace badEngine {
 			screenX = (worldX - offsetX) * scaleX;
 			screenY = (worldY - offsetY) * scaleY;
 		}
-		Vec2f worldToScreen(const Vec2i& position)const;
-		Vec2f worldToScreen(int x, int y)const;
-		RectF worldToScreen(const RectF& rect)const;
+		template <typename S>
+		Vec2f worldToScreen(const Vec2<S>& position)const
+		{
+			Vec2f p;
+			worldToScreen((int)position.x, (int)position.y, p.x, p.y);
+			return p;
+		}
+		Vec2f worldToScreen(int x, int y)const
+		{
+			Vec2f p;
+			worldToScreen(x, y, p.x, p.y);
+			return p;
+		}
+		template <typename S>
+		RectF worldToScreen(const Rectangle<S>& rect)const
+		{
+			Vec2f p = worldToScreen((int)rect.x, (int)rect.y);
+			float w = (float)rect.w * scaleX;
+			float h = (float)rect.h * scaleY;
+
+			return { p.x, p.y, w,h };
+		}
 
 		inline void screenToWorld(float screenX, float screenY, int& worldX, int& worldY) const
 		{
 			worldX = screenX / scaleX + offsetX;
 			worldY = screenY / scaleY + offsetY;
 		}
-		Vec2i screenToWorld(const Vec2f& position) const;
-		Vec2i screenToWorld(float x, float y) const;
-		RectF screenToWorld(const RectF& rect)const;
+		template <typename S> 
+		Vec2i screenToWorld(const Vec2<S>& position) const 
+		{
+			Vec2i p;
+			screenToWorld((float)position.x, (float)position.y, p.x, p.y);
+			return p;
+		}
+		Vec2i screenToWorld(float x, float y) const
+		{
+			Vec2i p;
+			screenToWorld(x, y, p.x, p.y);
+			return p;
+		}
+		template <typename S>
+		RectF screenToWorld(const Rectangle<S>& rect)const
+		{
+			Vec2i p = screenToWorld((float)rect.x, (float)rect.y);
+			float w = rect.w / scaleX;
+			float h = rect.h / scaleY;
+
+			return { (float)p.x, (float)p.y, w,h };
+		}
 
 		inline float getScaleX() const { return scaleX; }
 		inline float getScaleY() const { return scaleY; }

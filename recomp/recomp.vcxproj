@@ -162,7 +162,6 @@
     <ClInclude Include="Entity.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="Animation.cpp" />

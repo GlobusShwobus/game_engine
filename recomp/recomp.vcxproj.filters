@@ -100,9 +100,6 @@
     <ClCompile Include="Serialization.cpp">
       <Filter>Serialize</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Camera</Filter>
-    </ClCompile>
     <ClCompile Include="Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
