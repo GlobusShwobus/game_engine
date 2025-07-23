@@ -149,6 +149,7 @@
     <ClInclude Include="Colors.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="GPUSprite.h" />
+    <ClInclude Include="Sequence.h" />
     <ClInclude Include="Surface.h" />
     <ClInclude Include="Vek2.h" />
     <ClInclude Include="Rectangle.h" />
