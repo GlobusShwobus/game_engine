@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #include <utility>
 #include "SeqIterator.h"
 
@@ -28,7 +29,6 @@ namespace badEngine {
 			array = newArray;
 			cap = newCap;
 		}
-
 	public:
 		Sequence() :array(nullptr), size(0), cap(0) {}
 		~Sequence() {
@@ -38,6 +38,15 @@ namespace badEngine {
 			::operator delete(array, cap * sizeof(T));//then delete the bytes
 		}
 
+		bool isEmpty()const {
+			return size == 0;
+		}
+		size_t size()const {
+			return size;
+		}
+		size_t capacity()const {
+			return cap;
+		}
 		void add(const T& value) {
 			if (size == cap)
 				grow();
@@ -50,6 +59,35 @@ namespace badEngine {
 			new(array + size) T(std::move(value));//beginning of the sequence+ptr arithmetic index, place the value there
 			++size;
 		}
+
+		void pop_back() {
+			if (isEmpty())
+				throw std::runtime_error("pop back on empty");
+
+			--size;
+			array[size].~T();
+		}
+
+		void clear() {
+			if (size == 0)
+				return;
+			for (size_t i = size; i-- > 0) {
+				array[i].~T();
+			}
+			size = 0;
+		}
+
+		T& operator[](size_t index) {
+			if (index >= size)
+				throw std::out_of_range("out of range index access");
+			return array[index];
+		}
+		const T& operator[](size_t index)const {
+			if (index >= size)
+				throw std::out_of_range("out of range index access");
+			return array[index];
+		}
+
 
 		using iterator = SeqIterator<T>;
 		using const_iterator = ConstSeqIterator<T>;
@@ -73,18 +111,43 @@ namespace badEngine {
 			return const_iterator(array + size);
 		}
 
+		void erase(size_t index) {
+			if (index >= size) 
+				throw std::out_of_range("out of range index access");
+
+			array[index].~T();
+
+			if (index != size - 1) {//if last element, ignore
+				new(array + index) T(std::move(array[size - 1]));//move last element to the other slot
+				array[size - 1].~T();//remove the jast junk element after move
+			}
+			--size;
+		}
+		void erase(iterator pos) {
+			if(pos<begin() || pos>end())
+				throw std::out_of_range("out of range index access");
+
+			iterator::difference_type index = pos - begin();
+
+			erase(index);
+		}
+
+		// FROM CHILI HOMEWORK
+		//template <typename T, typename Predicate>
+		//void remove_erase_if(std::vector<T>& cont, Predicate predicate) {
+		//	auto dest = cont.begin();
+		//
+		//	for (auto src = cont.begin(); src != cont.end(); ++src) {
+		//		if (!predicate(*src)) {
+		//			*dest++ = std::move(*src);
+		//		}
+		//	}
+		//	cont.erase(dest, cont.end());
+		//}
+
 			/*
 			TODO
-			pop back
-			iterators
-			erase (but not insert in middle, fuck it, never use it)
 			erase range
-			clear
-
-			empty
-			size
-			cap
-			operator []
 
 			resize
 			reserve

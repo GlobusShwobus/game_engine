@@ -88,7 +88,7 @@ namespace badEngine {
 		}
 
 	private:
-		const T* value = nullptr;
+		const pointer value = nullptr;
 	};
 
 	template<typename T>
@@ -183,7 +183,7 @@ namespace badEngine {
 		}
 	private:
 		friend class ConstSeqIterator;
-		T* value = nullptr;
+		pointer value = nullptr;
 	};
 
 	template <typename T>
@@ -194,16 +194,4 @@ namespace badEngine {
 	ConstSeqIterator<T> operator+(typename ConstSeqIterator<T>::difference_type n, const ConstSeqIterator<T>& it) {
 		return it + n;
 	}
-
-
-	/*
-
-==
-!=
-<
->
-<=
->=
-*/
-
 }
