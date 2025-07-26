@@ -8,6 +8,7 @@
 #include "GPUSprite.h"
 #include "Font.h"
 #include "Animation.h"
+#include "Sequence.h"
 #include <iostream>
 
 static nlohmann::json* initJSON(const char* path) {
@@ -32,6 +33,58 @@ public:
     }
 };
 
+int main() {
+
+    badEngine::Sequence<int> myInts;
+
+    for (int i = 0; i < 99; i++) {
+        myInts.add(i * i);
+    }
+
+    for (int o : myInts) {
+        std::cout << o << '\n';
+    }
+    std::cout << "\n\n";
+    std::cout << myInts.size() << " << MY SIZE\n";
+    std::cout << myInts.capacity() << " << MY CAP";
+
+    myInts.clear();
+
+    std::cout << "\n\n";
+    std::cout << myInts.size() << " << MY SIZE\n";
+    std::cout << myInts.capacity() << " << MY CAP";
+
+    //myInts.pop_back(); // crashes here == good
+
+    myInts.clear();//should not crash on empty
+
+    for (int i = 0; i < 99; i++) {
+        myInts.add(i * i);
+    }
+
+    std::cout << "\n\n";
+    std::cout << myInts.size() << " << MY SIZE\n";
+    std::cout << myInts.capacity() << " << MY CAP";
+
+    for (int i = 0; i < 27; i++) {
+        myInts.pop_back();
+    }
+
+    std::cout << "\n\n";
+    std::cout << myInts.size() << " << MY SIZE\n";
+    std::cout << myInts.capacity() << " << MY CAP";
+
+    std::cout << "\n\n";
+    std::cout << myInts[10];
+
+    std::cout << "\n\n";
+   // std::cout << myInts[myInts.size()];//should crash
+    std::cout << myInts[myInts.size() - 1];
+
+    return 0;
+}
+
+/*
 int main() {
     using namespace badEngine;
     
@@ -109,3 +162,4 @@ int main() {
 
     return 0;
 }
+*/

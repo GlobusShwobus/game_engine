@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdexcept>
+#include <cassert>
 #include <utility>
 #include "SeqIterator.h"
 
@@ -9,7 +9,7 @@ namespace badEngine {
 	class Sequence {
 
 		T* array = nullptr;
-		size_t size;
+		size_t mSize;
 		size_t cap;
 
 		void grow() {
@@ -17,11 +17,11 @@ namespace badEngine {
 			void* bytes = ::operator new(newCap * sizeof(T));//allocate raw bytes
 			T* newArray = static_cast<T*>(bytes);//cast it to the actual type
 
-			for (size_t i = 0; i < size; i++) {
+			for (size_t i = 0; i < mSize; i++) {
 				new (newArray + i) T(std::move(array[i]));//beginning of the sequence + sizeof(T) implicit, ptr arithmetic in ( )
 			}
 
-			for (size_t i = 0; i < size; i++) {
+			for (size_t i = 0; i < mSize; i++) {
 				array[i].~T();
 			}
 
@@ -30,61 +30,57 @@ namespace badEngine {
 			cap = newCap;
 		}
 	public:
-		Sequence() :array(nullptr), size(0), cap(0) {}
+		Sequence() :array(nullptr), mSize(0), cap(0) {}
 		~Sequence() {
-			for (size_t i = 0; i < size; ++i) {
+			for (size_t i = 0; i < mSize; ++i) {
 				array[i].~T();//first destroy the element
 			}
 			::operator delete(array, cap * sizeof(T));//then delete the bytes
 		}
 
 		bool isEmpty()const {
-			return size == 0;
+			return mSize == 0;
 		}
 		size_t size()const {
-			return size;
+			return mSize;
 		}
 		size_t capacity()const {
 			return cap;
 		}
 		void add(const T& value) {
-			if (size == cap)
+			if (mSize == cap)
 				grow();
-			new(array + size) T(value);//beginning of the sequence+ptr arithmetic index, place the value there
-			++size;
+			new(array + mSize) T(value);//beginning of the sequence+ptr arithmetic index, place the value there
+			++mSize;
 		}
 		void add(T&& value) {
-			if (size == cap)
+			if (mSize == cap)
 				grow();
-			new(array + size) T(std::move(value));//beginning of the sequence+ptr arithmetic index, place the value there
-			++size;
+			new(array + mSize) T(std::move(value));//beginning of the sequence+ptr arithmetic index, place the value there
+			++mSize;
 		}
 
 		void pop_back() {
-			if (isEmpty())
-				throw std::runtime_error("pop back on empty");
-
-			--size;
-			array[size].~T();
+			assert(mSize != 0);
+			--mSize;
+			array[mSize].~T();
 		}
 
 		void clear() {
-			if (size == 0)
+			if (mSize == 0)
 				return;
-			for (size_t i = size; i-- > 0) {
+			for (size_t i = mSize; i-- > 0;) {
 				array[i].~T();
 			}
-			size = 0;
+			mSize = 0;
 		}
 
 		T& operator[](size_t index) {
-			if (index >= size)
-				throw std::out_of_range("out of range index access");
+			assert(index < mSize);
 			return array[index];
 		}
 		const T& operator[](size_t index)const {
-			if (index >= size)
-				throw std::out_of_range("out of range index access");
+			assert(index < mSize);
 			return array[index];
 		}
 
@@ -96,54 +92,47 @@ namespace badEngine {
 			return iterator(array);
 		}
 		iterator end() {
-			return iterator(array + size);
+			return iterator(array + mSize);
 		}
 		const_iterator begin()const {
 			return const_iterator(array);
 		}
 		const_iterator end()const {
-			return const_iterator(array + size);
+			return const_iterator(array + mSize);
 		}
 		const_iterator cbegin()const {
 			return const_iterator(array);
 		}
 		const_iterator cend()const {
-			return const_iterator(array + size);
+			return const_iterator(array + mSize);
 		}
 
-		void erase(size_t index) {
-			if (index >= size) 
-				throw std::out_of_range("out of range index access");
-
+		void eraseUnordered(size_t index) {
+			assert(index < mSize);
 			array[index].~T();
 
-			if (index != size - 1) {//if last element, ignore
-				new(array + index) T(std::move(array[size - 1]));//move last element to the other slot
-				array[size - 1].~T();//remove the jast junk element after move
+			if (index != mSize - 1) {//if last element, ignore
+				new(array + index) T(std::move(array[mSize - 1]));//move last element to the other slot
+				array[mSize - 1].~T();//remove the jast junk element after move
 			}
-			--size;
+			--mSize;
 		}
-		void erase(iterator pos) {
-			if(pos<begin() || pos>end())
-				throw std::out_of_range("out of range index access");
-
-			iterator::difference_type index = pos - begin();
-
-			erase(index);
+		void eraseUnordered(iterator pos) {
+			typename iterator::difference_type index = pos - begin();
+			eraseUnordered(index);
 		}
+		template <typename Predicate>
+		void remove_erase_if(Predicate predicate) {
+        	auto dest = begin();
+        
+        	for (auto src = begin(); src != end(); ++src) {
+        		if (!predicate(*src)) {
+        			*dest++ = std::move(*src);
+        		}
+        	}
+			eraseUnordered(dest);
+        }
 
-		// FROM CHILI HOMEWORK
-		//template <typename T, typename Predicate>
-		//void remove_erase_if(std::vector<T>& cont, Predicate predicate) {
-		//	auto dest = cont.begin();
-		//
-		//	for (auto src = cont.begin(); src != cont.end(); ++src) {
-		//		if (!predicate(*src)) {
-		//			*dest++ = std::move(*src);
-		//		}
-		//	}
-		//	cont.erase(dest, cont.end());
-		//}
 
 			/*
 			TODO

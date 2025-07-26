@@ -6,90 +6,7 @@
 namespace badEngine {
 
 	template <typename T>
-	class ConstSeqIterator {
-	public:
-		using self_type = ConstSeqIterator;
-		using value_type = T;
-		using reference = const T&;
-		using pointer = const T*;
-		using difference_type = std::ptrdiff_t;
-		using iterator_category = std::random_access_iterator_tag;
-
-		ConstSeqIterator() = default;
-		ConstSeqIterator(pointer value) :value(value) {}
-		ConstSeqIterator(const SeqIterator<T>& iter) :value(&*iter) {}
-
-		reference operator*()const {
-			return *value;
-		}
-		pointer operator->()const {
-			return value;
-		}
-
-		self_type& operator++() {
-			++value;
-			return *this;
-		}
-		self_type operator++(int) {
-			self_type temp = *this;
-			++value;
-			return temp;
-		}
-		self_type& operator--() {
-			--value;
-			return *this;
-		}
-		self_type operator--(int) {
-			self_type temp = *this;
-			--value;
-			return temp;
-		}
-
-		self_type& operator+=(difference_type n) {
-			value += n;
-			return *this;
-		}
-		self_type& operator-=(difference_type n) {
-			value -= n;
-			return *this;
-		}
-
-		self_type operator+(difference_type n)const {
-			return self_type(value + n);
-		}
-		self_type operator-(difference_type n)const {
-			return self_type(value - n);
-		}
-		difference_type operator-(const self_type& rhs)const {
-			return value - rhs.value;
-		}
-
-		reference operator[](difference_type n)const {
-			return value[n];
-		}
-
-		bool operator==(const self_type& rhs)const {
-			return value == rhs.value;
-		}
-		bool operator!=(const self_type& rhs)const {
-			return value != rhs.value;
-		}
-		bool operator<(const self_type& rhs)const {
-			return value < rhs.value;
-		}
-		bool operator>(const self_type& rhs)const {
-			return value > rhs.value;
-		}
-		bool operator<=(const self_type& rhs)const {
-			return value <= rhs.value;
-		}
-		bool operator>=(const self_type& rhs)const {
-			return value >= rhs.value;
-		}
-
-	private:
-		const pointer value = nullptr;
-	};
+	class ConstSeqIterator;
 
 	template<typename T>
 	class SeqIterator {
@@ -182,8 +99,93 @@ namespace badEngine {
 			return value >= rhs.value;
 		}
 	private:
-		friend class ConstSeqIterator;
+		friend class ConstSeqIterator<T>;
 		pointer value = nullptr;
+	};
+	template <typename T>
+	class ConstSeqIterator {
+	public:
+		using self_type = ConstSeqIterator;
+		using value_type = T;
+		using reference = const T&;
+		using pointer = const T*;
+		using difference_type = std::ptrdiff_t;
+		using iterator_category = std::random_access_iterator_tag;
+
+		ConstSeqIterator() = default;
+		ConstSeqIterator(pointer value) :value(value) {}
+		ConstSeqIterator(const SeqIterator<T>& iter) :value(&*iter) {}
+
+		reference operator*()const {
+			return *value;
+		}
+		pointer operator->()const {
+			return value;
+		}
+
+		self_type& operator++() {
+			++value;
+			return *this;
+		}
+		self_type operator++(int) {
+			self_type temp = *this;
+			++value;
+			return temp;
+		}
+		self_type& operator--() {
+			--value;
+			return *this;
+		}
+		self_type operator--(int) {
+			self_type temp = *this;
+			--value;
+			return temp;
+		}
+
+		self_type& operator+=(difference_type n) {
+			value += n;
+			return *this;
+		}
+		self_type& operator-=(difference_type n) {
+			value -= n;
+			return *this;
+		}
+
+		self_type operator+(difference_type n)const {
+			return self_type(value + n);
+		}
+		self_type operator-(difference_type n)const {
+			return self_type(value - n);
+		}
+		difference_type operator-(const self_type& rhs)const {
+			return value - rhs.value;
+		}
+
+		reference operator[](difference_type n)const {
+			return value[n];
+		}
+
+		bool operator==(const self_type& rhs)const {
+			return value == rhs.value;
+		}
+		bool operator!=(const self_type& rhs)const {
+			return value != rhs.value;
+		}
+		bool operator<(const self_type& rhs)const {
+			return value < rhs.value;
+		}
+		bool operator>(const self_type& rhs)const {
+			return value > rhs.value;
+		}
+		bool operator<=(const self_type& rhs)const {
+			return value <= rhs.value;
+		}
+		bool operator>=(const self_type& rhs)const {
+			return value >= rhs.value;
+		}
+
+	private:
+		const pointer value = nullptr;
 	};
 
 	template <typename T>
