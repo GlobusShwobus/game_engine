@@ -1,0 +1,10 @@
+{
+    "temple_village": {
+        "entity_id_type": 10001,
+        "sprite": {
+            "texture_path": "../Textures/worldmap.png",
+            "texture_source": [ 0, 0, 2560, 1440 ],
+            "texture_destination": [ 0, 0, 2560, 1440 ]
+        }
+    }
+}

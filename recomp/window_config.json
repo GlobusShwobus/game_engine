@@ -1,0 +1,10 @@
+{
+  "Window": {
+    "window_width": 960,
+    "window_height": 540,
+    "camera_width": 960,
+    "camera_height": 540,
+    "FPS_target": 60,
+    "game_name": "muh_game"
+  }
+}

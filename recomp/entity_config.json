@@ -1,0 +1,50 @@
+{
+  "Player": {
+    "movement_speed": 2.5,
+    "health_points": 100,
+    "mass": 25,
+    "position_x": 100,
+    "position_y": 100,
+    "texture_path": "../Textures/player_sheet_2.png",
+    "animations": {
+      "frame_width": 32,
+      "frame_height": 32,
+      "walk_left": {
+        "x": 0,
+        "y": 0,
+        "frameCount": 8
+      },
+      "walk_right": {
+        "x": 0,
+        "y": 32,
+        "frameCount": 8
+      },
+      "idle_left": {
+        "x": 128,
+        "y": 64,
+        "frameCount": 2
+      },
+      "idle_right": {
+        "x": 192,
+        "y": 64,
+        "frameCount": 2
+      }
+    }
+  },
+  "enemy_spear1": {
+    "movement_speed": 5,
+    "health_points": 100,
+    "mass": 10,
+    "texture_path": "../Textures/enemy_spear1.png",
+    "frame_width": 32,
+    "frame_height": 32
+  },
+  "enemy_sword1": {
+    "movement_speed": 10,
+    "health_points": 200,
+    "mass": 20,
+    "texture_path": "../Textures/enemy_sword1.png",
+    "frame_width": 32,
+    "frame_height": 32
+  }
+}
