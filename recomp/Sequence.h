@@ -7,7 +7,10 @@
 #include <type_traits>
 
 namespace badEngine {
-	template <typename T> requires std::semiregular<T>
+	template <typename T>
+	concept SequenceTypeTrait = std::semiregular<T> && !std::is_const_v<T>;
+
+	template <typename T> requires SequenceTypeTrait<T>
 	class Sequence {
 	private:
 		//forward declares
@@ -393,7 +396,7 @@ namespace badEngine {
 		lhs.swap(rhs);
 	}
 
-	template<typename T> requires std::semiregular<T>
+	template<typename T> requires SequenceTypeTrait<T>
 	class Sequence<T>::Iterator {
 	public:
 		using value_type = T;
@@ -430,7 +433,7 @@ namespace badEngine {
 		pointer ptr = nullptr;
 	};
 
-	template<typename T> requires std::semiregular<T>
+	template<typename T> requires SequenceTypeTrait<T>
 	class Sequence<T>::Const_Iterator {
 	public:
 		using value_type = const T;
