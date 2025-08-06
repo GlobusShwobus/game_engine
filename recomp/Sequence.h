@@ -115,7 +115,7 @@ namespace badEngine {
 			--mSize;
 			return dest;
 		}
-		void uninitCopy(pointer fromBegin, pointer fromEnd) {
+		void uninitCopy(const_pointer  fromBegin, const_pointer  fromEnd) {
 			size_type count = static_cast<size_type>(fromEnd - fromBegin);
 			array = memAlloc(count);
 			mSize = count;
