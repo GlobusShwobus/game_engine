@@ -8,7 +8,14 @@
 
 namespace badEngine {
 	template <typename T>
-	concept SequenceTypeTrait = std::semiregular<T> && !std::is_const_v<T>;
+	concept SequenceTypeTrait = std::default_initializable<T> &&
+	                            std::copy_constructible<T> &&
+	                            std::is_copy_assignable_v<T> &&
+	                            std::move_constructible<T> &&
+	                            std::is_move_assignable_v<T> &&
+	                            std::destructible<T> &&
+	                            std::is_object_v<T> &&
+	                            !std::is_const_v<T>;
 
 	template <typename T> requires SequenceTypeTrait<T>
 	class Sequence {
