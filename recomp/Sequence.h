@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cassert>
+#include <stdexcept>
 #include <algorithm>
 #include <memory>
 #include <concepts>
@@ -69,7 +69,10 @@ namespace badEngine {
 			cap = newCap;
 		}
 		pointer eraseImpl(const_iterator pos) {
-			assert(pos >= begin() && pos < end());
+			if (pos < begin() || pos >= end()) {
+				throw std::out_of_range("position out of range");
+			}
+
 			pointer ppos = const_cast<pointer>(pos.base());
 			std::move(ppos + 1, raw_end(), ppos);
 			array[mSize - 1].~T();
@@ -78,7 +81,9 @@ namespace badEngine {
 			return (ppos == raw_end()) ? raw_end() : ppos;
 		}
 		pointer eraseRangeImpl(const_iterator first, const_iterator last) {
-			assert(first >= begin() && first <= last && last <= end());
+			if (first < begin() || first >= last || last >= end()) {
+				throw std::out_of_range("position out of range");
+			}
 
 			pointer pfirst = const_cast<pointer>(first.base());
 			pointer plast = const_cast<pointer>(last.base());
@@ -104,7 +109,9 @@ namespace badEngine {
 			return pfirst;
 		}
 		pointer removeImpl(const_iterator pos) {
-			assert(pos >= begin() && pos < end());
+			if (pos < begin() && pos >= end()) {
+				throw std::out_of_range("position out of range");
+			}
 
 			pointer dest = const_cast<pointer>(pos.base());
 			pointer last = raw_end() - 1;
@@ -205,17 +212,21 @@ namespace badEngine {
 
 		//ACCESS
 		constexpr reference operator[](size_type index) {
-			return at(index);
+			return array[index];
 		}
 		constexpr const_reference operator[](size_type index)const {
-			return at(index);
+			return array[index];
 		}
 		constexpr reference at(size_type pos) {
-			assert(pos < mSize);
+			if (pos < size()) {
+				throw std::out_of_range("position out of range");
+			}
 			return array[pos];
 		}
 		constexpr const_reference at(size_type pos)const {
-			assert(pos < mSize);
+			if (pos < size()) {
+				throw std::out_of_range("position out of range");
+			}
 			return array[pos];
 		}
 		constexpr pointer data()noexcept {
