@@ -8,11 +8,11 @@
 
 namespace badEngine {
 	template <typename T>
-	concept SequenceTypeTrait = std::semiregular<T> && !std::is_const_v<T>;
-
-	template <typename T> requires SequenceTypeTrait<T>
 	class Sequence {
 	private:
+		static_assert(std::is_object_v<T>, "T must be an object type");
+		static_assert(std::destructible<T>, "T must be destructible");
+		static_assert(!std::is_const_v<T>, "T cannot be const type");
 		//forward declares
 		class Iterator;
 		class Const_Iterator;
@@ -126,21 +126,21 @@ namespace badEngine {
 	public:
 		//CONSTRUCTORS
 		Sequence()noexcept :array(nullptr), mSize(0), cap(0) {}
-		Sequence(std::initializer_list<value_type> init) {
+		Sequence(std::initializer_list<value_type> init) requires std::copyable<T> {
 			if (init.size() > 0) {
 				uninitCopy(init.begin(), init.end());
 			}
 		}
-		explicit Sequence(size_type count) {
+		explicit Sequence(size_type count) requires std::default_initializable<T> {
 			if (count > 0) {
 				array = memAlloc(count);
 				cap = count;
 				mSize = count;
 
-				std::uninitialized_value_construct_n(array, count);//envokes T()
+				std::uninitialized_value_construct_n(array, count);
 			}
 		}
-		Sequence(size_type count, const_reference value) {
+		Sequence(size_type count, const_reference value) requires std::copyable<T> {
 			if (count > 0) {
 				array = memAlloc(count);
 				cap = count;
@@ -149,7 +149,7 @@ namespace badEngine {
 				std::uninitialized_fill_n(array, count, value);
 			}
 		}
-		Sequence(const Sequence& rhs) {
+		Sequence(const Sequence& rhs) requires std::copyable<T> {
 			if (rhs.array) {
 				uninitCopy(rhs.raw_begin(), rhs.raw_end());
 			}
@@ -157,7 +157,7 @@ namespace badEngine {
 		constexpr Sequence(Sequence&& rhs)noexcept :array(rhs.array), cap(rhs.cap), mSize(rhs.mSize) {
 			rhs.reset();
 		}
-		Sequence& operator=(const Sequence& rhs) {
+		Sequence& operator=(const Sequence& rhs)requires std::copyable<T> {
 			if (this != &rhs) {
 				clear();
 				memFree();
@@ -184,7 +184,7 @@ namespace badEngine {
 			}
 			return *this;
 		}
-		Sequence& operator=(std::initializer_list<value_type> ilist) {
+		Sequence& operator=(std::initializer_list<value_type> ilist) requires std::copyable<T> {
 			clear();
 			memFree();
 
@@ -197,7 +197,7 @@ namespace badEngine {
 			return *this;
 		}
 
-		~Sequence() {
+		~Sequence() {//putting a requirement here will cause a misleading error, though would be more correct
 			clear();
 			memFree();
 		}
@@ -233,64 +233,62 @@ namespace badEngine {
 		//#################################################
 
 		//MODIFICATION
-		void emplace_back(const_reference value) {
+		void push_back(const_reference value) requires std::copy_constructible<T> {
 			ifGrow();
 			std::construct_at(raw_end(), value);
 			++mSize;
 		}
-		void emplace_back(T&& value) {
+		void push_back(T&& value) requires std::move_constructible<T> {
 			ifGrow();
 			std::construct_at(raw_end(), std::move(value));
 			++mSize;
 		}
+		void emplace_back(T&& value) requires std::move_constructible<T> {
+			push_back(std::move(value));
+		}
 		template<typename... Args>
-		void emplace_back(Args&&... args) {
+		void emplace_back(Args&&... args) requires std::constructible_from<T, Args&&...> {
 			ifGrow();
 			std::construct_at(raw_end(), std::forward<Args>(args)...);
 			++mSize;
 		}
-		void pop_back() {
-			assert(mSize > 0);
-			array[mSize - 1].~T();
-			--mSize;
+		void pop_back()noexcept {
+			if (mSize > 0) {
+				array[mSize - 1].~T();
+				--mSize;
+			}
 		}
-		void clear()noexcept {
-			if (mSize == 0)
-				return;
-			std::destroy(raw_begin(), raw_end());
-			mSize = 0;
+		void clear() noexcept {
+			if (mSize > 0) {
+				std::destroy(raw_begin(), raw_end());
+				mSize = 0;
+			}
 		}
 		void resize(size_type count) {
 			if (count == mSize) {
 				return;
 			}
-			//if count is less than current capacity, then no need to reallocate
-			if (count <= cap) {
-				//if count is less than size, cut off the end, else add default constructed elements
-				if (count < mSize) {
-					std::destroy(raw_begin() + count, raw_end());
-				}
-				else {
-					std::uninitialized_default_construct(raw_end(), raw_begin() + count);//same as vector, if resize sequence<int>, extra ints are there but not initalized (not zeroed)
-				}
+			//if count is less than size, cut off the tail
+			if (count < mSize) {
+				std::destroy(raw_begin() + count, raw_end());
 				mSize = count;
 				return;
 			}
-			//need reallocation and since count > cap, its always greater than mSize
-			size_type newCap = growthFactor(count);
-			pointer newArray = memAlloc(newCap);
-
-			std::uninitialized_move(raw_begin(), raw_end(), newArray);
-			std::uninitialized_default_construct(newArray + mSize, newArray + count);
-
-			std::destroy(raw_begin(), raw_end());
-			memFree();
-			array = newArray;
-			cap = newCap;
-			mSize = count;
+			// if T is default constructible, may need realloc in which case need movable
+			if constexpr (std::default_initializable<T>) {
+				if (count > cap) {
+					static_assert(std::move_constructible<T>, "T must be move constructible");
+					reAlloc(count);
+				}
+				std::uninitialized_default_construct(raw_end(), raw_begin() + count);
+				mSize = count;
+			}
+			else {
+				static_assert(std::default_initializable<T>, "T must be default initializable");
+			}
 		}
 		template <typename UnaryPred>
-		iterator remove(UnaryPred predicate) {
+		iterator remove(UnaryPred predicate) requires std::move_constructible<T> {
 
 			pointer last = raw_end() - 1;
 			pointer current = raw_begin();
@@ -306,7 +304,7 @@ namespace badEngine {
 					++current;
 				}
 			}
-			size_type newSize = last - raw_begin() + 1;
+			size_type newSize = last - raw_begin() + 1;//last began at last element, not one off the last, so here add it back
 
 			//bulk delete everything from last to end then apply new size
 			if (newSize < mSize) {
@@ -316,12 +314,24 @@ namespace badEngine {
 
 			return end();
 		}
-		const_iterator remove(const_iterator pos) { return { removeImpl(pos) }; }
-		iterator       remove(iterator pos) { return { removeImpl(pos) }; }
-		const_iterator erase(const_iterator pos) { return { eraseImpl(pos) }; }
-		iterator       erase(iterator pos) { return { eraseImpl(pos) }; }
-		const_iterator erase(const_iterator first, const_iterator last) { return { eraseRangeImpl(first, last) }; }
-		iterator       erase(iterator first, iterator last) { return { eraseRangeImpl(first, last) }; }
+		const_iterator remove(const_iterator pos)requires std::move_constructible<T> {
+			return { removeImpl(pos) };
+		}
+		iterator remove(iterator pos)requires std::move_constructible<T> {
+			return { removeImpl(pos) };
+		}
+		const_iterator erase(const_iterator pos)requires std::move_constructible<T> {
+			return { eraseImpl(pos) };
+		}
+		iterator erase(iterator pos)requires std::move_constructible<T> {
+			return { eraseImpl(pos) };
+		}
+		const_iterator erase(const_iterator first, const_iterator last)requires std::move_constructible<T> {
+			return { eraseRangeImpl(first, last) };
+		}
+		iterator erase(iterator first, iterator last)requires std::move_constructible<T> {
+			return { eraseRangeImpl(first, last) };
+		}
 
 		constexpr void swap(Sequence& rhs)noexcept {
 			pointer tempArr = array;
@@ -345,13 +355,13 @@ namespace badEngine {
 		constexpr size_type size()const noexcept { return mSize; }
 		constexpr size_type capacity()const noexcept { return cap; }
 
-		void reserve(size_type newCap) {
+		void reserve(size_type newCap) requires std::move_constructible<T> {
 			if (newCap > cap) {
 				reAlloc(newCap);
 			}
 		}
-		void shrinkToFit() {
-			if (cap > mSize) {
+		void shrinkToFit() requires std::move_constructible<T> {
+			if (cap > mSize) {//realloc sets the cap only, so if this function is called twice in a raw, just skip it entirely, otherwise if it grows in between the situation changed
 				reAlloc(mSize);
 			}
 		}
@@ -396,7 +406,7 @@ namespace badEngine {
 		lhs.swap(rhs);
 	}
 
-	template<typename T> requires SequenceTypeTrait<T>
+	template<typename T>
 	class Sequence<T>::Iterator {
 	public:
 		using value_type = T;
@@ -433,7 +443,7 @@ namespace badEngine {
 		pointer ptr = nullptr;
 	};
 
-	template<typename T> requires SequenceTypeTrait<T>
+	template<typename T>
 	class Sequence<T>::Const_Iterator {
 	public:
 		using value_type = const T;
