@@ -218,13 +218,13 @@ namespace badEngine {
 			return array[index];
 		}
 		constexpr reference at(size_type pos) {
-			if (pos < size()) {
+			if (pos >= size()) {
 				throw std::out_of_range("position out of range");
 			}
 			return array[pos];
 		}
 		constexpr const_reference at(size_type pos)const {
-			if (pos < size()) {
+			if (pos >= size()) {
 				throw std::out_of_range("position out of range");
 			}
 			return array[pos];
