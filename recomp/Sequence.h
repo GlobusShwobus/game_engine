@@ -1,10 +1,9 @@
 #pragma once
 
+#include <assert.h>
 #include <stdexcept>
-#include <algorithm>
 #include <memory>
 #include <concepts>
-#include <type_traits>
 
 namespace badEngine {
 	template <typename T>
@@ -32,11 +31,12 @@ namespace badEngine {
 
 		using iterator = Iterator;
 		using const_iterator = Const_Iterator;
+		//#################################################
 
 	private:
-
+		//the important shit
 		void moveAlloc(size_type count) {
-			pointer moved = static_cast<pointer>(::operator new(count * sizeof(value_type)));//can throw bad alloc, no mem is ever allocated, propagade up
+			pointer moved = static_cast<pointer>(::operator new(count * sizeof(value_type)));
 			pointer begin = raw_begin();
 			pointer end = raw_end();
 			pointer initialized = moved;
@@ -62,11 +62,17 @@ namespace badEngine {
 			cap = count;
 			//mSize unchanged
 		}
-		void copyAlloc(const_pointer begin, const_pointer end, size_type count) {
-			if (begin == end) return;
+		// In copy assignment scenarios, this basically acts as a += operator which is wrong.
+		// but it returns a pointer to the end point before anything was appended into the array
+		// then after calling this fun, erase should be used to remove the old section
+		// erase does nothing anyway if begin == end
+		// in copy construction scenarios, no extra steps required because it would append to the zero position
+		// (otherwise it would be a pretty involved function which yeah, fuck it)
+		pointer appendAlloc(const_pointer begin, const_pointer end, size_type count) {
+			if (begin == end) return raw_begin(); //erase is called from begin, if early return is also begin, then begin == begin == NO OP, good
 
 			if ((mSize + count) > cap) {
-				moveAlloc(mSize + count);//can throw, nothing is copied either
+				moveAlloc(mSize + count);
 			}
 			pointer dest = raw_end();
 			pointer initialized = dest;
@@ -75,13 +81,16 @@ namespace badEngine {
 				initialized = std::uninitialized_copy(begin, end, dest);
 			}
 			catch (...) {
-				std::destroy(dest, initialized); // clean up partially constructed elements
+				std::destroy(dest, initialized);
 				throw;
 			}
-			mSize += count;
-		}
 
-		//private members
+			mSize += count;
+			return dest;
+		}
+		//#################################################
+
+		//the convenience
 		void memFree() {
 			if (array) {
 				::operator delete(array);
@@ -89,7 +98,7 @@ namespace badEngine {
 				cap = 0;
 			}
 		}
-		void objDestroyAll() {
+		void objDestroyAll()noexcept {
 			if (mSize > 0) {
 				std::destroy(raw_begin(), raw_end());
 				mSize = 0;
@@ -104,21 +113,22 @@ namespace badEngine {
 		constexpr size_type growthFactor(size_type input)const {
 			return input + (input / 2) + 1;
 		}
+		//#################################################
 	public:
 		//CONSTRUCTORS
 		Sequence()noexcept :array(nullptr), mSize(0), cap(0) {}
 		Sequence(std::initializer_list<value_type> init) requires std::copyable<value_type> {
 			if (init.size() == 0)
 				return;
-			copyAlloc(init.begin(), init.end(), init.size());
+			appendAlloc(init.begin(), init.end(), init.size());
 		}
 		explicit Sequence(size_type count) requires std::default_initializable<value_type> {
 			if (count == 0)
 				return;
-			pointer defaultConstruct = static_cast<pointer>(::operator new(count * sizeof(value_type)));//can throw bad alloc, don't care, propagate it up
+			pointer defaultConstruct = static_cast<pointer>(::operator new(count * sizeof(value_type)));
 			pointer initialized = defaultConstruct;
 			try {
-				initialized = std::uninitialized_value_construct_n(defaultConstruct, count);
+				initialized = std::uninitialized_default_construct_n(defaultConstruct, count);
 			}
 			catch (...) {
 				std::destroy(defaultConstruct, initialized);
@@ -149,7 +159,7 @@ namespace badEngine {
 		Sequence(const Sequence& rhs) requires std::copyable<value_type> {
 			if (!rhs.isValid())
 				return;
-			copyAlloc(rhs.raw_begin(), rhs.raw_end(), rhs.size());
+			appendAlloc(rhs.raw_begin(), rhs.raw_end(), rhs.size());
 		}
 		constexpr Sequence(Sequence&& rhs)noexcept {//shallow copy theft, no need for requirements
 			array = std::exchange(rhs.array, nullptr);
@@ -160,13 +170,13 @@ namespace badEngine {
 			if (this == &rhs)
 				return *this;
 
-			if (!rhs.isValid()) {
+			if (!rhs.isValid()) {//implies user wants to delete old mem
 				objDestroyAll();
 				//memFree(); for the sake of future allocation, just don't free mem
 				return *this;
 			}
-
-			copyAlloc(rhs.raw_begin(), rhs.raw_end(), rhs.size());
+			pointer old_end = appendAlloc(rhs.raw_begin(), rhs.raw_end(), rhs.size());
+			erase(const_iterator(raw_begin()), const_iterator(old_end));
 			return *this;
 		}
 		Sequence& operator=(Sequence&& rhs)noexcept {//shallow copy theft, no need for requirements
@@ -188,8 +198,8 @@ namespace badEngine {
 				//memFree(); for the sake of future allocation, just don't free mem
 				return *this;
 			}
-
-			copyAlloc(ilist.begin(), ilist.end(), ilist.size());
+			pointer old_end = appendAlloc(ilist.begin(), ilist.end(), ilist.size());
+			erase(const_iterator(raw_begin()), const_iterator(old_end));
 			return *this;
 		}
 
@@ -201,25 +211,26 @@ namespace badEngine {
 
 		//ACCESS
 		constexpr reference operator[](size_type index) {
+			assert(index < mSize && "out of range position");
 			return array[index];
 		}
 		constexpr const_reference operator[](size_type index)const {
+			assert(index < mSize && "out of range position");
 			return array[index];
 		}
 		constexpr reference at(size_type pos) {
-			if (pos >= size()) {
+			if (pos >= size())
 				throw std::out_of_range("position out of range");
-			}
 			return array[pos];
 		}
 		constexpr const_reference at(size_type pos)const {
-			if (pos >= size()) {
+			if (pos >= size())
 				throw std::out_of_range("position out of range");
-			}
 			return array[pos];
 		}
-		constexpr pointer        data()noexcept { return array; }
-		constexpr const_pointer  data()const noexcept { return array; }
+		constexpr pointer        data()noexcept { return   array; }
+		constexpr const_pointer  data()const noexcept { return   array; }
+
 		constexpr iterator       begin()noexcept { return { array }; }
 		constexpr iterator       end()noexcept { return { array + mSize }; }
 		constexpr const_iterator begin()const noexcept { return { array }; }
@@ -232,28 +243,27 @@ namespace badEngine {
 		void push_back(const_reference value) requires std::copyable<value_type> {
 			if (mSize == cap)
 				moveAlloc(growthFactor(cap));
-			std::construct_at(raw_end(), value);//but this can and will fail as well if above failed because the capacity is not enough
+			std::construct_at(raw_end(), value);//safe to throw on fail, array not modified
 			++mSize;
 		}
 		void push_back(T&& value) requires strong_movable<value_type> {
 			if (mSize == cap)
 				moveAlloc(growthFactor(cap));
-			std::construct_at(raw_end(), std::move(value));
+			std::construct_at(raw_end(), std::move(value));//safe to throw on fail, array not modified
 			++mSize;
 		}
 		void emplace_back(T&& value) requires strong_movable<value_type> {
 			push_back(std::move(value));
 		}
-		template<typename... Args>
-		void emplace_back(Args&&... args) requires std::constructible_from<value_type, Args&&...> {
+		template<typename... Args> void emplace_back(Args&&... args) requires std::constructible_from<value_type, Args&&...> {
 			if (mSize == cap)
 				moveAlloc(growthFactor(cap));
-			std::construct_at(raw_end(), std::forward<Args>(args)...);
+			std::construct_at(raw_end(), std::forward<Args>(args)...);//safe to throw on fail, array not modified
 			++mSize;
 		}
-		void pop_back()noexcept(std::is_nothrow_destructible_v<T>) {
+		void pop_back()noexcept {
 			if (mSize > 0) {
-				array[mSize - 1].~T();
+				array[mSize - 1].~value_type();
 				--mSize;
 			}
 		}
@@ -268,9 +278,9 @@ namespace badEngine {
 				return;
 			}
 			// if T is default constructible, may need moveAlloc in which case need movable
-			if constexpr (std::default_initializable<T>) {
+			if constexpr (std::default_initializable<value_type>) {
 				if (count > cap) {
-					static_assert(std::move_constructible<T>, "T must be move constructible");
+					static_assert(std::move_constructible<value_type>, "T must be move constructible");
 					moveAlloc(growthFactor(count));
 				}
 
@@ -288,7 +298,7 @@ namespace badEngine {
 				mSize = count;
 			}
 			else {
-				static_assert(std::default_initializable<T>, "T must be default initializable");
+				static_assert(std::default_initializable<value_type>, "T must be default initializable");
 			}
 		}
 		iterator erase(const_iterator pos)requires strong_movable<value_type> {
@@ -297,7 +307,7 @@ namespace badEngine {
 			}
 			pointer pPos = const_cast<pointer>(pos.base());
 			std::move(pPos + 1, raw_end(), pPos);//move all elements 1 space
-			array[mSize - 1].~T();//end is dangling, delete it
+			array[mSize - 1].~value_type();//end is dangling, delete it
 			--mSize;
 
 			return iterator((pPos == raw_end()) ? raw_end() : pPos);
@@ -414,7 +424,7 @@ namespace badEngine {
 				moveAlloc(size());
 			}
 		}
-		void clear() noexcept(std::is_nothrow_destructible_v<value_type>) {
+		void clear() noexcept {
 			objDestroyAll();
 		}
 		//#################################################
@@ -489,7 +499,7 @@ namespace badEngine {
 		constexpr bool operator==(const self_type& rhs)const noexcept { return ptr == rhs.ptr; }
 		constexpr std::strong_ordering operator<=>(const self_type& rhs)const noexcept { return ptr <=> rhs.ptr; }
 
-		constexpr Iterator(pointer p) noexcept :ptr(p) {}
+		constexpr Iterator(pointer p) noexcept :ptr(p) { assert(p != nullptr && "Iterator constructed from nullptr!"); }
 		constexpr pointer base()const noexcept { return ptr; }
 	private:
 		pointer ptr = nullptr;
@@ -523,8 +533,8 @@ namespace badEngine {
 		constexpr bool operator==(const self_type& rhs)const noexcept { return ptr == rhs.ptr; }
 		constexpr std::strong_ordering operator<=>(const self_type& rhs)const noexcept { return ptr <=> rhs.ptr; }
 
-		constexpr Const_Iterator(pointer p)noexcept :ptr(p) {}
-		constexpr Const_Iterator(const Iterator& rp) noexcept :ptr(rp.base()) {}
+		constexpr Const_Iterator(pointer p)noexcept :ptr(p) { assert(ptr != nullptr && "Iterator constructed from nullptr!"); }
+		constexpr Const_Iterator(const Iterator& rp) noexcept :ptr(rp.base()) { assert(ptr != nullptr && "Iterator constructed from nullptr!"); }
 		constexpr pointer base()const noexcept { return ptr; }
 	private:
 		pointer ptr = nullptr;
