@@ -91,7 +91,7 @@ namespace badEngine {
 		//#################################################
 
 		//the convenience
-		void memFree() {
+		void memFree()noexcept {
 			if (array) {
 				::operator delete(array);
 				array = nullptr;
@@ -104,15 +104,9 @@ namespace badEngine {
 				mSize = 0;
 			}
 		}
-		constexpr pointer raw_begin()const {
-			return array;
-		}
-		constexpr pointer raw_end()const {
-			return array + mSize;
-		}
-		constexpr size_type growthFactor(size_type input)const {
-			return input + (input / 2) + 1;
-		}
+		constexpr pointer raw_begin()const { return array; }
+		constexpr pointer raw_end()const { return array + mSize; }
+		constexpr size_type growthFactor(size_type input)const { return input + (input / 2) + 1; }
 		//#################################################
 	public:
 		//CONSTRUCTORS
@@ -203,7 +197,7 @@ namespace badEngine {
 			return *this;
 		}
 
-		~Sequence() {//putting a requirement here will cause a misleading error
+		~Sequence()noexcept {//putting a requirement here will cause a misleading error
 			objDestroyAll();
 			memFree();
 		}
@@ -231,12 +225,12 @@ namespace badEngine {
 		constexpr pointer        data()noexcept { return   array; }
 		constexpr const_pointer  data()const noexcept { return   array; }
 
-		constexpr iterator       begin()noexcept { return { array }; }
-		constexpr iterator       end()noexcept { return { array + mSize }; }
-		constexpr const_iterator begin()const noexcept { return { array }; }
-		constexpr const_iterator end()const noexcept { return { array + mSize }; }
-		constexpr const_iterator cbegin()const noexcept { return { array }; }
-		constexpr const_iterator cend()const noexcept { return { array + mSize }; }
+		constexpr iterator       begin() { return { array }; }
+		constexpr iterator       end() { return { array + mSize }; }
+		constexpr const_iterator begin()const { return { array }; }
+		constexpr const_iterator end()const { return { array + mSize }; }
+		constexpr const_iterator cbegin()const { return { array }; }
+		constexpr const_iterator cend()const { return { array + mSize }; }
 		//#################################################
 
 		//MODIFICATION
@@ -499,7 +493,7 @@ namespace badEngine {
 		constexpr bool operator==(const self_type& rhs)const noexcept { return ptr == rhs.ptr; }
 		constexpr std::strong_ordering operator<=>(const self_type& rhs)const noexcept { return ptr <=> rhs.ptr; }
 
-		constexpr Iterator(pointer p) noexcept :ptr(p) { assert(p != nullptr && "Iterator constructed from nullptr!"); }
+		constexpr Iterator(pointer p) :ptr(p) { assert(p != nullptr && "Iterator constructed from nullptr!"); }
 		constexpr pointer base()const noexcept { return ptr; }
 	private:
 		pointer ptr = nullptr;
@@ -533,8 +527,8 @@ namespace badEngine {
 		constexpr bool operator==(const self_type& rhs)const noexcept { return ptr == rhs.ptr; }
 		constexpr std::strong_ordering operator<=>(const self_type& rhs)const noexcept { return ptr <=> rhs.ptr; }
 
-		constexpr Const_Iterator(pointer p)noexcept :ptr(p) { assert(ptr != nullptr && "Iterator constructed from nullptr!"); }
-		constexpr Const_Iterator(const Iterator& rp) noexcept :ptr(rp.base()) { assert(ptr != nullptr && "Iterator constructed from nullptr!"); }
+		constexpr Const_Iterator(pointer p) :ptr(p) { assert(ptr != nullptr && "Iterator constructed from nullptr!"); }
+		constexpr Const_Iterator(const Iterator& rp) : ptr(rp.base()) { assert(ptr != nullptr && "Iterator constructed from nullptr!"); }
 		constexpr pointer base()const noexcept { return ptr; }
 	private:
 		pointer ptr = nullptr;
