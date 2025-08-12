@@ -62,17 +62,11 @@ namespace badEngine {
 			cap = count;
 			//mSize unchanged
 		}
-		// In copy assignment scenarios, this basically acts as a += operator which is wrong.
-		// but it returns a pointer to the end point before anything was appended into the array
-		// then after calling this fun, erase should be used to remove the old section
-		// erase does nothing anyway if begin == end
-		// in copy construction scenarios, no extra steps required because it would append to the zero position
-		// (otherwise it would be a pretty involved function which yeah, fuck it)
-		pointer appendAlloc(const_pointer begin, const_pointer end, size_type count) {
-			if (begin == end) return raw_begin(); //erase is called from begin, if early return is also begin, then begin == begin == NO OP, good
+		void copyAlloc(const_pointer begin, const_pointer end, size_type count) {
+			if (begin == end) return;
 
-			if ((mSize + count) > cap) {
-				moveAlloc(mSize + count);
+			if (count > cap) {
+				moveAlloc(count);
 			}
 			pointer dest = raw_end();
 			pointer initialized = dest;
@@ -85,8 +79,7 @@ namespace badEngine {
 				throw;
 			}
 
-			mSize += count;
-			return dest;
+			mSize = count;
 		}
 		//#################################################
 
@@ -114,7 +107,7 @@ namespace badEngine {
 		Sequence(std::initializer_list<value_type> init) requires std::copyable<value_type> {
 			if (init.size() == 0)
 				return;
-			appendAlloc(init.begin(), init.end(), init.size());
+			copyAlloc(init.begin(), init.end(), init.size());
 		}
 		explicit Sequence(size_type count) requires std::default_initializable<value_type> {
 			if (count == 0)
@@ -153,7 +146,7 @@ namespace badEngine {
 		Sequence(const Sequence& rhs) requires std::copyable<value_type> {
 			if (!rhs.isValid())
 				return;
-			appendAlloc(rhs.raw_begin(), rhs.raw_end(), rhs.size());
+			copyAlloc(rhs.raw_begin(), rhs.raw_end(), rhs.size());
 		}
 		constexpr Sequence(Sequence&& rhs)noexcept {//shallow copy theft, no need for requirements
 			array = std::exchange(rhs.array, nullptr);
@@ -169,8 +162,8 @@ namespace badEngine {
 				//memFree(); for the sake of future allocation, just don't free mem
 				return *this;
 			}
-			pointer old_end = appendAlloc(rhs.raw_begin(), rhs.raw_end(), rhs.size());
-			erase(const_iterator(raw_begin()), const_iterator(old_end));
+			Sequence temp(rhs);
+			temp.swap(*this)
 			return *this;
 		}
 		Sequence& operator=(Sequence&& rhs)noexcept {//shallow copy theft, no need for requirements
@@ -192,8 +185,8 @@ namespace badEngine {
 				//memFree(); for the sake of future allocation, just don't free mem
 				return *this;
 			}
-			pointer old_end = appendAlloc(ilist.begin(), ilist.end(), ilist.size());
-			erase(const_iterator(raw_begin()), const_iterator(old_end));
+			Sequence temp(rhs);
+			temp.swap(*this)
 			return *this;
 		}
 
