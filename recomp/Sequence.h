@@ -186,7 +186,7 @@ namespace badEngine {
 				return *this;
 			}
 			Sequence temp(rhs);
-			temp.swap(*this)
+			temp.swap(*this);
 			return *this;
 		}
 
