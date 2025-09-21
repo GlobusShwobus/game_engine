@@ -143,34 +143,35 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BMPHeader.h" />
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\badConcepts.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\BMP_type_info.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Camera.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Color.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\FrameTimer.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Geometic_Functions.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\NumberGenerator.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Rectangle.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\SequenceM.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Stopwatch.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Transform.h" />
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Vec2M.h" />
     <ClInclude Include="Collision.h" />
-    <ClInclude Include="Colors.h" />
-    <ClInclude Include="Font.h" />
     <ClInclude Include="GPUSprite.h" />
-    <ClInclude Include="Sequence.h" />
-    <ClInclude Include="Surface.h" />
-    <ClInclude Include="Vek2.h" />
-    <ClInclude Include="Rectangle.h" />
     <ClInclude Include="Serialization.h" />
-    <ClInclude Include="Stopwatch.h" />
-    <ClInclude Include="Animation.h" />
-    <ClInclude Include="NumberGenerator.h" />
     <ClInclude Include="State.h" />
-    <ClInclude Include="Transform.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Entity.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Font.cpp" />
+    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.cpp" />
+    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.cpp" />
+    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.cpp" />
     <ClCompile Include="Serialization.cpp" />
-    <ClCompile Include="Animation.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="GPUSprite.cpp" />
-    <ClCompile Include="Stopwatch.cpp" />
-    <ClCompile Include="Surface.cpp" />
-    <ClCompile Include="Transform.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Entity.cpp" />
   </ItemGroup>

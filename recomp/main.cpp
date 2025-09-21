@@ -33,6 +33,7 @@ public:
 };
 
 int main() {
+    std::string meme = "rak""vere";
     using namespace badEngine;
     
     //configs

@@ -29,29 +29,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Vek2.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="Rectangle.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="Transform.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
     <ClInclude Include="Collision.h">
       <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Stopwatch.h">
-      <Filter>utilitiez</Filter>
-    </ClInclude>
-    <ClInclude Include="NumberGenerator.h">
-      <Filter>utilitiez</Filter>
-    </ClInclude>
-    <ClInclude Include="Animation.h">
-      <Filter>Drawable</Filter>
     </ClInclude>
     <ClInclude Include="Serialization.h">
       <Filter>Serialize</Filter>
@@ -68,34 +47,55 @@
     <ClInclude Include="GPUSprite.h">
       <Filter>Drawable</Filter>
     </ClInclude>
-    <ClInclude Include="Font.h">
-      <Filter>Drawable</Filter>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.h">
+      <Filter>planeStuff</Filter>
     </ClInclude>
-    <ClInclude Include="Surface.h">
-      <Filter>Drawable</Filter>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\BMP_type_info.h">
+      <Filter>planeStuff</Filter>
     </ClInclude>
-    <ClInclude Include="BMPHeader.h">
-      <Filter>File</Filter>
-    </ClInclude>
-    <ClInclude Include="Colors.h">
-      <Filter>Drawable</Filter>
-    </ClInclude>
-    <ClInclude Include="Sequence.h">
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\badConcepts.h">
       <Filter>utilitiez</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Camera.h">
+      <Filter>Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Color.h">
+      <Filter>planeStuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\FrameTimer.h">
+      <Filter>utilitiez</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.h">
+      <Filter>planeStuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Geometic_Functions.h">
+      <Filter>planeStuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\NumberGenerator.h">
+      <Filter>utilitiez</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Rectangle.h">
+      <Filter>planeStuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\SequenceM.h">
+      <Filter>utilitiez</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Stopwatch.h">
+      <Filter>utilitiez</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.h">
+      <Filter>planeStuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Transform.h">
+      <Filter>planeStuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Vec2M.h">
+      <Filter>planeStuff</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Transform.cpp">
-      <Filter>planeStuff</Filter>
-    </ClCompile>
-    <ClCompile Include="Stopwatch.cpp">
-      <Filter>utilitiez</Filter>
-    </ClCompile>
-    <ClCompile Include="Animation.cpp">
-      <Filter>Drawable</Filter>
     </ClCompile>
     <ClCompile Include="Serialization.cpp">
       <Filter>Serialize</Filter>
@@ -109,11 +109,14 @@
     <ClCompile Include="GPUSprite.cpp">
       <Filter>Drawable</Filter>
     </ClCompile>
-    <ClCompile Include="Font.cpp">
-      <Filter>Drawable</Filter>
+    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.cpp">
+      <Filter>planeStuff</Filter>
     </ClCompile>
-    <ClCompile Include="Surface.cpp">
-      <Filter>Drawable</Filter>
+    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.cpp">
+      <Filter>planeStuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.cpp">
+      <Filter>planeStuff</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
