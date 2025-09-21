@@ -1,133 +1,87 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="planeStuff">
-      <UniqueIdentifier>{c8938a00-20a2-4553-b44a-af3ac8c74e4e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Camera">
-      <UniqueIdentifier>{fb380ca5-b260-4da8-aba6-90a642d82d26}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="utilitiez">
-      <UniqueIdentifier>{6ca8d284-1e57-4950-9a38-ca4f64f0760f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Serialize">
       <UniqueIdentifier>{c43e9a2e-bc9d-49ac-bec0-8544cbde1371}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Drawable">
-      <UniqueIdentifier>{9427f2b5-c035-49fa-a87a-6fdafac1330e}</UniqueIdentifier>
+    <Filter Include="MAIN">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="File">
-      <UniqueIdentifier>{fdb7067b-0237-4f71-a6fe-46afe1c524e4}</UniqueIdentifier>
+    <Filter Include="GENERIC_UTILITY">
+      <UniqueIdentifier>{6ca8d284-1e57-4950-9a38-ca4f64f0760f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JSON_THINGIES">
+      <UniqueIdentifier>{ec1b0782-c23a-4b1c-98a2-78fe8afa581c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RENDERING_STUFF">
+      <UniqueIdentifier>{a8f1361c-4f0c-4bb9-bfbb-70a52c6b2625}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MATHY_GEOMETRY">
+      <UniqueIdentifier>{23dee9f4-19a6-42ef-8f04-3bd25fb30a85}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Collision.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
     <ClInclude Include="Serialization.h">
       <Filter>Serialize</Filter>
     </ClInclude>
-    <ClInclude Include="Window.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Entity.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="State.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GPUSprite.h">
-      <Filter>Drawable</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\BMP_type_info.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\badConcepts.h">
-      <Filter>utilitiez</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Camera.h">
-      <Filter>Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Color.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\FrameTimer.h">
-      <Filter>utilitiez</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Geometic_Functions.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\NumberGenerator.h">
-      <Filter>utilitiez</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Rectangle.h">
-      <Filter>planeStuff</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\SequenceM.h">
-      <Filter>utilitiez</Filter>
+      <Filter>GENERIC_UTILITY</Filter>
     </ClInclude>
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Stopwatch.h">
-      <Filter>utilitiez</Filter>
+      <Filter>GENERIC_UTILITY</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.h">
-      <Filter>planeStuff</Filter>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\FrameTimer.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\NumberGenerator.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Rectangle.h">
+      <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Transform.h">
-      <Filter>planeStuff</Filter>
+      <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Vec2M.h">
-      <Filter>planeStuff</Filter>
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Geometic_Functions.h">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="JSON_wrapper.h">
+      <Filter>JSON_THINGIES</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>MAIN</Filter>
     </ClCompile>
     <ClCompile Include="Serialization.cpp">
       <Filter>Serialize</Filter>
     </ClCompile>
+    <ClCompile Include="JSON_wrapper.cpp">
+      <Filter>JSON_THINGIES</Filter>
+    </ClCompile>
     <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Entity.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GPUSprite.cpp">
-      <Filter>Drawable</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.cpp">
-      <Filter>planeStuff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.cpp">
-      <Filter>planeStuff</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.cpp">
-      <Filter>planeStuff</Filter>
+      <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="entity_config.json">
-      <Filter>Resource Files</Filter>
+    <Text Include="window_config.json">
+      <Filter>JSON_THINGIES</Filter>
     </Text>
     <Text Include="stage_config.json">
-      <Filter>Resource Files</Filter>
+      <Filter>JSON_THINGIES</Filter>
     </Text>
-    <Text Include="window_config.json">
-      <Filter>Resource Files</Filter>
+    <Text Include="entity_config.json">
+      <Filter>JSON_THINGIES</Filter>
     </Text>
   </ItemGroup>
 </Project>

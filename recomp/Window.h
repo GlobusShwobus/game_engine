@@ -1,46 +1,40 @@
 #pragma once
 
-#include "SDL3/SDL.h"
+#include "SDL3/SDL_video.h"
+#include "SDL3/SDL_render.h"
 #include "json.hpp"
 
-/*
-SERIALIZE THE WINDOW INIT STRUCT IN SERIALIZE
-*/
 namespace badEngine {
 	class Window {
 
 		struct SDLWindowDeleter {
 			void operator()(SDL_Window* w)const {
 				SDL_DestroyWindow(w);
-				printf("\ndeleted window proof\n");
 			}
 		};
 		struct SDLRendererDeleter {
 			void operator()(SDL_Renderer* r)const {
 				SDL_DestroyRenderer(r);
-				printf("\ndeleted renderer proof\n");
 			}
 		};
 
-		std::unique_ptr<SDL_Window, SDLWindowDeleter> window;
-		std::unique_ptr<SDL_Renderer, SDLRendererDeleter> renderer;
-
 	public:
 
-		Window(const nlohmann::json* const windowConfig);
+		Window(const nlohmann::json& windowConfig);
 
-		void displayClear() {
-			SDL_RenderClear(renderer.get());
-		}
-		void displayPresent() {
-			SDL_RenderPresent(renderer.get());
-		}
+		void set_logical_presentation(SDL_RendererLogicalPresentation mode, uint32_t width, uint32_t height);
+		void renderer_clear();
+		void renderer_present();
 
-		SDL_Renderer* getRenderer() {
-			return renderer.get();
+		inline SDL_Renderer* get_renderer()noexcept {
+			return mRenderer.get();
 		}
-		SDL_Window* getWindow() {
-			return window.get();
+		inline SDL_Window* get_window()noexcept {
+			return mWindow.get();
 		}
+	private:
+
+		std::unique_ptr<SDL_Window, SDLWindowDeleter> mWindow;
+		std::unique_ptr<SDL_Renderer, SDLRendererDeleter> mRenderer;
 	};
 }

@@ -1,36 +1,6 @@
 #include "Window.h"
-#include "Stopwatch.h"
-
-#include <fstream> //file reader?
 #include <thread>
 
-#include "Surface.h"
-#include "GPUSprite.h"
-#include "Font.h"
-#include "Animation.h"
-
-
-static nlohmann::json* initJSON(const char* path) {
-    //look into assurances that the path is a json so we catch exception early
-    std::ifstream in(path);
-    nlohmann::json* json = nullptr;
-    if (in.good()) {
-        json = new nlohmann::json();
-        in >> *json;
-    }
-    in.close();
-
-    return json;
-}
-class JSON_Wrapper {//temporary until file reader sometime tm
-public:
-    nlohmann::json* json = nullptr;
-
-    ~JSON_Wrapper() {
-        delete json;
-        json = nullptr;
-    }
-};
 
 int main() {
     std::string meme = "rak""vere";

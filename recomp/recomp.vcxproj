@@ -143,37 +143,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\badConcepts.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\BMP_type_info.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Camera.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Color.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\FrameTimer.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Geometic_Functions.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\NumberGenerator.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Rectangle.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\SequenceM.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Stopwatch.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Transform.h" />
     <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Vec2M.h" />
-    <ClInclude Include="Collision.h" />
-    <ClInclude Include="GPUSprite.h" />
+    <ClInclude Include="JSON_wrapper.h" />
     <ClInclude Include="Serialization.h" />
-    <ClInclude Include="State.h" />
+    <ClInclude Include="Sprite.h" />
     <ClInclude Include="Window.h" />
-    <ClInclude Include="Entity.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Animation.cpp" />
-    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Font.cpp" />
-    <ClCompile Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Surface.cpp" />
+    <ClCompile Include="JSON_wrapper.cpp" />
     <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="GPUSprite.cpp" />
     <ClCompile Include="Window.cpp" />
-    <ClCompile Include="Entity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="entity_config.json" />
