@@ -25,30 +25,6 @@
     <ClInclude Include="Serialization.h">
       <Filter>Serialize</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\SequenceM.h">
-      <Filter>GENERIC_UTILITY</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Stopwatch.h">
-      <Filter>GENERIC_UTILITY</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\FrameTimer.h">
-      <Filter>GENERIC_UTILITY</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\NumberGenerator.h">
-      <Filter>GENERIC_UTILITY</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Rectangle.h">
-      <Filter>MATHY_GEOMETRY</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Transform.h">
-      <Filter>MATHY_GEOMETRY</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Vec2M.h">
-      <Filter>MATHY_GEOMETRY</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Geometic_Functions.h">
-      <Filter>MATHY_GEOMETRY</Filter>
-    </ClInclude>
     <ClInclude Include="JSON_wrapper.h">
       <Filter>JSON_THINGIES</Filter>
     </ClInclude>
@@ -56,6 +32,42 @@
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
     <ClInclude Include="Sprite.h">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClInclude>
+    <ClInclude Include="Animation.h">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClInclude>
+    <ClInclude Include="badConcepts.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameTimer.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="NumberGenerator.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="SequenceM.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="Stopwatch.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="Geometric_Functions.h">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="Rectangle.h">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="Vec2M.h">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
   </ItemGroup>

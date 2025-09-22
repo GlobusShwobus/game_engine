@@ -145,8 +145,10 @@
   <ItemGroup>
     <ClInclude Include="Animation.h" />
     <ClInclude Include="badConcepts.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Font.h" />
     <ClInclude Include="FrameTimer.h" />
-    <ClInclude Include="Geometic_Functions.h" />
+    <ClInclude Include="Geometric_Functions.h" />
     <ClInclude Include="JSON_wrapper.h" />
     <ClInclude Include="NumberGenerator.h" />
     <ClInclude Include="Rectangle.h" />

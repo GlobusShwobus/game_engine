@@ -8,12 +8,12 @@ namespace badEngine {
 	template<typename T>
 	class badAllocator {
 
-		using value_type      = T;
-		using pointer         = T*;
-		using const_pointer   = const T*;
-		using reference       = T&;
+		using value_type = T;
+		using pointer = T*;
+		using const_pointer = const T*;
+		using reference = T&;
 		using const_reference = const T&;
-		using size_type       = std::size_t;
+		using size_type = std::size_t;
 
 	public:
 
@@ -66,17 +66,17 @@ namespace badEngine {
 		class Iterator;
 		class Const_Iterator;
 	public:
-		using type              = SequenceM<T>;
-		using value_type        = T;
-		using pointer           = T*;
-		using const_pointer     = const T*;
-		using reference         = T&;
-		using const_reference   = const T&;
-		using size_type         = std::size_t;
-		using difference_type   = std::ptrdiff_t;
+		using type = SequenceM<T>;
+		using value_type = T;
+		using pointer = T*;
+		using const_pointer = const T*;
+		using reference = T&;
+		using const_reference = const T&;
+		using size_type = std::size_t;
+		using difference_type = std::ptrdiff_t;
 
-		using iterator          = Iterator;
-		using const_iterator    = Const_Iterator;
+		using iterator = Iterator;
+		using const_iterator = Const_Iterator;
 	public:
 		//CONSTRUCTORS
 		constexpr SequenceM()noexcept = default;
@@ -115,10 +115,10 @@ namespace badEngine {
 			}
 		}
 		constexpr SequenceM(SequenceM<value_type>&& rhs)noexcept {
-			mArray          = std::exchange(rhs.mArray, nullptr);
-			mValidSize      = std::exchange(rhs.mValidSize, 0);
-			mTotalSize      = std::exchange(rhs.mTotalSize, 0);
-			mCapacity       = std::exchange(rhs.mCapacity, 0);
+			mArray = std::exchange(rhs.mArray, nullptr);
+			mValidSize = std::exchange(rhs.mValidSize, 0);
+			mTotalSize = std::exchange(rhs.mTotalSize, 0);
+			mCapacity = std::exchange(rhs.mCapacity, 0);
 			mGrowthResistor = std::exchange(rhs.mGrowthResistor, 0);
 		}
 		SequenceM& operator=(SequenceM<value_type> rhs)noexcept {
@@ -151,13 +151,13 @@ namespace badEngine {
 		}
 
 		//ITERATORS
-		constexpr pointer        data()        { return  mArray; }
-		constexpr iterator       begin()       { return  mArray; }
-		constexpr iterator       end()         { return  mArray + mValidSize; }
-		constexpr const_iterator begin()const  { return  mArray; }
-		constexpr const_iterator end()const    { return  mArray + mValidSize; }
+		constexpr pointer        data() { return  mArray; }
+		constexpr iterator       begin() { return  mArray; }
+		constexpr iterator       end() { return  mArray + mValidSize; }
+		constexpr const_iterator begin()const { return  mArray; }
+		constexpr const_iterator end()const { return  mArray + mValidSize; }
 		constexpr const_iterator cbegin()const { return  mArray; }
-		constexpr const_iterator cend()const   { return  mArray + mValidSize; }
+		constexpr const_iterator cend()const { return  mArray + mValidSize; }
 
 		//ADD/REMOVE ELEMENTS
 		template <typename U>
@@ -202,20 +202,20 @@ namespace badEngine {
 		}
 		void depricate_ordered(iterator pos) {
 			pointer target = pos.base();
-			pointer begin  = pBegin();
-			pointer end    = pValidEnd();
-			
-			if(target < begin || target >= end)
+			pointer begin = pBegin();
+			pointer end = pValidEnd();
+
+			if (target < begin || target >= end)
 				throw std::out_of_range("position out of range");
-		
+
 			std::move(target + 1, end, target);//from, till, into
 			--mValidSize;
 		}
 		void depricate_ordered(iterator first, iterator last) {
 			pointer targetBegin = first.base();
-			pointer targetEnd   = last.base();
-			pointer arrayBegin  = pBegin();
-			pointer arrayEnd    = pValidEnd();
+			pointer targetEnd = last.base();
+			pointer arrayBegin = pBegin();
+			pointer arrayEnd = pValidEnd();
 
 			if (targetBegin == targetEnd) return;
 			if (targetBegin < arrayBegin || targetEnd > arrayEnd || targetEnd < targetBegin)
@@ -228,10 +228,10 @@ namespace badEngine {
 		}
 		void depricate_unordered(iterator pos) {
 			pointer target = pos.base();
-			pointer begin  = pBegin();
-			pointer end    = pValidEnd();
+			pointer begin = pBegin();
+			pointer end = pValidEnd();
 
-			if(target < begin || target >= end)
+			if (target < begin || target >= end)
 				throw std::out_of_range("position out of range");
 
 			--end;
@@ -243,8 +243,8 @@ namespace badEngine {
 
 			if (empty_in_use()) return;
 
-			pointer current        = pBegin();
-			pointer validLast      = pValidEnd() - 1;
+			pointer current = pBegin();
+			pointer validLast = pValidEnd() - 1;
 			size_type decreaseSize = 0;
 
 			while (current <= validLast) {
@@ -302,20 +302,20 @@ namespace badEngine {
 		}
 
 		//INFO/SETTERS/GETTERS
-		constexpr bool empty_in_use()const noexcept           { return mValidSize == EMPTY_GUARD; }
-		constexpr bool empty_total()const noexcept            { return mTotalSize == EMPTY_GUARD; }
-		constexpr bool empty_reserve()const noexcept          { return (mTotalSize - mValidSize) == EMPTY_GUARD; }
-		constexpr bool empty_capacity()const noexcept         { return mCapacity == EMPTY_GUARD; }
+		constexpr bool empty_in_use()const noexcept { return mValidSize == EMPTY_GUARD; }
+		constexpr bool empty_total()const noexcept { return mTotalSize == EMPTY_GUARD; }
+		constexpr bool empty_reserve()const noexcept { return (mTotalSize - mValidSize) == EMPTY_GUARD; }
+		constexpr bool empty_capacity()const noexcept { return mCapacity == EMPTY_GUARD; }
 		constexpr bool is_sequence_allocated() const noexcept { return mArray != nullptr; }
 
-		constexpr size_type size_in_use()const noexcept       { return mValidSize; }
-		constexpr size_type size_total()const noexcept        { return mTotalSize; }
-		constexpr size_type size_reserve()const noexcept      { return mTotalSize - mValidSize; }
-		constexpr size_type size_capacity()const noexcept     { return mCapacity; }
+		constexpr size_type size_in_use()const noexcept { return mValidSize; }
+		constexpr size_type size_total()const noexcept { return mTotalSize; }
+		constexpr size_type size_reserve()const noexcept { return mTotalSize - mValidSize; }
+		constexpr size_type size_capacity()const noexcept { return mCapacity; }
 
-		constexpr void set_growth_resist_high()noexcept       { mGrowthResistor = GROWTH_HIGH_RESIST; }
-		constexpr void set_growth_resist_medium()noexcept     { mGrowthResistor = GROWTH_MEDIUM_RESIST; }
-		constexpr void set_growth_resist_low()noexcept        { mGrowthResistor = GROWTH_LOW_RESIST; }
+		constexpr void set_growth_resist_high()noexcept { mGrowthResistor = GROWTH_HIGH_RESIST; }
+		constexpr void set_growth_resist_medium()noexcept { mGrowthResistor = GROWTH_MEDIUM_RESIST; }
+		constexpr void set_growth_resist_low()noexcept { mGrowthResistor = GROWTH_LOW_RESIST; }
 
 		constexpr reference       front() {
 			empty_array_error();
@@ -350,9 +350,9 @@ namespace badEngine {
 
 	private:
 		//private access
-		constexpr pointer pBegin()    { return mArray; }
+		constexpr pointer pBegin() { return mArray; }
 		constexpr pointer pValidEnd() { return mArray + mValidSize; }
-		constexpr pointer pRealEnd()  { return mArray + mTotalSize; }
+		constexpr pointer pRealEnd() { return mArray + mTotalSize; }
 		//the things that actually make it work
 		void reallocate(pointer from, pointer to, size_type newSize) {
 			//when reallocating, the range is not always known, thus iterate from -> to, but cleaning up old is always known
@@ -369,10 +369,10 @@ namespace badEngine {
 			//size does not change on reallocation
 		}
 		constexpr void construct(pointer data, size_type size) noexcept {
-			mArray          = data;
-			mValidSize      = size;
-			mTotalSize      = size;
-			mCapacity       = size;
+			mArray = data;
+			mValidSize = size;
+			mTotalSize = size;
+			mCapacity = size;
 			mGrowthResistor = GROWTH_MEDIUM_RESIST;
 		}
 		//growth math
@@ -391,17 +391,17 @@ namespace badEngine {
 
 	private:
 		//member variables
-		pointer                  mArray          = nullptr;
-		size_type                mValidSize      = 0;
-		size_type                mTotalSize      = 0;
-		size_type                mCapacity       = 0;
+		pointer                  mArray = nullptr;
+		size_type                mValidSize = 0;
+		size_type                mTotalSize = 0;
+		size_type                mCapacity = 0;
 		float                    mGrowthResistor = GROWTH_MEDIUM_RESIST;
 		badAllocator<value_type> allocator;
 		//universal variables
-		static constexpr size_type EMPTY_GUARD           = 0;
-		static constexpr float     GROWTH_HIGH_RESIST    = 4.0f;
-		static constexpr float     GROWTH_MEDIUM_RESIST  = 2.0f;
-		static constexpr float     GROWTH_LOW_RESIST     = 1.0f;
+		static constexpr size_type EMPTY_GUARD = 0;
+		static constexpr float     GROWTH_HIGH_RESIST = 4.0f;
+		static constexpr float     GROWTH_MEDIUM_RESIST = 2.0f;
+		static constexpr float     GROWTH_LOW_RESIST = 1.0f;
 	};
 
 	//iterators
@@ -409,53 +409,53 @@ namespace badEngine {
 		requires IS_RULE_OF_FIVE_CLASS_T<T>
 	class SequenceM<T>::Iterator {
 	public:
-		using value_type        = T;
-		using pointer           = T*;
-		using reference         = T&;
+		using value_type = T;
+		using pointer = T*;
+		using reference = T&;
 		using iterator_category = std::random_access_iterator_tag;
-		using difference_type   = std::ptrdiff_t;
-		using self_type         = Iterator;
+		using difference_type = std::ptrdiff_t;
+		using self_type = Iterator;
 
-		constexpr reference operator*()noexcept{
+		constexpr reference operator*()noexcept {
 			return *ptr;
 		}
-		constexpr pointer   operator->()noexcept{
+		constexpr pointer   operator->()noexcept {
 			return ptr;
 		}
-		constexpr reference operator[](difference_type n)noexcept{
-			return ptr[n];
-		}
-		
-		constexpr const reference operator*() const noexcept{
-			return *ptr;
-		}
-		constexpr const pointer   operator->() const noexcept{
-			return ptr;
-		}
-		constexpr const reference operator[](difference_type n) const noexcept { 
+		constexpr reference operator[](difference_type n)noexcept {
 			return ptr[n];
 		}
 
-		constexpr self_type& operator++()noexcept{
+		constexpr const reference operator*() const noexcept {
+			return *ptr;
+		}
+		constexpr const pointer   operator->() const noexcept {
+			return ptr;
+		}
+		constexpr const reference operator[](difference_type n) const noexcept {
+			return ptr[n];
+		}
+
+		constexpr self_type& operator++()noexcept {
 			++ptr;
 			return *this;
 		}
-		constexpr self_type  operator++(int)noexcept{ 
+		constexpr self_type  operator++(int)noexcept {
 			self_type temp = *this;
 			++ptr;
 			return temp;
 		}
-		constexpr self_type& operator--()noexcept{
+		constexpr self_type& operator--()noexcept {
 			--ptr;
 			return *this;
 		}
-		constexpr self_type  operator--(int)noexcept{
+		constexpr self_type  operator--(int)noexcept {
 			self_type temp = *this;
-			--ptr; 
+			--ptr;
 			return temp;
 		}
 
-		constexpr self_type& operator+=(difference_type n)noexcept { 
+		constexpr self_type& operator+=(difference_type n)noexcept {
 			ptr += n;
 			return *this;
 		}
@@ -466,11 +466,11 @@ namespace badEngine {
 		constexpr self_type  operator+(difference_type n)const noexcept {
 			return ptr + n;
 		}
-		constexpr self_type  operator-(difference_type n)const noexcept { 
+		constexpr self_type  operator-(difference_type n)const noexcept {
 			return ptr - n;
 		}
 		constexpr difference_type operator-(const self_type& rhs)const noexcept {
-			return ptr - rhs.ptr; 
+			return ptr - rhs.ptr;
 		}
 
 		constexpr bool operator==(const self_type& rhs)const noexcept {
@@ -492,30 +492,30 @@ namespace badEngine {
 		requires IS_RULE_OF_FIVE_CLASS_T<T>
 	class SequenceM<T>::Const_Iterator {
 	public:
-		using value_type        = const T;
-		using pointer           = const T*;
-		using reference         = const T&;
+		using value_type = const T;
+		using pointer = const T*;
+		using reference = const T&;
 		using iterator_category = std::random_access_iterator_tag;
-		using difference_type   = std::ptrdiff_t;
-		using self_type         = Const_Iterator;
+		using difference_type = std::ptrdiff_t;
+		using self_type = Const_Iterator;
 
-		constexpr reference operator*()const noexcept { 
+		constexpr reference operator*()const noexcept {
 			return *ptr;
 		}
 		constexpr pointer   operator->()const noexcept {
 			return ptr;
 		}
 		constexpr reference operator[](difference_type n)const noexcept {
-			return ptr[n]; 
+			return ptr[n];
 		}
 
 		constexpr self_type& operator++() noexcept {
 			++ptr;
 			return *this;
 		}
-		constexpr self_type  operator++(int) noexcept { 
+		constexpr self_type  operator++(int) noexcept {
 			self_type temp = *this;
-			++ptr; 
+			++ptr;
 			return temp;
 		}
 		constexpr self_type& operator--() noexcept {
@@ -525,31 +525,31 @@ namespace badEngine {
 		constexpr self_type  operator--(int) noexcept {
 			self_type temp = *this;
 			--ptr;
-			return temp; 
+			return temp;
 		}
 
 		constexpr self_type& operator+=(difference_type n) noexcept {
 			ptr += n;
-			return *this; 
+			return *this;
 		}
 		constexpr self_type& operator-=(difference_type n) noexcept {
 			ptr -= n;
 			return *this;
 		}
-		constexpr self_type  operator+(difference_type n)const noexcept { 
+		constexpr self_type  operator+(difference_type n)const noexcept {
 			return ptr + n;
 		}
-		constexpr self_type  operator-(difference_type n)const noexcept { 
+		constexpr self_type  operator-(difference_type n)const noexcept {
 			return ptr - n;
 		}
-		constexpr difference_type operator-(const self_type& rhs)const noexcept { 
+		constexpr difference_type operator-(const self_type& rhs)const noexcept {
 			return ptr - rhs.ptr;
 		}
 
 		constexpr bool operator==(const self_type& rhs)const noexcept {
 			return ptr == rhs.ptr;
 		}
-		constexpr std::strong_ordering operator<=>(const self_type& rhs)const noexcept { 
+		constexpr std::strong_ordering operator<=>(const self_type& rhs)const noexcept {
 			return ptr <=> rhs.ptr;
 		}
 

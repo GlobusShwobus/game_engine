@@ -6,9 +6,9 @@ namespace badEngine {
 
 
 	template <typename T>
-	requires IS_MATHMATICAL_VECTOR_T<T>
+		requires IS_MATHMATICAL_VECTOR_T<T>
 	class Transform {
-		
+
 	public:
 
 		constexpr Transform()noexcept = default;

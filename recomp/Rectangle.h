@@ -9,23 +9,23 @@ namespace badEngine {
 	class Rectangle {
 	public:
 		constexpr Rectangle()noexcept = default;
-		constexpr Rectangle(T x, T y, T w, T h) noexcept :mPosition(x,y), mDimensions(w,h) {}
-		
-		template <typename S, typename U> requires IS_MATHMATICAL_VECTOR_T<U>
-		constexpr Rectangle(const Vec2M<S>& pos, U w, U h) noexcept : mPosition(pos), mDimensions(w,h) {}
+		constexpr Rectangle(T x, T y, T w, T h) noexcept :mPosition(x, y), mDimensions(w, h) {}
 
 		template <typename S, typename U> requires IS_MATHMATICAL_VECTOR_T<U>
-		constexpr Rectangle(U x, U y, const Vec2M<S>& dimensions) noexcept : mPosition(x,y), mDimensions(dimensions){}
+		constexpr Rectangle(const Vec2M<S>& pos, U w, U h) noexcept : mPosition(pos), mDimensions(w, h) {}
+
+		template <typename S, typename U> requires IS_MATHMATICAL_VECTOR_T<U>
+		constexpr Rectangle(U x, U y, const Vec2M<S>& dimensions) noexcept : mPosition(x, y), mDimensions(dimensions) {}
 
 		template <typename S, typename U>
 		constexpr Rectangle(const Vec2M<S>& pos, const Vec2M<U>& dimensions)noexcept :mPosition(pos), mDimensions(dimensions) {}
-		
+
 		template<typename S>
 		constexpr Rectangle(const Rectangle<S>& rhs)noexcept :mPosition(rhs.mPosition), mDimensions(rhs.mDimensions) {}
 
 		template<typename S>
 		constexpr Rectangle& operator=(const Rectangle<S>& rhs)noexcept {
-			mPosition   = rhs.mPosition;
+			mPosition = rhs.mPosition;
 			mDimensions = rhs.mDimensions;
 			return *this;
 		}
@@ -50,11 +50,11 @@ namespace badEngine {
 		Vec2M<T> mDimensions;
 	};
 
-	using rectS  = Rectangle<short>;
-	using rectI  = Rectangle<int>;
-	using rectL  = Rectangle<long>;
+	using rectS = Rectangle<short>;
+	using rectI = Rectangle<int>;
+	using rectL = Rectangle<long>;
 	using rectLL = Rectangle<long long>;
-	using rectF  = Rectangle<float>;
-	using rectD  = Rectangle<double>;
+	using rectF = Rectangle<float>;
+	using rectD = Rectangle<double>;
 	using rectLD = Rectangle<long double>;
 }

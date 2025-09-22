@@ -3,7 +3,7 @@
 #include <chrono>
 
 namespace badEngine {
-	
+
 	class Stopwatch {
 
 		using Floatsec = std::chrono::duration<float>;
@@ -22,7 +22,7 @@ namespace badEngine {
 			mWatch = std::chrono::steady_clock::now();
 		}
 
-		float dt_float()noexcept{
+		float dt_float()noexcept {
 			return delta_time<Floatsec>().count();
 		}
 		std::size_t dt_millisec()noexcept {

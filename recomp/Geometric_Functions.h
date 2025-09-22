@@ -34,7 +34,7 @@ namespace badEngine {
 	constexpr vec2d reciprocal_vector(const Vec2M<T>& v)noexcept {
 		return vec2d(1.0f / v.x, 1.0f / v.y);
 	}
-	
+
 	template <typename T>
 	constexpr auto opposite_vector(const Vec2M<T>& v)noexcept {
 		return -v;
@@ -84,7 +84,7 @@ namespace badEngine {
 	template <typename T, typename U, typename S>
 	constexpr bool intersects_rectangle(const Rectangle<T>& a, const Rectangle<U>& b, rectF& output)noexcept {
 		auto distances = (a.mPosition + a.get_half_dimensions()) - (b.mPosition + b.get_half_dimensions());
-		auto overlap   = (a.get_half_dimensions() + b.get_half_dimensions()) - abs_vector(distances);
+		auto overlap = (a.get_half_dimensions() + b.get_half_dimensions()) - abs_vector(distances);
 
 		if (overlap.x < 0.0f || overlap.y < 0.0f) return false;
 
@@ -96,15 +96,15 @@ namespace badEngine {
 
 	constexpr bool intersects_projection(
 		const vec2f& rayOrigin,
-		const vec2f& rayVector, 
+		const vec2f& rayVector,
 		const rectF& target,
 		float& dt,
-		vec2f* contactPoint = nullptr, 
+		vec2f* contactPoint = nullptr,
 		vec2f* contactNormal = nullptr) noexcept
 	{
 		auto reciprocal = reciprocal_vector(rayVector);
 		auto tNear = (target.mPosition - rayOrigin) * reciprocal;
-		auto tFar  = (target.mPosition + target.mDimensions - rayOrigin) * reciprocal;
+		auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * reciprocal;
 		//broken float value (division by 0 probably)
 		if (
 			std::isnan(tNear.x) ||
@@ -119,7 +119,7 @@ namespace badEngine {
 			return false;
 		dt = larger_value(tNear.x, tNear.y);
 		float hitFar = smaller_value(tFar.x, tFar.y);
-		
+
 		//if hit but opposite direction, then no actual hit, just on same line
 		if (hitFar < 0.0f) return false;
 		//OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho

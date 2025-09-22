@@ -14,7 +14,7 @@ namespace badEngine {
 	concept IS_MATHMATICAL_VECTOR_T = std::_Is_any_of_v<std::remove_cv_t<T>, short, int, long, long long, float, double, long double>;
 
 	template <typename T>
-	concept IS_MATHMATICAL_T = std::_Is_any_of_v<std::remove_cv_t<T>, short, unsigned short, int, unsigned int, long int, unsigned long , long long, unsigned long long, float, double, long double>;
+	concept IS_MATHMATICAL_T = std::_Is_any_of_v<std::remove_cv_t<T>, short, unsigned short, int, unsigned int, long int, unsigned long, long long, unsigned long long, float, double, long double>;
 
 	template <typename T, typename U>
 	concept IS_LESS_THAN_COMPARABLE = requires (T a, U b) {
@@ -28,6 +28,4 @@ namespace badEngine {
 		std::is_nothrow_move_assignable_v<T> &&
 		std::destructible<T> &&
 		!std::is_const_v<T>;
-
-
 }
