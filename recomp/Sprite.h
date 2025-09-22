@@ -6,9 +6,11 @@
 namespace badEngine {
 
 	class Sprite {
+		Sprite(SDL_Texture* texture) :mTexture(texture) {}
+
 
 	private:
-		std::unique_ptr<SDL_Texture> texture;
+		std::unique_ptr<SDL_Texture> mTexture;
 	};
 
 }
