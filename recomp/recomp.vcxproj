@@ -143,17 +143,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\FrameTimer.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Geometic_Functions.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\NumberGenerator.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Rectangle.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\SequenceM.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Stopwatch.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Transform.h" />
-    <ClInclude Include="..\..\vulkan_gameEngine\vulkan_gameEngine\Vec2M.h" />
+    <ClInclude Include="Animation.h" />
+    <ClInclude Include="badConcepts.h" />
+    <ClInclude Include="FrameTimer.h" />
+    <ClInclude Include="Geometic_Functions.h" />
     <ClInclude Include="JSON_wrapper.h" />
+    <ClInclude Include="NumberGenerator.h" />
+    <ClInclude Include="Rectangle.h" />
+    <ClInclude Include="SequenceM.h" />
     <ClInclude Include="Serialization.h" />
     <ClInclude Include="Sprite.h" />
+    <ClInclude Include="Stopwatch.h" />
+    <ClInclude Include="Transform.h" />
+    <ClInclude Include="Vec2M.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
