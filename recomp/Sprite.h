@@ -33,6 +33,12 @@ namespace badEngine {
 				throw std::runtime_error("Failed to create an SDL_Texture");
 		}
 
+		int get_width()const {
+			return mTexture->w;
+		}
+		int get_height()const {
+			return mTexture->h;
+		}
 		SDL_Texture* data()noexcept {
 			return mTexture.get();
 		}
