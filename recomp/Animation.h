@@ -6,7 +6,7 @@
 
 namespace badEngine {
 
-	class Animation {
+	class Animation: public Sprite {
 
 		void advance()noexcept {
 			++mCurrentFrame;
@@ -15,18 +15,24 @@ namespace badEngine {
 		}
 	public:
 
-		Animation(Sprite& sprite, const vec2i& readBegin, uint16_t frameWidth, uint16_t frameHeight, uint16_t frameCount, float holdTime = 0.16f)
-			:mSprite(sprite), mFrameWidth(frameWidth), mFrameHeight(frameHeight), mFrameCount(frameCount), mHoldTime(holdTime) {
+		template <typename Args>
+		Animation(const vec2i& readBegin, const vec2i& frameSize, uint16_t frameCount, float holdTime, Args&& spriteArgs)
+			requires std::constructible_from<Sprite, Args&&>
+			:Sprite(std::forward<Args>(spriteArgs))
+		{
+			this->set_source_size(frameSize);
+			mFrameCount = frameCount;
+			mHoldTime = holdTime;
 
-			const std::size_t neededWidth = readBegin.x + frameCount * frameWidth;
-			const std::size_t neededHeight = readBegin.y + frameHeight;
+			const std::size_t neededWidth = readBegin.x + frameCount * frameSize.x;
+			const std::size_t neededHeight = readBegin.y + frameSize.y;
 
-			if (neededWidth > sprite.data()->w || neededHeight > sprite.data()->h) {
+			if (neededWidth > this->texture_width(); || neededHeight > this->texture_height()) {
 				throw std::runtime_error("Mismatch between widths or heights");
 			}
 
 			for (uint16_t i = 0; i < frameCount; i++) {
-				mFrames.element_create(readBegin.x + (i * frameWidth), readBegin.y);
+				mFrames.element_create(readBegin.x + (i * frameSize.x), readBegin.y);
 			}
 		}
 
@@ -37,24 +43,17 @@ namespace badEngine {
 				mCurrentFrameTime -= mHoldTime;
 			}
 		}
-		void draw(SDL_Renderer& renderer, const vec2i& destPos, vec2i* destScale = nullptr) {
-			vec2i sourcePosition = mFrames[mCurrentFrame];
-			SDL_FRect source = { sourcePosition.x ,sourcePosition.y, mFrameWidth,mFrameHeight };
-			vec2i destinationScale = (destScale == nullptr) ? vec2i(mFrameWidth, mFrameHeight) : *destScale;
-			SDL_FRect destination = { destPos.x, destPos.y, destinationScale.x, destinationScale.y };
-
-			SDL_RenderTexture(&renderer, mSprite.data(), &source, &destination);
+		void draw_animation(SDL_Renderer& renderer, const vec2i& destinationPosition) {
+			this->set_source_position(mFrames[mCurrentFrame]);
+			this->draw(renderer, destinationPosition);
 		}
 
 	private:
 		SequenceM<vec2i> mFrames;
-		Sprite& mSprite;
 
 		uint16_t mFrameCount = 0;
-		uint16_t mFrameWidth = 0;
-		uint16_t mFrameHeight = 0;
-
 		uint16_t mCurrentFrame = 0;
+
 		float mHoldTime = 0.0f;
 		float mCurrentFrameTime = 0.0f;
 	};

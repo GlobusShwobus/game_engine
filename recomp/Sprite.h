@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string_view>
+#include "Vec2M.h"
 #include <stdexcept>
 #include "SDL3/SDL_render.h"
 #include <SDL3_image/SDL_image.h>
@@ -33,17 +34,56 @@ namespace badEngine {
 				throw std::runtime_error("Failed to create an SDL_Texture");
 		}
 
-		int get_width()const {
+		void set_source(SDL_FRect newSource)noexcept {
+			mSourcePosition = std::move(newSource);
+		}
+		template<typename T>
+		void set_source_position(const Vec2M<T>& position)noexcept {
+			mSourcePosition.x = position.x;
+			mSourcePosition.y = position.y;
+		}
+		template<typename T>
+		void set_source_size(const Vec2M<T>& size)noexcept {
+			mSourcePosition.w = size.x;
+			mSourcePosition.h = size.y;
+		}
+		template<typename T>
+		void set_destination_scale(const Vec2M<T>& scale)noexcept {
+			mDestinationScale.x = scale.x;
+			mDestinationScale.y = scale.y;
+		}
+		template<typename T>
+		requires IS_MATHMATICAL_T<T>
+		void set_destination_scale(T scale)noexcept {
+			mDestinationScale.x = scale;
+			mDestinationScale.y = scale;
+		}
+		template<typename T>
+		void draw(SDL_Renderer& renderer, const Vec2M<T>& destinationPosition) {
+			SDL_RenderTexture(
+				&renderer,
+				mTexture.get(),
+				&mSourcePosition,
+				SDL_FRect(destinationPosition.x, destinationPosition.y, mDestinationScale.x, mDestinationScale.y)
+			);
+		}
+		int texture_width()const {
 			return mTexture->w;
 		}
-		int get_height()const {
+		int texture_height()const {
 			return mTexture->h;
 		}
-		SDL_Texture* data()noexcept {
-			return mTexture.get();
+		const SDL_FRect& get_source()const {
+			return mSourcePosition;
+		}
+		const vec2f& get_scale()const {
+			return mDestinationScale;
 		}
 
 	private:
+		SDL_FRect mSourcePosition = { 0,0,0,0 };
+		vec2f     mDestinationScale = { 0.0f,0.0f };
+
 		std::unique_ptr<SDL_Texture, SDLTextureDeleter> mTexture;
 	};
 

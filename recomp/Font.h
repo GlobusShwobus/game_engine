@@ -25,6 +25,25 @@ namespace badEngine {
 
 		void draw(std::string_view string, SDL_Renderer& renderer, const vec2i& pos) {
 
+			vec2i iteratedPosition = pos;
+
+			for (char c : string) {
+				if (c == '\n') {
+					iteratedPosition = vec2i(pos.x, iteratedPosition.y += mGylphHeight);
+					continue;
+				}
+				else if (c >= first_ASCII_character + 1 && c <= last_ASCII_character) {
+					const int gylphIndex = c - first_ASCII_character;
+					const int yGylph = gylphIndex / mColumnsCount;
+					const int xGylph = gylphIndex % mColumnsCount;
+
+					sprite.setSourceX(float(xGylph * gylphWidth));
+					sprite.setSourceY(float(yGylph * gylphHeight));
+
+					sprite.DrawTexture(renderer, curX, curY);
+				}
+				curX += gylphWidth;//if char is the empty space key, this by default skips over it and adds padding as well
+			}
 		}
 
 	public:
@@ -36,28 +55,9 @@ namespace badEngine {
 		const uint32_t mGylphWidth = 0;
 		const uint32_t mGylphHeight = 0;
 
-		static constexpr char firstChar = ' ';
-		static constexpr char lastChar = '~';
+		static constexpr char first_ASCII_character = ' ';
+		static constexpr char last_ASCII_character = '~';
 	};
 
 }
-/*
-	SequenceM<vec2i> Font::get_font_source_list(std::string_view text) {
-		SequenceM<vec2i> frames;
-		frames.set_reserve_size(text.size());
-		for (char c : text) {
-			if (c == '\n') {
-				continue;
-			}
-			else if (c >= firstChar + 1 && c <= lastChar) {
-				const int gylphIndex = c - firstChar;
-				const int yGylph = gylphIndex / mColumnsCount;
-				const int xGylph = gylphIndex % mColumnsCount;
 
-				frames.element_create(xGylph * mCharWidth, yGylph * mCharHeight);
-			}
-		}
-
-		return frames;
-	}
-*/
