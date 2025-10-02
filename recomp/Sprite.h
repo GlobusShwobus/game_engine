@@ -23,13 +23,13 @@ namespace badEngine {
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 		}
-		Sprite(SDL_Surface& surface, SDL_Renderer& renderer) {
-			mTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(SDL_CreateTextureFromSurface(&renderer, &surface));
+		Sprite(SDL_Surface& surface, SDL_Renderer* renderer) {
+			mTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(SDL_CreateTextureFromSurface(renderer, &surface));
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 		}
-		Sprite(std::string_view path, SDL_Renderer& renderer) {
-			mTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(IMG_LoadTexture(&renderer, path.data()));
+		Sprite(std::string_view path, SDL_Renderer* renderer) {
+			mTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(IMG_LoadTexture(renderer, path.data()));
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 		}
@@ -59,12 +59,13 @@ namespace badEngine {
 			mDestinationScale.y = scale;
 		}
 		template<typename T>
-		void draw(SDL_Renderer& renderer, const Vec2M<T>& destinationPosition) {
+		void draw(SDL_Renderer* renderer, const Vec2M<T>& destinationPosition) {
+			SDL_FRect dest = { destinationPosition.x, destinationPosition.y, mDestinationScale.x, mDestinationScale.y };
 			SDL_RenderTexture(
-				&renderer,
+				renderer,
 				mTexture.get(),
 				&mSourcePosition,
-				SDL_FRect(destinationPosition.x, destinationPosition.y, mDestinationScale.x, mDestinationScale.y)
+				&dest
 			);
 		}
 		int texture_width()const {

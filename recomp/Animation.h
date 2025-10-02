@@ -6,7 +6,7 @@
 
 namespace badEngine {
 
-	class Animation: public Sprite {
+	class Animation {
 
 		void advance()noexcept {
 			++mCurrentFrame;
@@ -15,10 +15,11 @@ namespace badEngine {
 		}
 	public:
 
-		Animation(Sprite sprite, const vec2i& readBegin, const vec2i& frameSize, uint16_t frameCount, float holdTime)
-			:Sprite(std::move(sprite))
+		Animation(Sprite& sprite, const vec2i& readBegin, const vec2i& frameSize, uint16_t frameCount, float holdTime = 0.16f)
+			:mSprite(sprite)
 		{
-			this->set_source_size(frameSize);
+			mSprite.set_source_size(frameSize);
+			mSprite.set_destination_scale(frameSize);
 			mFrameCount = frameCount;
 			mHoldTime = holdTime;
 
@@ -26,7 +27,7 @@ namespace badEngine {
 			const std::size_t neededHeight = readBegin.y + frameSize.y;
 
 
-			if (neededWidth > this->texture_width() || neededHeight > this->texture_height()) {
+			if (neededWidth > mSprite.texture_width() || neededHeight > mSprite.texture_height()) {
 				throw std::runtime_error("Mismatch between widths or heights");
 			}
 
@@ -42,13 +43,14 @@ namespace badEngine {
 				mCurrentFrameTime -= mHoldTime;
 			}
 		}
-		void draw_animation(SDL_Renderer& renderer, const vec2i& destinationPosition) {
-			this->set_source_position(mFrames[mCurrentFrame]);
-			this->draw(renderer, destinationPosition);
+		void draw_animation(SDL_Renderer* renderer, const vec2i& destinationPosition) {
+			mSprite.set_source_position(mFrames[mCurrentFrame]);
+			mSprite.draw(renderer, destinationPosition);
 		}
 
 	private:
 		SequenceM<vec2i> mFrames;
+		Sprite& mSprite;
 
 		uint16_t mFrameCount = 0;
 		uint16_t mCurrentFrame = 0;

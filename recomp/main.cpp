@@ -1,7 +1,10 @@
+#include "Stopwatch.h"
 #include "SystemManager.h"
 #include "Configs.h"
 #include <thread>
 
+#include "Sprite.h"
+#include "Animation.h"
 
 int main() {
     using namespace badEngine;
@@ -26,14 +29,18 @@ int main() {
         return -1;
     }
 
+    //TEST CODE
+    Sprite mSpriteTest("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", sysManager.get_renderer());
+    Animation mAnimationTest(mSpriteTest, vec2i(0,0), vec2i(32,32), 8, 0.08f);
 
-
+    ////#################################################################################
 
     //main loop
-
+    Stopwatch UPDATE_DELTA_TIMER;
     bool GAME_RUNNING = true;
     SDL_Event EVENT;
     while (GAME_RUNNING) {
+        float dt = UPDATE_DELTA_TIMER.dt_float();
         sysManager.renderer_clear();
 
         //LISTEN TO EVENTS
@@ -44,9 +51,8 @@ int main() {
         }
         //###############################################################################
 
-
-
-
+        mAnimationTest.update(dt);
+        mAnimationTest.draw_animation(sysManager.get_renderer(), vec2i(100,100));
 
         sysManager.renderer_present();
         //#################################################################################
