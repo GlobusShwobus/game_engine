@@ -15,10 +15,8 @@ namespace badEngine {
 		}
 	public:
 
-		template <typename Args>
-		Animation(const vec2i& readBegin, const vec2i& frameSize, uint16_t frameCount, float holdTime, Args&& spriteArgs)
-			requires std::constructible_from<Sprite, Args&&>
-			:Sprite(std::forward<Args>(spriteArgs))
+		Animation(Sprite sprite, const vec2i& readBegin, const vec2i& frameSize, uint16_t frameCount, float holdTime)
+			:Sprite(std::move(sprite))
 		{
 			this->set_source_size(frameSize);
 			mFrameCount = frameCount;
@@ -27,7 +25,8 @@ namespace badEngine {
 			const std::size_t neededWidth = readBegin.x + frameCount * frameSize.x;
 			const std::size_t neededHeight = readBegin.y + frameSize.y;
 
-			if (neededWidth > this->texture_width(); || neededHeight > this->texture_height()) {
+
+			if (neededWidth > this->texture_width() || neededHeight > this->texture_height()) {
 				throw std::runtime_error("Mismatch between widths or heights");
 			}
 

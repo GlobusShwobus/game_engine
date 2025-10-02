@@ -1,29 +1,30 @@
 #pragma once
 
 #include "Sprite.h"
-#include "SequenceM.h"
 #include "Vec2M.h"
+
 #include <cassert>
 #include <string_view>
 
 namespace badEngine {
 
-	class Font {
+	class Font: protected Sprite {
 	
 	public:
 
-		Font(Sprite& sprite, uint32_t columnsCount, uint32_t rowsCount)
-			:mSprite(sprite),
+		Font(Sprite sprite, uint32_t columnsCount, uint32_t rowsCount)
+			:Sprite(std::move(sprite)),
 			mColumnsCount(columnsCount),
 			mRowsCount(rowsCount),
-			mGylphWidth(sprite.get_width() / columnsCount),
-			mGylphHeight(sprite.get_height() / rowsCount)
+			mGylphWidth(this->texture_width() / columnsCount),
+			mGylphHeight(this->texture_height() / rowsCount)
 		{
-			assert(mGylphWidth * mColumnsCount == sprite.get_width());
-			assert(mGylphHeight * mRowsCount == sprite.get_height());
+			assert(mGylphWidth * mColumnsCount == this->texture_width());
+			assert(mGylphHeight * mRowsCount == this->texture_height());
+			this->set_source_size(vec2i(mGylphWidth, mGylphHeight));
 		}
 
-		void draw(std::string_view string, SDL_Renderer& renderer, const vec2i& pos) {
+		void draw_text(std::string_view string, SDL_Renderer& renderer, const vec2i& pos) {
 
 			vec2i iteratedPosition = pos;
 
@@ -37,21 +38,19 @@ namespace badEngine {
 					const int yGylph = gylphIndex / mColumnsCount;
 					const int xGylph = gylphIndex % mColumnsCount;
 
-					sprite.setSourceX(float(xGylph * gylphWidth));
-					sprite.setSourceY(float(yGylph * gylphHeight));
+					this->set_source_position(vec2i(xGylph * mGylphWidth, yGylph * mGylphHeight));
 
-					sprite.DrawTexture(renderer, curX, curY);
+					this->draw(renderer, iteratedPosition);
 				}
-				curX += gylphWidth;//if char is the empty space key, this by default skips over it and adds padding as well
+				iteratedPosition.x += mGylphWidth;//if char is the empty space key, this by default skips over it and adds padding as well
 			}
 		}
 
 	public:
 		
-		Sprite& mSprite;
-
 		const uint32_t mColumnsCount = 0;
 		const uint32_t mRowsCount = 0;
+
 		const uint32_t mGylphWidth = 0;
 		const uint32_t mGylphHeight = 0;
 

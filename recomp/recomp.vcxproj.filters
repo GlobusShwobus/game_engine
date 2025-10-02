@@ -25,10 +25,10 @@
     <ClInclude Include="Serialization.h">
       <Filter>Serialize</Filter>
     </ClInclude>
-    <ClInclude Include="JSON_wrapper.h">
+    <ClInclude Include="Configs.h">
       <Filter>JSON_THINGIES</Filter>
     </ClInclude>
-    <ClInclude Include="Window.h">
+    <ClInclude Include="SystemManager.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
     <ClInclude Include="Sprite.h">
@@ -78,15 +78,12 @@
     <ClCompile Include="Serialization.cpp">
       <Filter>Serialize</Filter>
     </ClCompile>
-    <ClCompile Include="JSON_wrapper.cpp">
-      <Filter>JSON_THINGIES</Filter>
-    </ClCompile>
-    <ClCompile Include="Window.cpp">
+    <ClCompile Include="SystemManager.cpp">
       <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="window_config.json">
+    <Text Include="SystemManagerConfig.json">
       <Filter>JSON_THINGIES</Filter>
     </Text>
     <Text Include="stage_config.json">

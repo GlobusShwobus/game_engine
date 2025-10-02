@@ -1,59 +1,58 @@
-#include "Window.h"
+#include "SystemManager.h"
+#include "Configs.h"
 #include <thread>
 
 
 int main() {
-    std::string meme = "rak""vere";
     using namespace badEngine;
     
     //configs
-    JSON_Wrapper entityConfig;
-    JSON_Wrapper stageConfig;
-    JSON_Wrapper windowConfig;
+    Configs windowConfig;
 
     try {
-        entityConfig.json = initJSON("entity_config.json");
-        stageConfig.json  = initJSON("stage_config.json");
-        windowConfig.json = initJSON("window_config.json");
+        windowConfig.init_from_file("SystemManagerConfig.json");
     }
     catch (const std::exception& excpt) {
         printf(excpt.what());
         return -1;
     }
-    //initalize SDL and RenderWIndow
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        printf("\nCRASH:: SDL_init Failure");
+    //initalize SDL system, can throw
+    SystemManager sysManager;
+    try {
+        sysManager.init(windowConfig.get());
+    }
+    catch (const std::exception& excpt) {
+        printf(excpt.what());
         return -1;
     }
-    Window window(windowConfig.json);
 
-    //initialize EntityFactory
 
-    bool gameRunning = true;
-    SDL_Event event;
-    FrameTimer frameTimer;
 
-    // TEST SURFACE TO GPU BULLSHIT
 
-    //###############################
+    //main loop
 
-    while (gameRunning) {
-        frameTimer.MarkFloat();
-
-        window.displayClear();
+    bool GAME_RUNNING = true;
+    SDL_Event EVENT;
+    while (GAME_RUNNING) {
+        sysManager.renderer_clear();
 
         //LISTEN TO EVENTS
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT) {
-                gameRunning = false;
+        while (SDL_PollEvent(&EVENT)) {
+            if (EVENT.type == SDL_EVENT_QUIT) {
+                GAME_RUNNING = false;
             }
         }
         //###############################################################################
 
-        window.displayPresent();
+
+
+
+
+        sysManager.renderer_present();
         //#################################################################################
         
         //HANDLE TASKS BETWEEN FRAMES
+        /*
         auto dt = frameTimer.MarkMilliSec();
         auto limit = frameTimer.getLimitMilliSec();
         if (dt < limit) {
@@ -73,6 +72,7 @@ int main() {
                 std::this_thread::sleep_for(remainingTime);
             }
         }
+        */
         //#################################################################################
         
     }

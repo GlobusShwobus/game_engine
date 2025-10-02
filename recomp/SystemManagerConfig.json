@@ -1,0 +1,9 @@
+{
+  "GameSysConfig": {
+    "window_width": 960,
+    "window_height": 540,
+    "heading": "muh_game",
+    "engine": 2,
+    "mode": 32
+  }
+}
