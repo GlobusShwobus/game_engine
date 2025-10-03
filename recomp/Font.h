@@ -8,23 +8,25 @@
 
 namespace badEngine {
 
-	class Font: protected Sprite {
+	class Font {
 	
+
 	public:
 
-		Font(Sprite sprite, uint32_t columnsCount, uint32_t rowsCount)
-			:Sprite(std::move(sprite)),
+		Font(Sprite& sprite, uint32_t columnsCount, uint32_t rowsCount)
+			:mSprite(sprite),
 			mColumnsCount(columnsCount),
 			mRowsCount(rowsCount),
-			mGylphWidth(this->texture_width() / columnsCount),
-			mGylphHeight(this->texture_height() / rowsCount)
+			mGylphWidth(mSprite.texture_width() / columnsCount),
+			mGylphHeight(mSprite.texture_height() / rowsCount)
 		{
-			assert(mGylphWidth * mColumnsCount == this->texture_width());
-			assert(mGylphHeight * mRowsCount == this->texture_height());
-			this->set_source_size(vec2i(mGylphWidth, mGylphHeight));
+			assert(mGylphWidth * mColumnsCount == mSprite.texture_width());
+			assert(mGylphHeight * mRowsCount == mSprite.texture_height());
+			mSprite.set_source_size(vec2i(mGylphWidth, mGylphHeight));
+			mSprite.set_destination_scale(vec2i(mGylphWidth, mGylphHeight));///MAYBE SCALE DIFFERENTLY, OVERWRITE FUNC?
 		}
 
-		void draw_text(std::string_view string, SDL_Renderer& renderer, const vec2i& pos) {
+		void draw_text(std::string_view string, SDL_Renderer* renderer, const vec2i& pos) {
 
 			vec2i iteratedPosition = pos;
 
@@ -38,16 +40,20 @@ namespace badEngine {
 					const int yGylph = gylphIndex / mColumnsCount;
 					const int xGylph = gylphIndex % mColumnsCount;
 
-					this->set_source_position(vec2i(xGylph * mGylphWidth, yGylph * mGylphHeight));
+					mSprite.set_source_position(vec2i(xGylph * mGylphWidth, yGylph * mGylphHeight));
 
-					this->draw(renderer, iteratedPosition);
+					mSprite.draw(renderer, iteratedPosition);
 				}
 				iteratedPosition.x += mGylphWidth;//if char is the empty space key, this by default skips over it and adds padding as well
 			}
 		}
 
 	public:
-		
+
+		Sprite& mSprite;
+
+	private:
+
 		const uint32_t mColumnsCount = 0;
 		const uint32_t mRowsCount = 0;
 
