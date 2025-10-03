@@ -6,35 +6,7 @@
 #include "Sprite.h"
 #include "Animation.h"
 #include "Font.h"
-
-void memeScaleMyFunc(badEngine::Sprite& sprite, float dt) {
-    static constexpr float memeTime = 0.04f;
-    static constexpr int memeMax = 64;
-    static constexpr int memeMin = 0;
-
-    static int current = 32;
-    static int memifier = 1;
-    static float currentTime = 0;
-
-    currentTime += dt;
-    if (currentTime>=memeTime) {
-
-
-        current += memifier;
-
-        if (current == memeMax) {
-            memifier = -1;
-        }
-        else if (current == memeMin) {
-            memifier = 1;
-        }
-
-
-        sprite.set_destination_scale(badEngine::vec2i(current, current));
-        currentTime = 0;
-    }
-
-}
+#include "Geometric_Functions.h"
 
 int main() {
     using namespace badEngine;
@@ -60,11 +32,9 @@ int main() {
     }
 
     //TEST CODE
-    Sprite mSpriteTest("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", sysManager.get_renderer());
-    Animation mAnimationTest(mSpriteTest, vec2i(0,0), vec2i(32,32), 8, 0.08f);
-
-    Sprite mFontTest("C:/Users/ADMIN/Desktop/recomp/Fonts/fixed.png", sysManager.get_renderer());
-    Font mFontFontTest(mFontTest, 32,3);
+    Sprite mGreenBox("C:/Users/ADMIN/Desktop/recomp/Textures/green_box.png", sysManager.get_renderer());
+    Sprite mRedBox("C:/Users/ADMIN/Desktop/recomp/Textures/red_box.png", sysManager.get_renderer());
+    Sprite mBlueBox("C:/Users/ADMIN/Desktop/recomp/Textures/blue_box.png", sysManager.get_renderer());
 
     ////#################################################################################
 
@@ -72,6 +42,7 @@ int main() {
     Stopwatch UPDATE_DELTA_TIMER;
     bool GAME_RUNNING = true;
     SDL_Event EVENT;
+
     while (GAME_RUNNING) {
         float dt = UPDATE_DELTA_TIMER.dt_float();
         sysManager.renderer_clear();
@@ -80,15 +51,30 @@ int main() {
         while (SDL_PollEvent(&EVENT)) {
             if (EVENT.type == SDL_EVENT_QUIT) {
                 GAME_RUNNING = false;
+                continue;
             }
         }
         //###############################################################################
 
-        mAnimationTest.update(dt);
-        mAnimationTest.draw_animation(sysManager.get_renderer(), vec2i(100,100));
+        float greenX;
+        float greenY;
+        static int redX = 200;
+        static int redY = 200;
+        SDL_GetMouseState(&greenX, &greenY);
 
-        memeScaleMyFunc(mFontFontTest.mSprite, dt);
-        mFontFontTest.draw_text("does this ev\nen work lol", sysManager.get_renderer(), vec2i(200,200));
+        mGreenBox.set_destination_position(vec2i(greenX, greenY));
+        mRedBox.set_destination_position(vec2i(redX, redY));
+        mGreenBox.draw(sysManager.get_renderer());
+        mRedBox.draw(sysManager.get_renderer());
+
+        if (intersects_rectangle(mGreenBox.get_destination(), 300, 300)) {
+            mBlueBox.set_destination_position(vec2i(400, 400));
+            mBlueBox.draw(sysManager.get_renderer());
+        }
+        //if (intersects_rectangle(mGreenBox.get_destination(), mRedBox.get_destination())) {
+        //    mBlueBox.set_destination_position(vec2i(400,400));
+        //    mBlueBox.draw(sysManager.get_renderer());
+        //}
 
         sysManager.renderer_present();
         //#################################################################################

@@ -60,10 +60,10 @@ namespace badEngine {
 	template <typename T, typename U> requires IS_MATHMATICAL_T<U>
 	constexpr bool intersects_rectangle(const Rectangle<T>& rect, U X, U Y)noexcept {
 		return (
-			X >= rect.x &&
-			Y >= rect.y &&
-			X < rect.x + rect.w &&
-			Y < rect.y + rect.h);
+			X >= rect.mPosition.x &&
+			Y >= rect.mPosition.y &&
+			X < rect.mPosition.x + rect.mDimensions.x &&
+			Y < rect.mPosition.y + rect.mDimensions.y);
 	}
 
 	template <typename T, typename U>
@@ -74,10 +74,10 @@ namespace badEngine {
 	template <typename T, typename U>
 	constexpr bool intersects_rectangle(const Rectangle<T>& a, const Rectangle<U>& b)noexcept {
 		return (
-			a.x < b.x + b.w &&
-			a.x + a.w > b.x &&
-			a.y < b.y + b.h &&
-			a.y + a.h > b.y
+			a.mPosition.x < b.mPosition.x + b.mDimensions.x &&
+			a.mPosition.x + a.mDimensions.x > b.mPosition.x &&
+			a.mPosition.y < b.mPosition.y + b.mDimensions.y &&
+			a.mPosition.y + a.mDimensions.y > b.mPosition.y
 			);
 	}
 
@@ -94,7 +94,7 @@ namespace badEngine {
 		return true;
 	}
 
-	constexpr bool intersects_projection(
+	bool intersects_projection(
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
 		const rectF& target,
@@ -132,7 +132,7 @@ namespace badEngine {
 		return true;
 	}
 	template<typename T, typename U>
-	constexpr bool intersects_projection_adjusted(
+	bool intersects_projection_adjusted(
 		const Transform<T>& a,
 		const Transform<U>& b,
 		float& dt,

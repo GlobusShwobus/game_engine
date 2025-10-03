@@ -19,7 +19,7 @@ namespace badEngine {
 			:mSprite(sprite)
 		{
 			mSprite.set_source_size(frameSize);
-			mSprite.set_destination_scale(frameSize);
+			mSprite.set_destination_size(frameSize);
 			mFrameCount = frameCount;
 			mHoldTime = holdTime;
 
@@ -27,7 +27,7 @@ namespace badEngine {
 			const std::size_t neededHeight = readBegin.y + frameSize.y;
 
 
-			if (neededWidth > mSprite.texture_width() || neededHeight > mSprite.texture_height()) {
+			if (neededWidth > mSprite.get_texture_width() || neededHeight > mSprite.get_texture_height()) {
 				throw std::runtime_error("Mismatch between widths or heights");
 			}
 
@@ -45,7 +45,8 @@ namespace badEngine {
 		}
 		void draw_animation(SDL_Renderer* renderer, const vec2i& destinationPosition) {
 			mSprite.set_source_position(mFrames[mCurrentFrame]);
-			mSprite.draw(renderer, destinationPosition);
+			mSprite.set_destination_position(destinationPosition);
+			mSprite.draw(renderer);
 		}
 
 	private:

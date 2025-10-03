@@ -17,13 +17,13 @@ namespace badEngine {
 			:mSprite(sprite),
 			mColumnsCount(columnsCount),
 			mRowsCount(rowsCount),
-			mGylphWidth(mSprite.texture_width() / columnsCount),
-			mGylphHeight(mSprite.texture_height() / rowsCount)
+			mGylphWidth(mSprite.get_texture_width() / columnsCount),
+			mGylphHeight(mSprite.get_texture_height() / rowsCount)
 		{
-			assert(mGylphWidth * mColumnsCount == mSprite.texture_width());
-			assert(mGylphHeight * mRowsCount == mSprite.texture_height());
+			assert(mGylphWidth * mColumnsCount == mSprite.get_texture_width());
+			assert(mGylphHeight * mRowsCount == mSprite.get_texture_height());
 			mSprite.set_source_size(vec2i(mGylphWidth, mGylphHeight));
-			mSprite.set_destination_scale(vec2i(mGylphWidth, mGylphHeight));///MAYBE SCALE DIFFERENTLY, OVERWRITE FUNC?
+			mSprite.set_destination_size(vec2i(mGylphWidth, mGylphHeight));
 		}
 
 		void draw_text(std::string_view string, SDL_Renderer* renderer, const vec2i& pos) {
@@ -41,8 +41,8 @@ namespace badEngine {
 					const int xGylph = gylphIndex % mColumnsCount;
 
 					mSprite.set_source_position(vec2i(xGylph * mGylphWidth, yGylph * mGylphHeight));
-
-					mSprite.draw(renderer, iteratedPosition);
+					mSprite.set_destination_position(iteratedPosition);
+					mSprite.draw(renderer);
 				}
 				iteratedPosition.x += mGylphWidth;//if char is the empty space key, this by default skips over it and adds padding as well
 			}

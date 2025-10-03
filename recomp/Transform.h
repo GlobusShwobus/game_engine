@@ -32,13 +32,13 @@ namespace badEngine {
 			return *this;
 		}
 
-		constexpr set_position(T x, T y)noexcept {
+		constexpr void set_position(T x, T y)noexcept {
 			mBox.mPosition.set(x, y);
 		}
-		constexpr set_velocity(T x, T y)noexcept {
+		constexpr void set_velocity(T x, T y)noexcept {
 			mVelocity.set(x, y);
 		}
-		constexpr move_on_velocity()noexcept {
+		constexpr void move_on_velocity()noexcept {
 			mBox.mPosition += mVelocity;
 		}
 
