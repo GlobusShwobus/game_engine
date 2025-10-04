@@ -70,6 +70,9 @@
     <ClInclude Include="Camera.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

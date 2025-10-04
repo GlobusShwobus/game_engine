@@ -36,6 +36,14 @@ int main() {
     Sprite mRedBox("C:/Users/ADMIN/Desktop/recomp/Textures/red_box.png", sysManager.get_renderer());
     Sprite mBlueBox("C:/Users/ADMIN/Desktop/recomp/Textures/blue_box.png", sysManager.get_renderer());
 
+    int redX = 200;
+    int redY = 200;
+    mRedBox.set_destination_position(vec2i(redX, redY));
+    mBlueBox.set_destination_position(vec2i(400,400));
+
+    float lineX = 20;
+    float lineY = 20;
+
     ////#################################################################################
 
     //main loop
@@ -54,31 +62,53 @@ int main() {
                 continue;
             }
         }
-        //###############################################################################
+        //TEST CODE
 
-        float greenX;
-        float greenY;
-        static int redX = 200;
-        static int redY = 200;
-        SDL_GetMouseState(&greenX, &greenY);
+        float moseX = 0, mouseY = 0;
+        Uint32 mouseState = SDL_GetMouseState(&moseX, &mouseY);
 
-        mGreenBox.set_destination_position(vec2i(greenX, greenY));
-        mRedBox.set_destination_position(vec2i(redX, redY));
-        mGreenBox.draw(sysManager.get_renderer());
-        mRedBox.draw(sysManager.get_renderer());
+        /*
+        ### 
+        ALSO ADD RENDER COLOR TO SYS MANAGER/RENAME TO RENDER MANAGER FOR BETTER REP?
+        ###
+        */
 
-        if (intersects_rectangle(mGreenBox.get_destination(), 300, 300)) {
-            mBlueBox.set_destination_position(vec2i(400, 400));
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), 0, 0, 0, 255);
+        SDL_RenderClear(sysManager.get_renderer());
+
+        //white line
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), 255, 255, 255, 255);
+        SDL_RenderLine(sysManager.get_renderer(), lineX, lineY, moseX, mouseY);
+
+        //origin visual
+        SDL_FRect originDot = { lineX - 3, lineY - 3, 7, 7 };
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), 0, 200, 0, 255);
+        SDL_RenderFillRect(sysManager.get_renderer(), &originDot);
+
+        //dest visual
+        SDL_FRect mouseDot = { moseX - 4, mouseY - 4, 9, 9 };
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), 200, 0, 0, 255);
+        SDL_RenderFillRect(sysManager.get_renderer(), &mouseDot);
+
+        vec2f rayOrigin = vec2f(lineX, lineY);
+        vec2f rayVec = vec2f(moseX, mouseY);
+        auto target = mRedBox.get_destination();
+        float t;
+        vec2f cp;
+        vec2f cn;
+        if ((intersects_projection(rayOrigin, rayVec, target, t, &cp,&cn)) && t < 1.0f) {
+            SDL_FRect contactPoint = { cp.x - 4, cp.y - 4, 9, 9 };
+            SDL_SetRenderDrawColor(sysManager.get_renderer(), 255, 0, 255, 255);
+            SDL_RenderFillRect(sysManager.get_renderer(), &contactPoint);
             mBlueBox.draw(sysManager.get_renderer());
         }
-        //if (intersects_rectangle(mGreenBox.get_destination(), mRedBox.get_destination())) {
-        //    mBlueBox.set_destination_position(vec2i(400,400));
-        //    mBlueBox.draw(sysManager.get_renderer());
-        //}
+
+        mRedBox.draw(sysManager.get_renderer());
+
+        //#################################################################################
 
         sysManager.renderer_present();
-        //#################################################################################
-        
+
         //HANDLE TASKS BETWEEN FRAMES
         /*
         auto dt = frameTimer.MarkMilliSec();

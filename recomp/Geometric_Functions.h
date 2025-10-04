@@ -98,7 +98,7 @@ namespace badEngine {
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
 		const rectF& target,
-		float& dt,
+		float& tHitNear,
 		vec2f* contactPoint = nullptr,
 		vec2f* contactNormal = nullptr) noexcept
 	{
@@ -117,14 +117,14 @@ namespace badEngine {
 		//if no hit == false
 		if (tNear.x > tFar.y || tNear.y > tFar.x)
 			return false;
-		dt = larger_value(tNear.x, tNear.y);
+		tHitNear = larger_value(tNear.x, tNear.y);
 		float hitFar = smaller_value(tFar.x, tFar.y);
 
 		//if hit but opposite direction, then no actual hit, just on same line
 		if (hitFar < 0.0f) return false;
 		//OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho
 		if (contactPoint)
-			*contactPoint = (rayVector * hitFar) + rayOrigin;
+			*contactPoint = rayOrigin + tHitNear * rayVector;//(rayVector * hitFar) + rayOrigin;
 		//OPTIONAL: get normalized Sign value
 		if (contactNormal)
 			*contactNormal = sign_vector(rayVector);
@@ -135,7 +135,7 @@ namespace badEngine {
 	bool intersects_projection_adjusted(
 		const Transform<T>& a,
 		const Transform<U>& b,
-		float& dt,
+		float& tHitNear,
 		vec2f* contactPoint = nullptr,
 		vec2f* contactNormal = nullptr)noexcept
 	{
@@ -148,8 +148,8 @@ namespace badEngine {
 
 		auto rayOrigin = a.mBox.get_center_point();
 
-		if (intersects_projection(rayOrigin, relativeVelocity, expandedTarget, dt, contactPoint, contactNormal)) {
-			return (dt >= 0.0f && dt < 1.0f);
+		if (intersects_projection(rayOrigin, relativeVelocity, expandedTarget, tHitNear, contactPoint, contactNormal)) {
+			return (tHitNear >= 0.0f && tHitNear < 1.0f);
 		}
 		return false;
 	}
