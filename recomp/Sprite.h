@@ -9,6 +9,11 @@
 
 namespace badEngine {
 
+	static SDL_FRect rectF_to_SDL_FRect(const rectF& rect)noexcept {
+		return SDL_FRect(rect.mPosition.x, rect.mPosition.y, rect.mDimensions.x, rect.mDimensions.y);
+	}
+
+
 	class Sprite {
 		
 		struct SDLTextureDeleter {
@@ -21,9 +26,7 @@ namespace badEngine {
 			mSource = rectF(0, 0, (float)mTexture->w, (float)mTexture->h);
 			mDestination = rectF(0, 0, (float)mTexture->w, (float)mTexture->h);
 		}
-		SDL_FRect to_SDL_convert(const rectF& rect)const noexcept {
-			return SDL_FRect(rect.mPosition.x, rect.mPosition.y, rect.mDimensions.x, rect.mDimensions.y);
-		}
+
 	public:
 
 		Sprite(SDL_Texture* texture) :mTexture(texture) {
@@ -46,8 +49,8 @@ namespace badEngine {
 
 		//THE IMPORTANT SHIT
 		void draw(SDL_Renderer* renderer) {
-			SDL_FRect source = to_SDL_convert(mSource);
-			SDL_FRect dest = to_SDL_convert(mDestination);
+			SDL_FRect source = rectF_to_SDL_FRect(mSource);
+			SDL_FRect dest = rectF_to_SDL_FRect(mDestination);
 
 			SDL_RenderTexture( renderer, mTexture.get(), &source, &dest );
 		}

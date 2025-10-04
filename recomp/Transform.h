@@ -46,4 +46,7 @@ namespace badEngine {
 		Rectangle<T> mBox;
 		Vec2M<T> mVelocity;
 	};
+
+	using TransformI = Transform<int>;
+	using TransformF = Transform<float>;
 }

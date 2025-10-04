@@ -153,6 +153,4 @@ namespace badEngine {
 		}
 		return false;
 	}
-
-
 }

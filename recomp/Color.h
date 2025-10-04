@@ -53,17 +53,17 @@ namespace badEngine {
 
 	};
 	namespace Colors {
-		static constexpr Color makeRGB(unsigned char r, unsigned char g, unsigned char b) {
-			return (r << 16u) | (g << 8u) | b;
+		static constexpr Color makeRGB(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+			return (a << 24) | (r << 16u) | (g << 8u) | b;
 		}
-		static constexpr Color White = makeRGB(255u, 255u, 255u);
-		static constexpr Color Black = makeRGB(0u, 0u, 0u);
-		static constexpr Color Gray = makeRGB(0x80u, 0x80u, 0x80u);
-		static constexpr Color Red = makeRGB(255u, 0u, 0u);
-		static constexpr Color Green = makeRGB(0u, 255u, 0u);
-		static constexpr Color Blue = makeRGB(0u, 0u, 255u);
-		static constexpr Color Yellow = makeRGB(255u, 255u, 0u);
-		static constexpr Color Cyan = makeRGB(0u, 255u, 255u);
-		static constexpr Color Magenta = makeRGB(255u, 0u, 255u);
+		static constexpr Color White = makeRGB(255u, 255u, 255u, 255u);
+		static constexpr Color Black = makeRGB(0u, 0u, 0u, 255u);
+		static constexpr Color Gray = makeRGB(0x80u, 0x80u, 0x80u, 255u);
+		static constexpr Color Red = makeRGB(255u, 0u, 0u, 255u);
+		static constexpr Color Green = makeRGB(0u, 255u, 0u, 255u);
+		static constexpr Color Blue = makeRGB(0u, 0u, 255u, 255u);
+		static constexpr Color Yellow = makeRGB(255u, 255u, 0u, 255u);
+		static constexpr Color Cyan = makeRGB(0u, 255u, 255u, 255u);
+		static constexpr Color Magenta = makeRGB(255u, 0u, 255u, 255u);
 	}
 }
