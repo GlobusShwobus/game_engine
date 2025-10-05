@@ -107,7 +107,7 @@ namespace badEngine {
 
 		return true;
 	}
-	bool sweapt_AABB(const rectF& a, const rectF& b, float& penetration, vec2f& normal)noexcept {
+	bool swept_AABB(const rectF& a, const rectF& b, float& penetration, vec2f& normal)noexcept {
 		//X axis projection
 		float aXmin = a.mPosition.x;
 		float aXmax = a.mPosition.x + a.mDimensions.x;
@@ -121,54 +121,43 @@ namespace badEngine {
 
 		//check for non-intersection
 
-		if (aXmin > bXmax) return false;
-		if (bXmin > aXmax) return false;
+		float overlapX = std::min(aXmax, bXmax) - std::max(aXmin, bXmin);
+		if (overlapX <= 0.0f) return false;
 
-		if (aYmin > bYmax) return false;
-		if (bYmin > aYmax) return false;
+		float overlapY = std::min(aYmax, bYmax) - std::max(aYmin, bYmin);
+		if (overlapY <= 0.0f) return false;
 
-		//if we here, then iz collision
+		// choose axis of least penetration (MTV)
+		float aCenterX = aXmin + 0.5f * a.mDimensions.x;
+		float bCenterX = bXmin + 0.5f * b.mDimensions.x;
+		float aCenterY = aYmin + 0.5f * a.mDimensions.y;
+		float bCenterY = bYmin + 0.5f * b.mDimensions.y;
 
-		penetration = std::numeric_limits<float>::max();
-		//b collider on the right?
-		if (bXmin < aXmax && aXmin < aXmax) {
-			penetration = std::abs(bXmin - aXmax);
-			normal = vec2f(-1.0f, 0.0f);
+		if (overlapX < overlapY) {
+			penetration = overlapX;
+			// if A is left of B, push A left (negative x) otherwise push right
+			normal = (aCenterX < bCenterX) ? vec2f(-1.0f, 0.0f) : vec2f(1.0f, 0.0f);
 		}
-		//b collider on the left?
-		if (aXmin < bXmax && bXmin < aXmax){
-			penetration = std::abs(aXmin - bXmax);
-			normal = vec2f(1.0f, 0.0f);
+		else {
+			penetration = overlapY;
+			// if A is above B, push A up (negative y) otherwise push down
+			normal = (aCenterY < bCenterY) ? vec2f(0.0f, -1.0f) : vec2f(0.0f, 1.0f);
 		}
-		//b collider on the above?
-		if (bYmin < aYmax && aYmin < bYmax){
-			float py = std::abs(bYmin - aYmax);
-			if (py < penetration){
-				penetration = py;
-				normal = vec2f(0.f, -1.f);
-			}
-		}
-		//b collider below?
-		if (aXmin < bXmax && bXmin < aXmax){
-			float py = std::abs(aXmin - bXmax);
-			if (py < penetration)
-			{
-				penetration = py;
-				normal = vec2f(0.f, 1.f);
-			}
-		}
+
 		return true;
 	}
-	bool sweap_AABB_with_resolve(rectF& a, const rectF& b)noexcept {
+	bool swept_AABB_with_resolve(rectF& a, const rectF& b)noexcept {
 		vec2f normal;
 		float penetration = 0.0f;
-		bool result = sweapt_AABB(a, b, penetration, normal);
+		
+		
+		if (!swept_AABB(a, b, penetration, normal))
+			return false;
 
-		if (result) {
-			a.mPosition += normal * penetration;//a.mPosition = a.mPosition + normal * penetration;
-			return true;
-		}
-		return false;
+		// Move A out of collision by the MTV
+		a.mPosition += normal * penetration;
+
+		return true;
 	}
 
 	//bool intersects_ray_rect_basic(

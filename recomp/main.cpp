@@ -87,24 +87,21 @@ int main() {
         hold += dt;
         if (hold >= 0.008f) {
 
-            for (int i = 0; i < 10;i++) {
-
-                for (int j = 0; j < 10; j++) {
-
-                    if (i == j) {
-                        continue;
-                    }
-
-                    if (sweap_AABB_with_resolve(mRects[i].mBox, mRects[j].mBox)) {
-                        mRects[i].mVelocity *= -1;
-                        mRects[j].mVelocity *= -1;
+            //step 1- first move
+            for (int i = 0; i < 10; ++i) {
+                mRects[i].mBox.mPosition += mRects[i].mVelocity;
+            }
+            //step 2- check collisions
+            for (int i = 0; i < 10; ++i) {
+                for (int j = i + 1; j < 10; ++j) {
+                    if (swept_AABB_with_resolve(mRects[i].mBox, mRects[j].mBox)) {
+                        mRects[i].mVelocity *= -1.0f;
+                        mRects[j].mVelocity *= -1.0f;
                     }
                 }
-            
             }
-            //ALSO IF COLLISION NEED TO RESOLVE IMMEDIATELY BEFORE THIS SHIT
-
-            for (int i = 0; i < 10; i++) {
+            //step 3- window boundry
+            for (int i = 0; i < 10; ++i) {
                 auto& transform = mRects[i];
                 auto& box = transform.mBox;
 
@@ -125,8 +122,6 @@ int main() {
                     box.mPosition.y = 540 - box.mDimensions.y;
                     transform.mVelocity.y *= -1;
                 }
-
-                transform.mBox.mPosition += transform.mVelocity;
             }
             hold = 0;
         }
