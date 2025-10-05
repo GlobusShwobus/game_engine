@@ -105,19 +105,6 @@ namespace badEngine {
 			return !(*this == rhs);
 		}
 
-		constexpr void set(T X, T Y)noexcept {
-			x = X;
-			y = Y;
-		}
-
-		constexpr void set_x(T X)noexcept {
-			x = X;
-		}
-
-		constexpr void set_y(T Y)noexcept {
-			y = Y;
-		}
-
 	public:
 
 		T x = 0;
@@ -133,11 +120,11 @@ namespace badEngine {
 	Vec2M<U> operator/(T scalar, const Vec2M<U>& v)noexcept {
 		return Vec2M<U>(v.x / scalar, v.y / scalar);
 	}
-	using vec2s = Vec2M<short>;
-	using vec2i = Vec2M<int>;
-	using vec2l = Vec2M<long>;
+	using vec2s  = Vec2M<short>;
+	using vec2i  = Vec2M<int>;
+	using vec2l  = Vec2M<long>;
 	using vec2ll = Vec2M<long long>;
-	using vec2f = Vec2M<float>;
-	using vec2d = Vec2M<double>;
+	using vec2f  = Vec2M<float>;
+	using vec2d  = Vec2M<double>;
 	using vec2ld = Vec2M<long double>;
 }

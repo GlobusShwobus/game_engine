@@ -95,11 +95,11 @@ int main() {
             for (int i = 0; i < 10; ++i) {
                 for (int j = i + 1; j < 10; ++j) {
                     if (swept_AABB_with_resolve(mRects[i].mBox, mRects[j].mBox)) {
-                        mRects[i].mVelocity *= -1.0f;
-                        mRects[j].mVelocity *= -1.0f;
+                        mRects[i].mVelocity *= -1; 
+                        mRects[j].mVelocity *= -1;
                     }
                 }
-            }
+            }            
             //step 3- window boundry
             for (int i = 0; i < 10; ++i) {
                 auto& transform = mRects[i];

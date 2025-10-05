@@ -107,6 +107,7 @@ namespace badEngine {
 
 		return true;
 	}
+
 	bool swept_AABB(const rectF& a, const rectF& b, float& penetration, vec2f& normal)noexcept {
 		//X axis projection
 		float aXmin = a.mPosition.x;
@@ -118,32 +119,32 @@ namespace badEngine {
 		float aYmax = a.mPosition.y + a.mDimensions.y;
 		float bYmin = b.mPosition.y;
 		float bYmax = b.mPosition.y + b.mDimensions.y;
-
+	
 		//check for non-intersection
-
+	
 		float overlapX = std::min(aXmax, bXmax) - std::max(aXmin, bXmin);
 		if (overlapX <= 0.0f) return false;
-
+	
 		float overlapY = std::min(aYmax, bYmax) - std::max(aYmin, bYmin);
 		if (overlapY <= 0.0f) return false;
-
-		// choose axis of least penetration (MTV)
+	
+		//choose axis of least penetration (MTV)
 		float aCenterX = aXmin + 0.5f * a.mDimensions.x;
 		float bCenterX = bXmin + 0.5f * b.mDimensions.x;
 		float aCenterY = aYmin + 0.5f * a.mDimensions.y;
 		float bCenterY = bYmin + 0.5f * b.mDimensions.y;
-
+	
 		if (overlapX < overlapY) {
 			penetration = overlapX;
-			// if A is left of B, push A left (negative x) otherwise push right
+			//if A is left of B, push A left (negative x) otherwise push right
 			normal = (aCenterX < bCenterX) ? vec2f(-1.0f, 0.0f) : vec2f(1.0f, 0.0f);
 		}
 		else {
 			penetration = overlapY;
-			// if A is above B, push A up (negative y) otherwise push down
+			//if A is above B, push A up (negative y) otherwise push down
 			normal = (aCenterY < bCenterY) ? vec2f(0.0f, -1.0f) : vec2f(0.0f, 1.0f);
 		}
-
+	
 		return true;
 	}
 	bool swept_AABB_with_resolve(rectF& a, const rectF& b)noexcept {
@@ -153,11 +154,32 @@ namespace badEngine {
 		
 		if (!swept_AABB(a, b, penetration, normal))
 			return false;
-
-		// Move A out of collision by the MTV
+	
+		//move A out of collision by the MTV
 		a.mPosition += normal * penetration;
-
+	
 		return true;
+	}
+
+	float sweptAABB_FINAL(TransformF& a, TransformF&b, vec2f& normal) {
+		float xInvEntry, yInvEntry;
+		float xInvExit, yInvExit;
+
+		if (a.mVelocity.x > 0.0f) {
+			xInvEntry = b.mBox.mPosition.x - (a.mBox.mPosition.x + a.mBox.mDimensions.x);
+			xInvEntry = (b.mBox.mPosition.x + b.mBox.mDimensions.x) - a.mBox.mPosition.x;
+		}
+		else {
+			xInvEntry = (b.mBox.mPosition.x + b.mBox.mDimensions.x) - a.mBox.mPosition.x;
+			xInvExit = b.mBox.mPosition.x - (a.mBox.mPosition.x + a.mBox.mDimensions.x);
+		}
+
+		if (a.mVelocity.y > 0.0f) {
+			yInvEntry = b.mBox.mPosition.y - (a.mBox.mPosition.y + a.mBox.mDimensions.y);
+		}
+		else {
+
+		}
 	}
 
 	//bool intersects_ray_rect_basic(

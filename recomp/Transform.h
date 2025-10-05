@@ -33,13 +33,25 @@ namespace badEngine {
 		}
 
 		constexpr void set_position(T x, T y)noexcept {
-			mBox.mPosition.set(x, y);
+			mBox.x = x;
+			mBox.y = y;
 		}
+		template <typename U>
+		constexpr void set_position(const Vec2M<U>& pos)noexcept {
+			set_position(pos.x, pos.y);
+		}
+
 		constexpr void set_velocity(T x, T y)noexcept {
-			mVelocity.set(x, y);
+			mVelocity = Vec2M<T>( x,y );
 		}
-		constexpr void move_on_velocity()noexcept {
-			mBox.mPosition += mVelocity;
+		template <typename U>
+		constexpr void set_velocity(const Vec2M<U>& vel)noexcept {
+			set_velocity(vel.x, vel.y);
+		}
+
+		constexpr void increment_position_on_velocity()noexcept {
+			mBox.x += mVelocity.x;
+			mBox.y += mVelocity.y;
 		}
 
 	public:
