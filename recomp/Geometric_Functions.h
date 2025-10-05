@@ -132,7 +132,7 @@ namespace badEngine {
 		if (tNear.x > tFar.y || tNear.y > tFar.x) 
 			return false;
 
-		contactTime = std::max(tNear.x, tNear.y);
+		contactTime  = std::max(tNear.x, tNear.y);
 		float hitFar = std::min(tFar.x, tFar.y);
 
 		//reject if ray direction is pointing away from object
@@ -151,7 +151,6 @@ namespace badEngine {
 	template<typename T, typename U>
 	bool intersects_ray_rect_adjusted(
 		const Transform<T>& dynamic,
-		float dt,
 		const Transform<U>& stationary,
 		float& contactTime,
 		vec2f* contactPoint = nullptr,
@@ -160,12 +159,11 @@ namespace badEngine {
 		if (dynamic.mVelocity.x == 0 && dynamic.mVelocity.y == 0)
 			return false;
 
-
 		rectF expandedTarget;
 		expandedTarget.mPosition = stationary.mBox.mPosition - dynamic.mBox.get_half_dimensions();
 		expandedTarget.mDimensions = stationary.mBox.mDimensions + dynamic.mBox.mDimensions;
 
-		if (intersects_ray_rect_basic(dynamic.mBox.get_center_point(), dynamic.mVelocity * dt, expandedTarget, contactTime, contactPoint, contactNormal)) {
+		if (intersects_ray_rect_basic(dynamic.mBox.get_center_point(), dynamic.mVelocity, expandedTarget, contactTime, contactPoint, contactNormal)) {
 			return (contactTime >= 0.0f && contactTime < 1.0f);
 		}
 		else {
@@ -173,3 +171,42 @@ namespace badEngine {
 		}
 	}
 }
+/*
+bool intersects_projection(
+	const vec2f& rayOrigin,
+	const vec2f& rayVector,
+	const rectF& target,
+	float& tHitNear,
+	vec2f* contactPoint = nullptr,
+	vec2f* contactNormal = nullptr) noexcept
+{
+	auto reciprocal = reciprocal_vector(rayVector);
+	auto tNear = (target.mPosition - rayOrigin) * reciprocal;
+	auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * reciprocal;
+	//broken float value (division by 0 probably)
+	if (
+		std::isnan(tNear.x) ||
+		std::isnan(tNear.y) ||
+		std::isnan(tFar.x) ||
+		std::isnan(tFar.y)) return false;
+	//order
+	if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
+	if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
+	//if no hit == false
+	if (tNear.x > tFar.y || tNear.y > tFar.x)
+		return false;
+	tHitNear = larger_value(tNear.x, tNear.y);
+	float hitFar = smaller_value(tFar.x, tFar.y);
+
+	//if hit but opposite direction, then no actual hit, just on same line
+	if (hitFar < 0.0f) return false;
+	//OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho
+	if (contactPoint)
+		*contactPoint = rayOrigin + tHitNear * rayVector;//(rayVector * hitFar) + rayOrigin;
+	//OPTIONAL: get normalized Sign value
+	if (contactNormal)
+		*contactNormal = sign_vector(rayVector);
+
+	return true;
+}
+*/

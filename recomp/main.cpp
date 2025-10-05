@@ -87,6 +87,35 @@ int main() {
         hold += dt;
         if (hold >= 0.008f) {
 
+            struct COLLIDERS {
+                int objA;
+                int objB;
+                float time;
+            };
+
+            SequenceM<COLLIDERS> colliders;
+            float sortingTime = 0;
+            for (int i = 0; i < 10; i++) {
+                for (int j = 0; j < 10; j++) {
+                    if (i == j)
+                        continue;
+
+                    if (intersects_ray_rect_adjusted(mRects[i], mRects[j], sortingTime, nullptr, nullptr)) {
+                        colliders.element_create(COLLIDERS(i,j, sortingTime));
+                    }
+
+
+                }
+            }
+
+            std::sort(colliders.begin(), colliders.end(), [](const COLLIDERS&a, const COLLIDERS&b) {
+                return a.time < b.time;
+                });
+            
+
+
+            //ALSO IF COLLISION NEED TO RESOLVE IMMEDIATELY BEFORE THIS SHIT
+
             for (int i = 0; i < 10; i++) {
                 auto& transform = mRects[i];
                 auto& box = transform.mBox;
