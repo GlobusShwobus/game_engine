@@ -159,14 +159,16 @@ namespace badEngine {
 		}
 		return true;
 	}
-	void sweap_AABB_with_resolve(rectF& a, const rectF& b)noexcept {
+	bool sweap_AABB_with_resolve(rectF& a, const rectF& b)noexcept {
 		vec2f normal;
 		float penetration = 0.0f;
 		bool result = sweapt_AABB(a, b, penetration, normal);
 
 		if (result) {
 			a.mPosition += normal * penetration;//a.mPosition = a.mPosition + normal * penetration;
+			return true;
 		}
+		return false;
 	}
 
 	//bool intersects_ray_rect_basic(
