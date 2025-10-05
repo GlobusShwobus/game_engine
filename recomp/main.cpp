@@ -83,37 +83,9 @@ int main() {
         ###
         */
 
-        static float holdTime = 0.0f;
-        holdTime += dt;
-        if (holdTime>=0.008f) {
-
-
-            SequenceM<std::pair<int, float>> hits;
-            float tHitTimes = 0;
-
-            for (int ii = 0; ii < 10; ii++) {
-                for (int jj = 0; jj < 10; jj++) {
-
-                    if (ii != jj) {
-
-                        if (intersects_projection_adjusted(mRects[ii], mRects[jj], tHitTimes, nullptr, nullptr)) {
-                            hits.element_create(std::make_pair(ii, tHitTimes));
-                        }
-
-
-                    }
-
-                }
-            }
-
-            std::sort(hits.begin(), hits.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b)
-                {
-                    return a.second < b.second;
-                });
-
-
-
-
+        static float hold = 0;
+        hold += dt;
+        if (hold >= 0.008f) {
 
             for (int i = 0; i < 10; i++) {
                 auto& transform = mRects[i];
@@ -124,7 +96,7 @@ int main() {
                     box.mPosition.x = 0;
                     transform.mVelocity.x *= -1;
                 }
-                else if(box.mPosition.x+box.mDimensions.x > 960) {
+                else if (box.mPosition.x + box.mDimensions.x > 960) {
                     box.mPosition.x = 960 - box.mDimensions.x;
                     transform.mVelocity.x *= -1;
                 }
@@ -132,16 +104,14 @@ int main() {
                     box.mPosition.y = 0;
                     transform.mVelocity.y *= -1;
                 }
-                else if (box.mPosition.y+box.mDimensions.y > 540) {
+                else if (box.mPosition.y + box.mDimensions.y > 540) {
                     box.mPosition.y = 540 - box.mDimensions.y;
                     transform.mVelocity.y *= -1;
                 }
 
                 transform.mBox.mPosition += transform.mVelocity;
             }
-
-
-            holdTime = 0;
+            hold = 0;
         }
 
         //just coloring in

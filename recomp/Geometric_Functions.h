@@ -7,14 +7,14 @@
 
 namespace badEngine {
 
-	template <typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
-	constexpr auto larger_value(const T& x, const U& y)noexcept {
-		return (x < y) ? y : x;
-	}
-	template<typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
-	constexpr auto smaller_value(const T& x, const U& y)noexcept {
-		return (x < y) ? x : y;
-	}
+	//template <typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
+	//constexpr auto larger_value(const T& x, const U& y)noexcept {
+	//	return (x < y) ? y : x;
+	//}
+	//template<typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
+	//constexpr auto smaller_value(const T& x, const U& y)noexcept {
+	//	return (x < y) ? x : y;
+	//}
 	template<typename T>
 	constexpr Vec2M<T> abs_vector(const Vec2M<T>& vec)noexcept {
 		return Vec2M<T>(std::abs(vec.x), std::abs(vec.y));
@@ -47,7 +47,7 @@ namespace badEngine {
 	}
 
 	template <typename T>
-	constexpr auto sign_vector(Vec2M<T> v)noexcept {
+	constexpr auto normal_vector(Vec2M<T> v)noexcept {
 		if (v.x > 0) v.x = 1;
 		else if (v.x < 0) v.x = -1;
 
@@ -55,6 +55,20 @@ namespace badEngine {
 		else if (v.y < 0) v.y = -1;
 
 		return v;
+	}
+	template<typename T, typename U>
+	constexpr vec2i normal_vector_on_entry(const Vec2M<T>& entry, const Vec2M<U>& direction)noexcept {
+		if (entry.x > entry.y)
+			if (direction.x < 0)
+				return { 1, 0 };
+			else
+				return { -1, 0 };
+		else if (entry.x < entry.y)
+			if (direction.y < 0)
+				return { 0, 1 };
+			else
+				return { 0, -1 };
+		return {0,0};
 	}
 
 	template <typename T, typename U> requires IS_MATHMATICAL_T<U>
@@ -94,63 +108,68 @@ namespace badEngine {
 		return true;
 	}
 
-	bool intersects_projection(
+	bool intersects_ray_rect_basic(
 		const vec2f& rayOrigin,
-		const vec2f& rayVector,
+		const vec2f& rayDir,
 		const rectF& target,
-		float& tHitNear,
+		float& contactTime,
 		vec2f* contactPoint = nullptr,
 		vec2f* contactNormal = nullptr) noexcept
 	{
-		auto reciprocal = reciprocal_vector(rayVector);
-		auto tNear = (target.mPosition - rayOrigin) * reciprocal;
-		auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * reciprocal;
+		vec2f invdir = 1.0f / rayDir;//reciprocal?
+		auto tNear = (target.mPosition - rayOrigin) * invdir;
+		auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * invdir;
 		//broken float value (division by 0 probably)
-		if (
-			std::isnan(tNear.x) ||
-			std::isnan(tNear.y) ||
-			std::isnan(tFar.x) ||
-			std::isnan(tFar.y)) return false;
+		if (std::isnan(tFar.y) || std::isnan(tFar.x))
+			return false;
+		if (std::isnan(tNear.y) || std::isnan(tNear.x))
+			return false;
+		
 		//order
 		if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
 		if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
 		//if no hit == false
-		if (tNear.x > tFar.y || tNear.y > tFar.x)
+		if (tNear.x > tFar.y || tNear.y > tFar.x) 
 			return false;
-		tHitNear = larger_value(tNear.x, tNear.y);
-		float hitFar = smaller_value(tFar.x, tFar.y);
 
-		//if hit but opposite direction, then no actual hit, just on same line
-		if (hitFar < 0.0f) return false;
-		//OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho
+		contactTime = std::max(tNear.x, tNear.y);
+		float hitFar = std::min(tFar.x, tFar.y);
+
+		//reject if ray direction is pointing away from object
+		if (hitFar < 0)
+			return false;
+		
+		//OPTIONAL: set the point where contact was made
 		if (contactPoint)
-			*contactPoint = rayOrigin + tHitNear * rayVector;//(rayVector * hitFar) + rayOrigin;
+			*contactPoint = rayOrigin + contactTime * rayDir;
 		//OPTIONAL: get normalized Sign value
 		if (contactNormal)
-			*contactNormal = sign_vector(rayVector);
+			*contactNormal = normal_vector_on_entry(tNear, invdir);
 
 		return true;
 	}
 	template<typename T, typename U>
-	bool intersects_projection_adjusted(
-		const Transform<T>& a,
-		const Transform<U>& b,
-		float& tHitNear,
+	bool intersects_ray_rect_adjusted(
+		const Transform<T>& dynamic,
+		float dt,
+		const Transform<U>& stationary,
+		float& contactTime,
 		vec2f* contactPoint = nullptr,
 		vec2f* contactNormal = nullptr)noexcept
 	{
-		auto relativeVelocity = a.mVelocity - b.mVelocity;
-		//no movement
-		if (relativeVelocity.x == 0 && relativeVelocity.y == 0) return false;
-
-		rectF expandedTarget = { b.mBox.mPosition - a.mBox.get_half_dimensions(), b.mBox.mDimensions + a.mBox.mDimensions };
+		if (dynamic.mVelocity.x == 0 && dynamic.mVelocity.y == 0)
+			return false;
 
 
-		auto rayOrigin = a.mBox.get_center_point();
+		rectF expandedTarget;
+		expandedTarget.mPosition = stationary.mBox.mPosition - dynamic.mBox.get_half_dimensions();
+		expandedTarget.mDimensions = stationary.mBox.mDimensions + dynamic.mBox.mDimensions;
 
-		if (intersects_projection(rayOrigin, relativeVelocity, expandedTarget, tHitNear, contactPoint, contactNormal)) {
-			return (tHitNear >= 0.0f && tHitNear < 1.0f);
+		if (intersects_ray_rect_basic(dynamic.mBox.get_center_point(), dynamic.mVelocity * dt, expandedTarget, contactTime, contactPoint, contactNormal)) {
+			return (contactTime >= 0.0f && contactTime < 1.0f);
 		}
-		return false;
+		else {
+			return false;
+		}
 	}
 }
