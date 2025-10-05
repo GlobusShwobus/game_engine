@@ -56,20 +56,20 @@ namespace badEngine {
 
 		return v;
 	}
-	template<typename T, typename U>
-	constexpr vec2i normal_vector_on_entry(const Vec2M<T>& entry, const Vec2M<U>& direction)noexcept {
-		if (entry.x > entry.y)
-			if (direction.x < 0)
-				return { 1, 0 };
-			else
-				return { -1, 0 };
-		else if (entry.x < entry.y)
-			if (direction.y < 0)
-				return { 0, 1 };
-			else
-				return { 0, -1 };
-		return {0,0};
-	}
+	//template<typename T, typename U>
+	//constexpr vec2i normal_vector_on_entry(const Vec2M<T>& entry, const Vec2M<U>& direction)noexcept {
+	//	if (entry.x > entry.y)
+	//		if (direction.x < 0)
+	//			return { 1, 0 };
+	//		else
+	//			return { -1, 0 };
+	//	else if (entry.x < entry.y)
+	//		if (direction.y < 0)
+	//			return { 0, 1 };
+	//		else
+	//			return { 0, -1 };
+	//	return {0,0};
+	//}
 
 	template <typename T, typename U> requires IS_MATHMATICAL_T<U>
 	constexpr bool intersects_rectangle(const Rectangle<T>& rect, U X, U Y)noexcept {
@@ -107,106 +107,128 @@ namespace badEngine {
 
 		return true;
 	}
+	bool sweapt_AABB(const rectF& a, const rectF& b, float& penetration, vec2f& normal)noexcept {
+		//X axis projection
+		float aXmin = a.mPosition.x;
+		float aXmax = a.mPosition.x + a.mDimensions.x;
+		float bXmin = b.mPosition.x;
+		float bXmax = b.mPosition.x + b.mDimensions.x;
+		//Y axis projection
+		float aYmin = a.mPosition.y;
+		float aYmax = a.mPosition.y + a.mDimensions.y;
+		float bYmin = b.mPosition.y;
+		float bYmax = b.mPosition.y + b.mDimensions.y;
 
-	bool intersects_ray_rect_basic(
-		const vec2f& rayOrigin,
-		const vec2f& rayDir,
-		const rectF& target,
-		float& contactTime,
-		vec2f* contactPoint = nullptr,
-		vec2f* contactNormal = nullptr) noexcept
-	{
-		vec2f invdir = 1.0f / rayDir;//reciprocal?
-		auto tNear = (target.mPosition - rayOrigin) * invdir;
-		auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * invdir;
-		//broken float value (division by 0 probably)
-		if (std::isnan(tFar.y) || std::isnan(tFar.x))
-			return false;
-		if (std::isnan(tNear.y) || std::isnan(tNear.x))
-			return false;
-		
-		//order
-		if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
-		if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
-		//if no hit == false
-		if (tNear.x > tFar.y || tNear.y > tFar.x) 
-			return false;
+		//check for non-intersection
 
-		contactTime  = std::max(tNear.x, tNear.y);
-		float hitFar = std::min(tFar.x, tFar.y);
+		if (aXmin > bXmax) return false;
+		if (bXmin > aXmax) return false;
 
-		//reject if ray direction is pointing away from object
-		if (hitFar < 0)
-			return false;
-		
-		//OPTIONAL: set the point where contact was made
-		if (contactPoint)
-			*contactPoint = rayOrigin + contactTime * rayDir;
-		//OPTIONAL: get normalized Sign value
-		if (contactNormal)
-			*contactNormal = normal_vector_on_entry(tNear, invdir);
+		if (aYmin > bYmax) return false;
+		if (bYmin > aYmax) return false;
 
+		//if we here, then iz collision
+
+		penetration = std::numeric_limits<float>::max();
+		//b collider on the right?
+		if (bXmin < aXmax && aXmin < aXmax) {
+			penetration = std::abs(bXmin - aXmax);
+			normal = vec2f(-1.0f, 0.0f);
+		}
+		//b collider on the left?
+		if (aXmin < bXmax && bXmin < aXmax){
+			penetration = std::abs(aXmin - bXmax);
+			normal = vec2f(1.0f, 0.0f);
+		}
+		//b collider on the above?
+		if (bYmin < aYmax && aYmin < bYmax){
+			float py = std::abs(bYmin - aYmax);
+			if (py < penetration){
+				penetration = py;
+				normal = vec2f(0.f, -1.f);
+			}
+		}
+		//b collider below?
+		if (aXmin < bXmax && bXmin < aXmax){
+			float py = std::abs(aXmin - bXmax);
+			if (py < penetration)
+			{
+				penetration = py;
+				normal = vec2f(0.f, 1.f);
+			}
+		}
 		return true;
 	}
-	template<typename T, typename U>
-	bool intersects_ray_rect_adjusted(
-		const Transform<T>& dynamic,
-		const Transform<U>& stationary,
-		float& contactTime,
-		vec2f* contactPoint = nullptr,
-		vec2f* contactNormal = nullptr)noexcept
-	{
-		if (dynamic.mVelocity.x == 0 && dynamic.mVelocity.y == 0)
-			return false;
+	void sweap_AABB_with_resolve(rectF& a, const rectF& b)noexcept {
+		vec2f normal;
+		float penetration = 0.0f;
+		bool result = sweapt_AABB(a, b, penetration, normal);
 
-		rectF expandedTarget;
-		expandedTarget.mPosition = stationary.mBox.mPosition - dynamic.mBox.get_half_dimensions();
-		expandedTarget.mDimensions = stationary.mBox.mDimensions + dynamic.mBox.mDimensions;
-
-		if (intersects_ray_rect_basic(dynamic.mBox.get_center_point(), dynamic.mVelocity, expandedTarget, contactTime, contactPoint, contactNormal)) {
-			return (contactTime >= 0.0f && contactTime < 1.0f);
-		}
-		else {
-			return false;
+		if (result) {
+			a.mPosition += normal * penetration;//a.mPosition = a.mPosition + normal * penetration;
 		}
 	}
-}
-/*
-bool intersects_projection(
-	const vec2f& rayOrigin,
-	const vec2f& rayVector,
-	const rectF& target,
-	float& tHitNear,
-	vec2f* contactPoint = nullptr,
-	vec2f* contactNormal = nullptr) noexcept
-{
-	auto reciprocal = reciprocal_vector(rayVector);
-	auto tNear = (target.mPosition - rayOrigin) * reciprocal;
-	auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * reciprocal;
-	//broken float value (division by 0 probably)
-	if (
-		std::isnan(tNear.x) ||
-		std::isnan(tNear.y) ||
-		std::isnan(tFar.x) ||
-		std::isnan(tFar.y)) return false;
-	//order
-	if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
-	if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
-	//if no hit == false
-	if (tNear.x > tFar.y || tNear.y > tFar.x)
-		return false;
-	tHitNear = larger_value(tNear.x, tNear.y);
-	float hitFar = smaller_value(tFar.x, tFar.y);
 
-	//if hit but opposite direction, then no actual hit, just on same line
-	if (hitFar < 0.0f) return false;
-	//OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho
-	if (contactPoint)
-		*contactPoint = rayOrigin + tHitNear * rayVector;//(rayVector * hitFar) + rayOrigin;
-	//OPTIONAL: get normalized Sign value
-	if (contactNormal)
-		*contactNormal = sign_vector(rayVector);
-
-	return true;
+	//bool intersects_ray_rect_basic(
+	//	const vec2f& rayOrigin,
+	//	const vec2f& rayDir,
+	//	const rectF& target,
+	//	float& contactTime,
+	//	vec2f* contactPoint = nullptr,
+	//	vec2f* contactNormal = nullptr) noexcept
+	//{
+	//	vec2f invdir = 1.0f / rayDir;//reciprocal?
+	//	auto tNear = (target.mPosition - rayOrigin) * invdir;
+	//	auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * invdir;
+	//	//broken float value (division by 0 probably)
+	//	if (std::isnan(tFar.y) || std::isnan(tFar.x))
+	//		return false;
+	//	if (std::isnan(tNear.y) || std::isnan(tNear.x))
+	//		return false;
+	//	
+	//	//order
+	//	if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
+	//	if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
+	//	//if no hit == false
+	//	if (tNear.x > tFar.y || tNear.y > tFar.x) 
+	//		return false;
+	//
+	//	contactTime  = std::max(tNear.x, tNear.y);
+	//	float hitFar = std::min(tFar.x, tFar.y);
+	//
+	//	//reject if ray direction is pointing away from object
+	//	if (hitFar < 0)
+	//		return false;
+	//	
+	//	//OPTIONAL: set the point where contact was made
+	//	if (contactPoint)
+	//		*contactPoint = rayOrigin + contactTime * rayDir;
+	//	//OPTIONAL: get normalized Sign value
+	//	if (contactNormal)
+	//		*contactNormal = normal_vector_on_entry(tNear, invdir);
+	//
+	//	return true;
+	//}
+	//template<typename T, typename U>
+	//bool intersects_ray_rect_adjusted(
+	//	const Transform<T>& dynamic,
+	//	const Transform<U>& stationary,
+	//	float& contactTime,
+	//	vec2f* contactPoint = nullptr,
+	//	vec2f* contactNormal = nullptr)noexcept
+	//{
+	//	if (dynamic.mVelocity.x == 0 && dynamic.mVelocity.y == 0)
+	//		return false;
+	//
+	//	rectF expandedTarget;
+	//	expandedTarget.mPosition = stationary.mBox.mPosition - dynamic.mBox.get_half_dimensions();
+	//	expandedTarget.mDimensions = stationary.mBox.mDimensions + dynamic.mBox.mDimensions;
+	//
+	//	if (intersects_ray_rect_basic(dynamic.mBox.get_center_point(), dynamic.mVelocity, expandedTarget, contactTime, contactPoint, contactNormal)) {
+	//		return (contactTime >= 0.0f && contactTime < 1.0f);
+	//	}
+	//	else {
+	//		return false;
+	//	}
+	//}
 }
-*/
