@@ -1,20 +1,13 @@
 #pragma once
 
 #include <cmath>
+#include <limits>
 #include "Vec2M.h"
 #include "Rectangle.h"
 #include "Transform.h"
 
 namespace badEngine {
 
-	//template <typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
-	//constexpr auto larger_value(const T& x, const U& y)noexcept {
-	//	return (x < y) ? y : x;
-	//}
-	//template<typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
-	//constexpr auto smaller_value(const T& x, const U& y)noexcept {
-	//	return (x < y) ? x : y;
-	//}
 	template<typename T>
 	constexpr Vec2M<T> abs_vector(const Vec2M<T>& vec)noexcept {
 		return Vec2M<T>(std::abs(vec.x), std::abs(vec.y));
@@ -23,6 +16,10 @@ namespace badEngine {
 	template <typename T, typename U>
 	constexpr auto dot_vector(const Vec2M<T>& v1, const Vec2M<U>& v2)noexcept {
 		return (v1.x * v2.x) + (v1.y * v2.y);
+	}
+	template <typename T, typename U>
+	constexpr auto dot_vector_perpendicular(const Vec2M<T>& v1, const Vec2M<U>& v2)noexcept {
+		return (v1.x * v2.y) + (v1.y * v2.x);
 	}
 
 	template <typename T>
@@ -56,59 +53,149 @@ namespace badEngine {
 
 		return v;
 	}
-	//template<typename T, typename U>
-	//constexpr vec2i normal_vector_on_entry(const Vec2M<T>& entry, const Vec2M<U>& direction)noexcept {
-	//	if (entry.x > entry.y)
-	//		if (direction.x < 0)
-	//			return { 1, 0 };
-	//		else
-	//			return { -1, 0 };
-	//	else if (entry.x < entry.y)
-	//		if (direction.y < 0)
-	//			return { 0, 1 };
-	//		else
-	//			return { 0, -1 };
-	//	return {0,0};
-	//}
 
 	template <typename T, typename U> requires IS_MATHMATICAL_T<U>
-	constexpr bool intersects_rectangle(const Rectangle<T>& rect, U X, U Y)noexcept {
+	constexpr bool rect_contains_pos(const Rectangle<T>& rect, U X, U Y)noexcept {
 		return (
-			X >= rect.mPosition.x &&
-			Y >= rect.mPosition.y &&
-			X < rect.mPosition.x + rect.mDimensions.x &&
-			Y < rect.mPosition.y + rect.mDimensions.y);
+			X >= rect.x &&
+			Y >= rect.y &&
+			X < rect.x + rect.w &&
+			Y < rect.y + rect.h);
 	}
 
 	template <typename T, typename U>
-	constexpr bool intersects_rectangle(const Rectangle<T>& rect, Vec2M<U>& pos)noexcept {
-		return intersects_rectangle(rect, pos.x, pos.y);
+	constexpr bool rect_contains_pos(const Rectangle<T>& rect, Vec2M<U>& pos)noexcept {
+		return rect_contains_pos(rect, pos.x, pos.y);
 	}
 
 	template <typename T, typename U>
-	constexpr bool intersects_rectangle(const Rectangle<T>& a, const Rectangle<U>& b)noexcept {
-		return (
-			a.mPosition.x < b.mPosition.x + b.mDimensions.x &&
-			a.mPosition.x + a.mDimensions.x > b.mPosition.x &&
-			a.mPosition.y < b.mPosition.y + b.mDimensions.y &&
-			a.mPosition.y + a.mDimensions.y > b.mPosition.y
-			);
+	constexpr bool AABB_contains(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
+		return !(b1.x + b1.w < b2.x || b1.x > b2.x + b2.w || b1.y + b1.h < b2.y || b1.y > b2.y + b2.h);
 	}
 
 	template <typename T, typename U, typename S>
-	constexpr bool intersects_rectangle(const Rectangle<T>& a, const Rectangle<U>& b, rectF& output)noexcept {
-		auto distances = (a.mPosition + a.get_half_dimensions()) - (b.mPosition + b.get_half_dimensions());
-		auto overlap = (a.get_half_dimensions() + b.get_half_dimensions()) - abs_vector(distances);
+	constexpr bool AABB_contains_clamp(const Rectangle<T>& a, const Rectangle<U>& b, rectF& output)noexcept {
+		auto distances = (a.get_center_point() - b.get_center_point());
+		auto overlap = (a.get_half_size() + b.get_half_size()) - abs_vector(distances);
 
 		if (overlap.x < 0.0f || overlap.y < 0.0f) return false;
 
-		output.mPosition = distances;
-		output.mDimensions = overlap;
-
+		output.set_XY(distances);
+		output.set_WH(overlap);
 		return true;
 	}
 
-	bool swept_AABB(const rectF& a, const rectF& b, float& penetration, vec2f& normal)noexcept {
+	float sweptAABB_basic(const TransformF& a, const TransformF& b, vec2f& normal) noexcept {
+		constexpr float EPSILON = 1e-6f;
+
+		// Compute inverse entry/exit distances
+		float xInvEntry, xInvExit;
+		if (a.mVelocity.x > 0.0f) {
+			xInvEntry = b.mBox.x - (a.mBox.x + a.mBox.w);
+			xInvExit = (b.mBox.x + b.mBox.w) - a.mBox.x;
+		}
+		else {
+			xInvEntry = (b.mBox.x + b.mBox.w) - a.mBox.x;
+			xInvExit = b.mBox.x - (a.mBox.x + a.mBox.w);
+		}
+
+		float yInvEntry, yInvExit;
+		if (a.mVelocity.y > 0.0f) {
+			yInvEntry = b.mBox.y - (a.mBox.y + a.mBox.h);
+			yInvExit = (b.mBox.y + b.mBox.h) - a.mBox.y;
+		}
+		else {
+			yInvEntry = (b.mBox.y + b.mBox.h) - a.mBox.y;
+			yInvExit = b.mBox.y - (a.mBox.y + a.mBox.h);
+		}
+
+		// Convert to entry/exit times
+		float xEntry = (a.mVelocity.x == 0.0f) ? -INFINITY : xInvEntry / a.mVelocity.x;
+		float xExit = (a.mVelocity.x == 0.0f) ? INFINITY : xInvExit / a.mVelocity.x;
+
+		float yEntry = (a.mVelocity.y == 0.0f) ? -INFINITY : yInvEntry / a.mVelocity.y;
+		float yExit = (a.mVelocity.y == 0.0f) ? INFINITY : yInvExit / a.mVelocity.y;
+
+		// Find earliest/latest collision times
+		float entryTime = std::max(xEntry, yEntry);
+		float exitTime = std::min(xExit, yExit);
+
+		// No collision this frame?
+		if (entryTime > exitTime || (xEntry < 0.0f && yEntry < 0.0f) || entryTime > 1.0f) {
+			normal = { 0.0f, 0.0f };
+			return 1.0f;
+		}
+
+		// Determine surface normal
+		if (xEntry > yEntry) {
+			normal = (a.mVelocity.x < 0.0f) ? vec2f{ 1, 0 } : vec2f{ -1, 0 };
+		}
+		else {
+			normal = (a.mVelocity.y < 0.0f) ? vec2f{ 0, 1 } : vec2f{ 0, -1 };
+		}
+
+		return entryTime;
+	}
+	void collision_response_deflect(TransformF& box, float remainingTime, const vec2f& normal) {
+		box.mVelocity *= remainingTime;
+
+		float dot = dot_vector(box.mVelocity, normal);
+		box.mVelocity -= 2.0f * dot * normal;
+	}
+	void collision_response_push(TransformF& box, float remainingTime, const vec2f& normal) {
+	
+		vec2f tangent = vec2f(normal.y, normal.x);
+		float speed = length_vector(box.mVelocity) * remainingTime;
+		float dot = dot_vector(box.mVelocity, tangent);
+
+		tangent = normal_vector(tangent);
+
+		box.mVelocity = tangent * (dot >= 0 ? speed : -speed);
+	}
+	void collision_response_slide(TransformF& box, float remainingTime, const vec2f& normal) {
+		
+		vec2f tangent = vec2f(normal.y, normal.x);
+		tangent = normal_vector(tangent);
+
+		float dot = dot_vector(box.mVelocity, tangent);
+
+		box.mVelocity = tangent * dot * remainingTime;
+	}
+	rectF get_broadbox(const TransformF& box)noexcept {
+		rectF broadbox;
+		broadbox.x = box.mVelocity.x > 0 ? box.mBox.x : box.mBox.x + box.mVelocity.x;
+		broadbox.y = box.mVelocity.y > 0 ? box.mBox.y : box.mBox.y + box.mVelocity.y;
+		broadbox.w = box.mVelocity.x > 0 ? box.mVelocity.x + box.mBox.w : box.mBox.w - box.mVelocity.x;
+		broadbox.h = box.mVelocity.y > 0 ? box.mVelocity.y + box.mBox.h : box.mBox.h - box.mVelocity.y;
+
+		return broadbox;
+	}
+
+	template <typename T>
+	concept AABB_PREDICATE_T = std::invocable<T,TransformF&, float, const vec2f&>;
+
+	template<typename Condition>
+		requires AABB_PREDICATE_T<Condition>
+	void AABB_collision_algorithm(TransformF& moving, TransformF& stationary, Condition predicate)noexcept {
+
+		rectF broadbox = get_broadbox(moving);
+
+		if (!AABB_contains(broadbox, stationary.mBox))
+			return;
+	
+		vec2f normal;
+		float collisionTime = sweptAABB_basic(moving, stationary, normal);
+		moving.mBox.x += moving.mVelocity.x * collisionTime;
+		moving.mBox.y += moving.mVelocity.y * collisionTime;
+
+		if (collisionTime < 1.0f) {
+			float remainingTime = 1.0f - collisionTime;
+			predicate(moving, remainingTime, normal);
+		}
+
+	}
+	/*
+		bool swept_AABB(const rectF& a, const rectF& b, float& penetration, vec2f& normal)noexcept {
 		//X axis projection
 		float aXmin = a.mPosition.x;
 		float aXmax = a.mPosition.x + a.mDimensions.x;
@@ -160,28 +247,7 @@ namespace badEngine {
 	
 		return true;
 	}
-
-	float sweptAABB_FINAL(TransformF& a, TransformF&b, vec2f& normal) {
-		float xInvEntry, yInvEntry;
-		float xInvExit, yInvExit;
-
-		if (a.mVelocity.x > 0.0f) {
-			xInvEntry = b.mBox.mPosition.x - (a.mBox.mPosition.x + a.mBox.mDimensions.x);
-			xInvEntry = (b.mBox.mPosition.x + b.mBox.mDimensions.x) - a.mBox.mPosition.x;
-		}
-		else {
-			xInvEntry = (b.mBox.mPosition.x + b.mBox.mDimensions.x) - a.mBox.mPosition.x;
-			xInvExit = b.mBox.mPosition.x - (a.mBox.mPosition.x + a.mBox.mDimensions.x);
-		}
-
-		if (a.mVelocity.y > 0.0f) {
-			yInvEntry = b.mBox.mPosition.y - (a.mBox.mPosition.y + a.mBox.mDimensions.y);
-		}
-		else {
-
-		}
-	}
-
+	*/
 	//bool intersects_ray_rect_basic(
 	//	const vec2f& rayOrigin,
 	//	const vec2f& rayDir,

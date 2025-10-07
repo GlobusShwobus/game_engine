@@ -40,8 +40,25 @@ namespace badEngine {
 			return!(*this == rhs);
 		}
 
+		constexpr void set_XY(const Vec2M<T>& pos)noexcept {
+			set_XY(pos.x, pos.y);
+		}
+		constexpr void set_XY(T X, T Y)noexcept {
+			x = X;
+			y = Y;
+		}
+		constexpr void set_WH(const Vec2M<T>& size)noexcept {
+			set_WH(size.x, size.y);
+		}
+		constexpr void set_WH(T W, T H)noexcept {
+			w = W;
+			h = H;
+		}
 		constexpr Vec2M<T> get_center_point()const noexcept {
 			return Vec2M<T>(x + (w * 0.5f), y + (h * 0.5f));
+		}
+		Vec2M<T> get_half_size()const noexcept {
+			return Vec2M<T>(w * 0.5f, h * 0.5f);
 		}
 
 	public:
