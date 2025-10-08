@@ -87,42 +87,21 @@ int main() {
         hold += dt;
         if (hold >= 0.008f) {
 
-            //step 1- first move
-            for (int i = 0; i < 10; ++i) {
-                mRects[i].mBox.mPosition += mRects[i].mVelocity;
-            }
-            //step 2- check collisions
+            COLLISION_DEFLECT deflect;
             for (int i = 0; i < 10; ++i) {
                 for (int j = i + 1; j < 10; ++j) {
-                    if (swept_AABB_with_resolve(mRects[i].mBox, mRects[j].mBox)) {
-                        mRects[i].mVelocity *= -1; 
-                        mRects[j].mVelocity *= -1;
-                    }
-                }
-            }            
-            //step 3- window boundry
-            for (int i = 0; i < 10; ++i) {
-                auto& transform = mRects[i];
-                auto& box = transform.mBox;
+                   
+                    AABB_collision_algorithm(mRects[i], mRects[j], deflect);
 
-                //SAVE THIS AS A REMINDER, OTHERWISE IDK WHERE TO PUT THIS SHIT, IF AT ALL. MAYBE NOT AT ALL...
-                if (box.mPosition.x < 0) {
-                    box.mPosition.x = 0;
-                    transform.mVelocity.x *= -1;
-                }
-                else if (box.mPosition.x + box.mDimensions.x > 960) {
-                    box.mPosition.x = 960 - box.mDimensions.x;
-                    transform.mVelocity.x *= -1;
-                }
-                if (box.mPosition.y < 0) {
-                    box.mPosition.y = 0;
-                    transform.mVelocity.y *= -1;
-                }
-                else if (box.mPosition.y + box.mDimensions.y > 540) {
-                    box.mPosition.y = 540 - box.mDimensions.y;
-                    transform.mVelocity.y *= -1;
                 }
             }
+            rectI worldEdge(0, 0, 960, 540);
+            for (int i = 0; i < 10; ++i) {
+                if (world_edge_collision_clamp(mRects[i], worldEdge)) {
+                    mRects[i].mVelocity *= -1;
+                }
+            }
+
             hold = 0;
         }
 

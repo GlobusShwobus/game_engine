@@ -10,7 +10,7 @@
 namespace badEngine {
 
 	static SDL_FRect rectF_to_SDL_FRect(const rectF& rect)noexcept {
-		return SDL_FRect(rect.mPosition.x, rect.mPosition.y, rect.mDimensions.x, rect.mDimensions.y);
+		return SDL_FRect(rect.x, rect.y, rect.w, rect.h);
 	}
 
 
@@ -68,19 +68,19 @@ namespace badEngine {
 
 		template<typename T>
 		void set_source_position(const Vec2M<T>& position)noexcept {
-			mSource.mPosition = position;
+			mSource.set_XY(position);
 		}
 		template<typename T>
 		void set_source_size(const Vec2M<T>& size)noexcept {
-			mSource.mDimensions = size;
+			mSource.set_WH(size);
 		}
 		template<typename T>
 		void set_destination_position(const Vec2M<T>& position)noexcept {
-			mDestination.mPosition = position;
+			mDestination.set_XY(position);
 		}
 		template<typename T>
 		void set_destination_size(const Vec2M<T>& size)noexcept {
-			mDestination.mDimensions = size;
+			mDestination.set_WH(size);
 		}
 
 
@@ -98,7 +98,7 @@ namespace badEngine {
 			return mDestination;
 		}
 		vec2f get_destination_dimensions()const noexcept {
-			return mDestination.mDimensions;
+			return vec2f(mDestination.w, mDestination.h);
 		}
 
 	private:
