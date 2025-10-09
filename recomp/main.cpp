@@ -87,20 +87,6 @@ int main() {
         hold += dt;
         if (hold >= 0.008f) {
 
-            COLLISION_DEFLECT deflect;
-            for (int i = 0; i < 10; ++i) {
-                for (int j = i + 1; j < 10; ++j) {
-                   
-                    AABB_collision_algorithm(mRects[i], mRects[j], deflect);
-
-                }
-            }
-            rectI worldEdge(0, 0, 960, 540);
-            for (int i = 0; i < 10; ++i) {
-                if (world_edge_collision_clamp(mRects[i], worldEdge)) {
-                    mRects[i].mVelocity *= -1;
-                }
-            }
 
             hold = 0;
         }

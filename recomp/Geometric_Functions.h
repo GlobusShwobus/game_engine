@@ -89,62 +89,85 @@ namespace badEngine {
 		return true;
 	}
 
-	constexpr bool intersects_projection(
+	constexpr bool AABB_swept(
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
 		const rectF& target,
-		float& dt,
-		vec2f* contactPoint = nullptr,
-		vec2f* contactNormal = nullptr) noexcept
+		float& contactTime,
+		vec2f& contactNormal) noexcept
 	{
-		auto reciprocal = reciprocal_vector(rayVector);
-		auto tNear = (target.mPosition - rayOrigin) * reciprocal;
-		auto tFar = (target.mPosition + target.mDimensions - rayOrigin) * reciprocal;
+		auto invdir = reciprocal_vector(rayVector);
+
+		vec2f nearHit = vec2f(
+			(target.x - rayOrigin.x) * invdir.x,
+			(target.y - rayOrigin.y) * invdir.y
+		);
+		vec2f farHit = vec2f(
+			(target.x + target.w - rayOrigin.x) * invdir.x,
+			(target.y + target.h - rayOrigin.y) * invdir.y
+		);
+
 		//broken float value (division by 0 probably)
-		if (
-			std::isnan(tNear.x) ||
-			std::isnan(tNear.y) ||
-			std::isnan(tFar.x) ||
-			std::isnan(tFar.y)) return false;
-		//order
-		if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
-		if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
-		//if no hit == false
-		if (tNear.x > tFar.y || tNear.y > tFar.x)
+		if (std::isnan(farHit.y) || std::isnan(farHit.x))
 			return false;
-		dt = larger_value(tNear.x, tNear.y);
-		float hitFar = smaller_value(tFar.x, tFar.y);
+		if (std::isnan(nearHit.y) || std::isnan(nearHit.x))
+			return false;
+		//order
+		if (nearHit.x > farHit.x) std::swap(nearHit.x, farHit.x);
+		if (nearHit.y > farHit.y) std::swap(nearHit.y, farHit.y);
+		//if no hit == false
+		if (nearHit.x > farHit.y || nearHit.y > farHit.x)
+			return false;
+
+		//determine contacts
+		contactTime = std::max(nearHit.x, nearHit.y);
+		float contactExit = std::min(farHit.x, farHit.y);
 
 		//if hit but opposite direction, then no actual hit, just on same line
-		if (hitFar < 0.0f) return false;
-		//OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho
-		if (contactPoint)
-			*contactPoint = (rayVector * hitFar) + rayOrigin;
-		//OPTIONAL: get normalized Sign value
-		if (contactNormal)
-			*contactNormal = sign_vector(rayVector);
+		if (contactExit < 0)
+			return false;
+		
+		if (nearHit.x > nearHit.y)
+			if (invdir.x < 0)
+				contactNormal = { 1, 0 };
+			else
+				contactNormal = { -1, 0 };
+		else if (nearHit.x < nearHit.y)
+			if (invdir.y < 0)
+				contactNormal = { 0, 1 };
+			else
+				contactNormal = { 0, -1 };
+		
+		/*
+		    //DEPRICATED FOR NOW
+			//if (contactPoint)
+			//	*contactPoint = (rayVector * hitFar) + rayOrigin;
+		*/
 
 		return true;
 	}
 	template<typename T, typename U>
-	constexpr bool intersects_projection_adjusted(
+	constexpr bool AABB_swept_expanded(
 		const Transform<T>& a,
 		const Transform<U>& b,
-		float& dt,
-		vec2f* contactPoint = nullptr,
-		vec2f* contactNormal = nullptr)noexcept
+		float& contactTime,
+		vec2f& contactNormal)noexcept
 	{
-		auto relativeVelocity = a.mVelocity - b.mVelocity;
-		//no movement
-		if (relativeVelocity.x == 0 && relativeVelocity.y == 0) return false;
+		auto relativeVelocity = a.mVelocity - b.mVelocity;//because both objects can move, if not however its something - zero so doesnt matter
+		//no relative movement
+		if (relativeVelocity.x == 0 && relativeVelocity.y == 0)
+			return false;
 
-		rectF expandedTarget = { b.mBox.mPosition - a.mBox.get_half_dimensions(), b.mBox.mDimensions + a.mBox.mDimensions };
+		vec2f halfOfA = a.mBox.get_half_size();
+		rectF expandedTarget = rectF(
+			b.mBox.x - halfOfA.x,
+			b.mBox.y - halfOfA.y,
+			b.mBox.w + a.mBox.w,
+			b.mBox.h + a.mBox.h
+		);
 
-
-		auto rayOrigin = a.mBox.get_center_point();
-
-		if (intersects_projection(rayOrigin, relativeVelocity, expandedTarget, dt, contactPoint, contactNormal)) {
-			return (dt >= 0.0f && dt < 1.0f);
+		if (intersects_projection(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
+			return (contactTime >= 0.0f && contactTime < 1.0f);
 		}
 		return false;
 	}
