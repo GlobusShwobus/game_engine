@@ -85,7 +85,7 @@ namespace badEngine {
 		return true;
 	}
 
-	rectF expanded_AABB_box(const TransformF& box) {
+	constexpr rectF expanded_AABB_box(const TransformF& box)noexcept {
 		return rectF(
 			box.mBox.x + box.mVelocity.x,
 			box.mBox.y + box.mVelocity.y,
@@ -99,6 +99,16 @@ namespace badEngine {
 		rectF output;
 
 		if (AABB_contains(expanded, box2.mBox, output)) {
+
+			/*
+			*FIRST MAKE SURE AABB_contains IS NOT BUGGED. REFER TO THE BALD YOUTUBE GUY
+			
+			*OUTPUT SHOULD GIVE A NORMAL AND A SIZE, NOT A RECTANGLE!!!
+
+			TWO OPTIONS: EITHER RESOLVE THE CLAMP HERE AND RETURN A LEFTOVER VELOCITY OR RETURN BOTH NORMAL AND 
+			OUTPUT AND RESOLVE IN A DEDICATED MANNER
+
+			*/
 
 			return true;
 		}
