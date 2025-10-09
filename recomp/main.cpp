@@ -88,6 +88,36 @@ int main() {
         if (hold >= 0.008f) {
 
 
+            
+            for (int i = 0; i < 10;i++) {
+
+                auto& rect = mRects[i].mBox;
+                auto& vel = mRects[i].mVelocity;
+
+                if (rect.x < 0) {
+                    rect.x = 0;
+                    vel.x *= -1;
+                }
+                if (rect.y < 0) {
+                    rect.y = 0;
+                    vel.y *= -1;
+                }
+                if (rect.x + rect.w > 960) {
+                    rect.x = 960 - rect.w;
+                    vel.x *= -1;
+                }
+                if (rect.y + rect.h > 540) {
+                    rect.y = 540 - rect.h;
+                    vel.y *= -1;
+                }
+            }
+
+            //FINAL STEP IS TO MOVE, ANY OTHER ISSUES GET RESOLVED NEXT FRAME
+            for (int i = 0; i < 10; i++) {
+                auto& rect = mRects[i].mBox;
+                auto& vel = mRects[i].mVelocity;
+            }
+
             hold = 0;
         }
 
