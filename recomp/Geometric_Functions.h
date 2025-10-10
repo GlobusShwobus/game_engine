@@ -79,46 +79,6 @@ namespace badEngine {
 		output.set_WH(overlap);
 		return true;
 	}
-
-
-
-
-	struct Rect3D {
-		float xmin, ymin, zmin;
-		float xmax, ymax, zmax;
-	};
-	Rect3D make_swept_box(const TransformF& box) {
-		return{
-			std::min(box.mBox.x, box.mBox.x + box.mVelocity.x),
-			std::min(box.mBox.y, box.mBox.y + box.mVelocity.y),
-			0.0f,
-			std::max(box.mBox.x + box.mBox.w, box.mBox.x + box.mVelocity.x + box.mBox.w),
-			std::max(box.mBox.y + box.mBox.h, box.mBox.y + box.mVelocity.y + box.mBox.h),
-			1.0f
-		};
-	}
-	bool rect3D_vs_rect3D(const Rect3D&a, const Rect3D& b) {
-		return (
-			a.xmin < b.xmax && a.xmax > b.xmin &&
-			a.ymin < b.ymax && a.ymax > b.ymin &&
-			a.zmin < b.zmax && a.zmax > b.zmin
-			);
-	}
-	bool swept_rect3D(TransformF& box1, TransformF& box2) {
-
-		Rect3D b1 = make_swept_box(box1);
-		Rect3D b2 = make_swept_box(box2);
-
-
-		if (rect3D_vs_rect3D(b1, b2)) {
-			return true;
-			//collision?
-		}
-		return false;
-	}	
-
-
-
 	template <typename T, typename U>
 	constexpr bool rect_vs_rect(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
 		return(
@@ -128,14 +88,7 @@ namespace badEngine {
 			(b1.y + b1.h) > b2.y)
 			);
 	}
-	rectF make_broad_phase_box(const TransformF& box) {
-		return rectF(
-			(box.mVelocity.x > 0) ? box.mBox.x : box.mBox.x + box.mVelocity.x,
-			(box.mVelocity.y > 0) ? box.mBox.y : box.mBox.y + box.mVelocity.y,
-			(box.mVelocity.x > 0) ? box.mVelocity.x + box.mBox.w : box.mBox.w - box.mVelocity.x,
-			(box.mVelocity.y > 0) ? box.mVelocity.y + box.mBox.h : box.mBox.h - box.mVelocity.y
-		);
-	}
+
 	bool ray_vs_rect(
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
@@ -173,28 +126,39 @@ namespace badEngine {
 		if (hitFar < 0.0f)
 			return false;
 
-		////OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho
-		//if (contactPoint)
-		//	*contactPoint = (rayVector * hitFar) + rayOrigin;
+		/*
+		* NOT REQUIRED FOR NOW
+		//set the point where contact was made, idk what to do with it, can remove later tho
+		if (contactPoint)
+			*contactPoint = (rayVector * hitFar) + rayOrigin;
 		
 		//get normalized Sign value
-		//if (contactNormal)
-		//	contactNormal = sign_vector(rayVector);
+		if (contactNormal)
+			contactNormal = sign_vector(rayVector);
+		*/
 
 		return true;
 	}
-	bool do_swept_collision(TransformF& box1, TransformF& box2, vec2f& contactNormal, float& contactTime) {
+	bool do_swept_collision(
+		const TransformF& a,
+		const TransformF& b,
+		float& contactTime,
+		vec2f& contactNormal)noexcept
+	{
+		auto relativeVelocity = a.mVelocity - b.mVelocity;
+		//no movement
+		if (relativeVelocity.x == 0 && relativeVelocity.y == 0) return false;
 
-		rectF broadPhaseBox = make_broad_phase_box(box2);
+		rectF expandedTarget = rectF(
+			b.mBox.x - (a.mBox.w * 0.5f),
+			b.mBox.y - (a.mBox.h * 0.5f),
+			b.mBox.w + a.mBox.w,
+			b.mBox.h + a.mBox.h
+		);
 
-		if (rect_vs_rect(box1.mBox, broadPhaseBox)) {
-			printf("yey2\n");
-			vec2f relativeVelocity = box1.mVelocity - box2.mVelocity;
 
-			if (ray_vs_rect(box1.mBox.get_center_point(), relativeVelocity, box2.mBox, contactTime, contactNormal)) {
-				printf("yey3\n");
-				return (contactTime >= 0.0f && contactTime < 1.0f);
-			}
+		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
+			return (contactTime >= 0.0f && contactTime < 1.0f);
 		}
 		return false;
 	}

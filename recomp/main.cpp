@@ -54,10 +54,15 @@ int main() {
         mRects.element_assign(TransformF(rect, vel));
     }
 
-    TransformF tester1(rectF(0,100,64,64), vec2f(999,0));
-    TransformF tester2(rectF(900,100,64,64),vec2f(-999,0));
+    TransformF tester1(rectF(0,100,64,64), vec2f(10,0));
+    TransformF tester2(rectF(900,100,64,64),vec2f(-10,0));
     Color tester1Col = Colors::Magenta;
     Color tester2Col = Colors::Blue;
+
+    TransformF tester3(rectF(0, 300, 64, 64), vec2f(999, 0));
+    TransformF tester4(rectF(900, 300, 64, 64), vec2f(-999, 0));
+    Color tester3Col = Colors::Gray;
+    Color tester4Col = Colors::Red;
 
 
     ////#################################################################################
@@ -93,57 +98,57 @@ int main() {
         hold += dt;
         if (hold >= 0.008f) {
 
-
-           //rectF broadBox = make_broad_phase_box(tester1);
-           //rectF broadBox2 = make_broad_phase_box(tester2);
-           //
-           //if (rect_vs_rect(broadBox, broadBox2)) {
-           //
-           //    vec2f contactNormal;
-           //    float contactTime = another_swept_check(tester1, tester2, contactNormal);
-           //    
-           //    tester1.mBox.x += tester1.mVelocity.x * contactTime;
-           //    tester1.mBox.y += tester1.mVelocity.y * contactTime;
-           //
-           //    float remainder = 1.0f - contactTime;
-           //
-           //    tester2.mBox.x += tester2.mVelocity.x * remainder;
-           //    tester2.mBox.y += tester2.mVelocity.y * remainder;
-           //    
-           //    tester1.mVelocity = vec2f(0, 0);
-           //    tester2.mVelocity = vec2f(0, 0);
-           //}
-           //else {
-           //    tester1.mBox.x += tester1.mVelocity.x;
-           //    tester1.mBox.y += tester1.mVelocity.y;
-           //
-           //    tester2.mBox.x += tester2.mVelocity.x;
-           //    tester2.mBox.y += tester2.mVelocity.y;
-           //}
-
-            float contactTime = 1.0f;
-            vec2f contactNormal;
+            float contactTime1 = 1.0f;
+            vec2f contactNormal1;
            
      
-            if (do_swept_collision(tester1, tester2, contactNormal, contactTime)) {
+            if (do_swept_collision(tester1, tester2, contactTime1, contactNormal1)) {
                 printf("yey\n");
               
-                tester1.mBox.x += (tester1.mVelocity.x * contactTime);
-                tester1.mBox.y += (tester1.mVelocity.y * contactTime);
+                tester1.mBox.x += (tester1.mVelocity.x * contactTime1);
+                tester1.mBox.y += (tester1.mVelocity.y * contactTime1);
 
-                float remainder = 1.0f - contactTime;
-               
-                tester2.mBox.x += (tester2.mVelocity.x * remainder);
-                tester2.mBox.y += (tester2.mVelocity.y * remainder);
+                tester2.mBox.x += (tester2.mVelocity.x * contactTime1);
+                tester2.mBox.y += (tester2.mVelocity.y * contactTime1);
               
                 tester1.mVelocity = vec2f(0, 0);
                 tester2.mVelocity = vec2f(0, 0);
             }
+            else {
+                tester1.mBox.x += (tester1.mVelocity.x);
+                tester1.mBox.y += (tester1.mVelocity.y);
+                
+                tester2.mBox.x += (tester2.mVelocity.x);
+                tester2.mBox.y += (tester2.mVelocity.y);
+            }
+            float contactTime2 = 1.0f;
+            vec2f contactNormal2;
+
+
+            if (do_swept_collision(tester3, tester4, contactTime2, contactNormal2)) {
+                printf("yey\n");
+
+                tester3.mBox.x += (tester3.mVelocity.x * contactTime2);
+                tester3.mBox.y += (tester3.mVelocity.y * contactTime2);
+
+                tester4.mBox.x += (tester4.mVelocity.x * contactTime2);
+                tester4.mBox.y += (tester4.mVelocity.y * contactTime2);
+
+                tester3.mVelocity = vec2f(0, 0);
+                tester4.mVelocity = vec2f(0, 0);
+            }
+            else {
+                tester3.mBox.x += (tester3.mVelocity.x);
+                tester3.mBox.y += (tester3.mVelocity.y);
+
+                tester4.mBox.x += (tester4.mVelocity.x);
+                tester4.mBox.y += (tester4.mVelocity.y);
+            }
+
+
+
            
-            tester1.mBox.x += (tester1.mVelocity.x*contactTime);
-            tester1.mBox.y += (tester1.mVelocity.y*contactTime);
-            tester2.mBox.x += (tester2.mVelocity.x*contactTime);
-            tester2.mBox.y += (tester2.mVelocity.y*contactTime);
+
 
            //world wall collision
            // for (int i = 0; i < 10;i++) {
@@ -179,6 +184,14 @@ int main() {
         SDL_SetRenderDrawColor(sysManager.get_renderer(), tester2Col.get_red(), tester2Col.get_green(), tester2Col.get_blue(), tester2Col.get_alpha());
         SDL_FRect box2 = rectF_to_SDL_FRect(tester2.mBox);
         SDL_RenderFillRect(sysManager.get_renderer(), &box2);
+
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester3Col.get_red(), tester3Col.get_green(), tester3Col.get_blue(), tester3Col.get_alpha());
+        SDL_FRect box3 = rectF_to_SDL_FRect(tester3.mBox);
+        SDL_RenderFillRect(sysManager.get_renderer(), &box3);
+
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester4Col.get_red(), tester4Col.get_green(), tester4Col.get_blue(), tester4Col.get_alpha());
+        SDL_FRect box4 = rectF_to_SDL_FRect(tester4.mBox);
+        SDL_RenderFillRect(sysManager.get_renderer(), &box4);
 
         for (int i = 0; i < 10;i++) {
 
