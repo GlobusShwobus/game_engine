@@ -156,10 +156,32 @@ namespace badEngine {
 			b.mBox.h + a.mBox.h
 		);
 
-
 		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
 			return (contactTime >= 0.0f && contactTime < 1.0f);
 		}
 		return false;
 	}
+
+	void do_if_edge_collision(const rectI&edge, TransformF& box) {
+		auto& rect = box.mBox;
+		auto& vel = box.mVelocity;
+
+		if (rect.x < edge.x) {
+			rect.x = 0;
+			vel.x *= -1;
+		}
+		if (rect.y < edge.y) {
+			rect.y = 0;
+			vel.y *= -1;
+		}
+		if (rect.x + rect.w > edge.x + edge.w) {
+			rect.x = 960 - rect.w;
+			vel.x *= -1;
+		}
+		if (rect.y + rect.h > edge.y + edge.h) {
+			rect.y = 540 - rect.h;
+			vel.y *= -1;
+		}
+	}
+
 }

@@ -111,8 +111,8 @@ int main() {
                 tester2.mBox.x += (tester2.mVelocity.x * contactTime1);
                 tester2.mBox.y += (tester2.mVelocity.y * contactTime1);
               
-                tester1.mVelocity = vec2f(0, 0);
-                tester2.mVelocity = vec2f(0, 0);
+                tester1.mVelocity *= -1;
+                tester2.mVelocity *= -1;
             }
             else {
                 tester1.mBox.x += (tester1.mVelocity.x);
@@ -134,8 +134,8 @@ int main() {
                 tester4.mBox.x += (tester4.mVelocity.x * contactTime2);
                 tester4.mBox.y += (tester4.mVelocity.y * contactTime2);
 
-                tester3.mVelocity = vec2f(0, 0);
-                tester4.mVelocity = vec2f(0, 0);
+                tester3.mVelocity *= -1;
+                tester4.mVelocity *= -1;
             }
             else {
                 tester3.mBox.x += (tester3.mVelocity.x);
@@ -146,33 +146,11 @@ int main() {
             }
 
 
-
-           
-
-
-           //world wall collision
-           // for (int i = 0; i < 10;i++) {
-           //
-           //     auto& rect = mRects[i].mBox;
-           //     auto& vel = mRects[i].mVelocity;
-           //
-           //     if (rect.x < 0) {
-           //         rect.x = 0;
-           //         vel.x *= -1;
-           //     }
-           //     if (rect.y < 0) {
-           //         rect.y = 0;
-           //         vel.y *= -1;
-           //     }
-           //     if (rect.x + rect.w > 960) {
-           //         rect.x = 960 - rect.w;
-           //         vel.x *= -1;
-           //     }
-           //     if (rect.y + rect.h > 540) {
-           //         rect.y = 540 - rect.h;
-           //         vel.y *= -1;
-           //     }
-           // }
+            rectI edge(0, 0, 960, 540);
+            do_if_edge_collision(edge, tester1);
+            do_if_edge_collision(edge, tester2);
+            do_if_edge_collision(edge, tester3);
+            do_if_edge_collision(edge, tester4);
             hold = 0;
         }
 
