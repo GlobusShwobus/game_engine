@@ -54,8 +54,8 @@ int main() {
         mRects.element_assign(TransformF(rect, vel));
     }
 
-    TransformF tester1(rectF(0,100,64,64), vec2f(10,0));
-    TransformF tester2(rectF(900,100,64,64),vec2f(-10,0));
+    TransformF tester1(rectF(0,100,64,64), vec2f(999,0));
+    TransformF tester2(rectF(900,100,64,64),vec2f(-999,0));
     Color tester1Col = Colors::Magenta;
     Color tester2Col = Colors::Blue;
 
@@ -94,20 +94,50 @@ int main() {
         if (hold >= 0.008f) {
 
 
-            float contactTime = 1.0f;
-            vec2f contactNormal;
+           //rectF broadBox = make_broad_phase_box(tester1);
+           //rectF broadBox2 = make_broad_phase_box(tester2);
+           //
+           //if (rect_vs_rect(broadBox, broadBox2)) {
+           //
+           //    vec2f contactNormal;
+           //    float contactTime = another_swept_check(tester1, tester2, contactNormal);
+           //    
+           //    tester1.mBox.x += tester1.mVelocity.x * contactTime;
+           //    tester1.mBox.y += tester1.mVelocity.y * contactTime;
+           //
+           //    float remainder = 1.0f - contactTime;
+           //
+           //    tester2.mBox.x += tester2.mVelocity.x * remainder;
+           //    tester2.mBox.y += tester2.mVelocity.y * remainder;
+           //    
+           //    tester1.mVelocity = vec2f(0, 0);
+           //    tester2.mVelocity = vec2f(0, 0);
+           //}
+           //else {
+           //    tester1.mBox.x += tester1.mVelocity.x;
+           //    tester1.mBox.y += tester1.mVelocity.y;
+           //
+           //    tester2.mBox.x += tester2.mVelocity.x;
+           //    tester2.mBox.y += tester2.mVelocity.y;
+           //}
 
-            if (do_swept_collision(tester1, tester2, contactNormal, contactTime)) {
-                printf("yey\n");
-                tester1.mVelocity = vec2f(0, 0);
-                tester2.mVelocity = vec2f(0, 0);
-            }
-
-
-            tester1.mBox.x += (tester1.mVelocity.x*contactTime);
-            tester1.mBox.y += (tester1.mVelocity.y*contactTime);
-            tester2.mBox.x += (tester2.mVelocity.x*contactTime);
-            tester2.mBox.y += (tester2.mVelocity.y*contactTime);
+           // float contactTime = 1.0f;
+           // vec2f contactNormal;
+           //
+           //
+           //
+           //
+           // if (do_swept_collision(tester1, tester2, contactNormal, contactTime)) {
+           //     printf("yey\n");
+           //     tester1.mVelocity = vec2f(0, 0);
+           //     tester2.mVelocity = vec2f(0, 0);
+           // }
+           //
+           //
+           // tester1.mBox.x += (tester1.mVelocity.x*contactTime);
+           // tester1.mBox.y += (tester1.mVelocity.y*contactTime);
+           // tester2.mBox.x += (tester2.mVelocity.x*contactTime);
+           // tester2.mBox.y += (tester2.mVelocity.y*contactTime);
 
            //world wall collision
            // for (int i = 0; i < 10;i++) {

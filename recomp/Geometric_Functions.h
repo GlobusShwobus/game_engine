@@ -186,6 +186,95 @@ namespace badEngine {
 		// considered a hit, the resolver wont change anything.
 		return true;
 	}
+	float another_swept_check(TransformF& box1, TransformF& box2, vec2f& normal) {
+		float xInvEntry, yInvEntry;
+		float xInvExit, yInvExit;
+
+		auto& b1 = box1.mBox;
+		auto& b2 = box2.mBox;
+		// find the distance between the objects on the near and far sides for both x and y 
+		if (box1.mVelocity.x > 0.0f)
+		{
+			xInvEntry = b2.x - (b1.x + b1.w);
+			xInvExit = (b2.x + b2.w) - b1.x;
+		}
+		else
+		{
+			xInvEntry = (b2.x + b2.w) - b1.x;
+			xInvExit = b2.x - (b1.x + b1.w);
+		}
+
+		if (box1.mVelocity.y > 0.0f)
+		{
+			yInvEntry = b2.y - (b1.y + b1.h);
+			yInvExit = (b2.y + b2.h) - b1.y;
+		}
+		else
+		{
+			yInvEntry = (b2.y + b2.h) - b1.y;
+			yInvExit = b2.y - (b1.y + b1.h);
+		}
+		// find time of collision and time of leaving for each axis (if statement is to prevent divide by zero) 
+		float xEntry, yEntry;
+		float xExit, yExit;
+
+		if (box1.mVelocity.x == 0.0f)
+		{
+			xEntry = -std::numeric_limits<float>::infinity();
+			xExit = std::numeric_limits<float>::infinity();
+		}
+		else
+		{
+			xEntry = xInvEntry / box1.mVelocity.x;
+			xExit = xInvExit / box1.mVelocity.x;
+		}
+
+		if (box1.mVelocity.y == 0.0f)
+		{
+			yEntry = -std::numeric_limits<float>::infinity();
+			yExit = std::numeric_limits<float>::infinity();
+		}
+		else
+		{
+			yEntry = yInvEntry / box1.mVelocity.y;
+			yExit = yInvExit / box1.mVelocity.y;
+		}
+		// find the earliest/latest times of collisionfloat 
+		float entryTime = std::max(xEntry, yEntry);
+		float exitTime = std::min(xExit, yExit);
+		if (entryTime > exitTime || xEntry < 0.0f && yEntry < 0.0f || xEntry > 1.0f || yEntry > 1.0f)
+		{
+			normal = vec2f(0, 0);
+			return 1.0f;
+		}
+		else // if there was a collision 
+		{
+			// calculate normal of collided surface
+			if (xEntry > yEntry)
+			{
+				if (xInvEntry < 0.0f)
+				{
+					normal = vec2f(1, 0);
+				}
+				else
+				{
+					normal = vec2f(-1, 0);
+				}
+			}
+			else
+			{
+				if (yInvEntry < 0.0f)
+				{
+					normal = vec2f(0, 1);
+				}
+				else
+				{
+					normal = vec2f(0, -1);
+				}
+			} // return the time of collisionreturn entryTime; 
+		}
+		return entryTime;
+	}
 	bool do_swept_collision(TransformF& box1, TransformF& box2, vec2f& contactNormal, float& contactTime) {
 
 		rectF broadPhaseBox = make_broad_phase_box(box2);
@@ -201,8 +290,4 @@ namespace badEngine {
 		}
 		return false;
 	}
-
-
-
-
 }
