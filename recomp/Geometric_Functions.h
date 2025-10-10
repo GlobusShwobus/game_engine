@@ -136,155 +136,63 @@ namespace badEngine {
 			(box.mVelocity.y > 0) ? box.mVelocity.y + box.mBox.h : box.mBox.h - box.mVelocity.y
 		);
 	}
-	bool ray_vs_rect(const vec2f ray_origin, const vec2f ray_dir, const rectF& target, vec2f& contactNormal, float& contactTime) {
-		// Cache division
-		vec2f invdir = 1.0f / ray_dir;
-
-		// Calculate intersections with rectangle bounding axes
-		vec2f t_near = vec2f(
-			(target.x - ray_origin.x) * invdir.x,
-			(target.y - ray_origin.y) * invdir.y
+	bool ray_vs_rect(
+		const vec2f& rayOrigin,
+		const vec2f& rayVector,
+		const rectF& target,
+		float& contactTime,
+		vec2f& contactNormal) noexcept
+	{
+		auto reciprocal = reciprocal_vector(rayVector);
+		
+		vec2d tNear = vec2d(
+			(target.x - rayOrigin.x) * reciprocal.x,
+			(target.y - rayOrigin.y) * reciprocal.y
 		);
-		vec2f t_far = vec2f(
-			(target.x + target.w - ray_origin.x) * invdir.x,
-			(target.y + target.h - ray_origin.y) * invdir.y
+		vec2d tFar = vec2d(
+			(target.x + target.w - rayOrigin.x) * reciprocal.x,
+			(target.y + target.h - rayOrigin.y) * reciprocal.y
 		);
 
-		if (std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
-		if (std::isnan(t_near.y) || std::isnan(t_near.x)) return false;
+		//broken float value (division by 0 probably)
+		if (
+			std::isnan(tNear.x) ||
+			std::isnan(tNear.y) ||
+			std::isnan(tFar.x) ||
+			std::isnan(tFar.y)) return false;
+		//order
+		if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
+		if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
+		//if no hit == false
+		if (tNear.x > tFar.y || tNear.y > tFar.x)
+			return false;
+		contactTime = std::max(tNear.x, tNear.y);
+		float hitFar = std::min(tFar.x, tFar.y);
 
-		// Sort distances
-		if (t_near.x > t_far.x) std::swap(t_near.x, t_far.x);
-		if (t_near.y > t_far.y) std::swap(t_near.y, t_far.y);
-
-		// Early rejection		
-		if (t_near.x > t_far.y || t_near.y > t_far.x) return false;
-
-		// Closest 'time' will be the first contact
-		contactTime = std::max(t_near.x, t_near.y);
-
-		// Furthest 'time' is contact on opposite side of target
-		float t_hit_far = std::min(t_far.x, t_far.y);
-
-		// Reject if ray direction is pointing away from object
-		if (t_hit_far < 0)
+		//if hit but opposite direction, then no actual hit, just on same line
+		if (hitFar < 0.0f)
 			return false;
 
-		if (t_near.x > t_near.y)
-			if (invdir.x < 0)
-				contactNormal = { 1, 0 };
-			else
-				contactNormal = { -1, 0 };
-		else if (t_near.x < t_near.y)
-			if (invdir.y < 0)
-				contactNormal = { 0, 1 };
-			else
-				contactNormal = { 0, -1 };
+		////OPTIONAL: set the point where contact was made, idk what to do with it, can remove later tho
+		//if (contactPoint)
+		//	*contactPoint = (rayVector * hitFar) + rayOrigin;
+		
+		//get normalized Sign value
+		//if (contactNormal)
+		//	contactNormal = sign_vector(rayVector);
 
-		// Note if t_near == t_far, collision is principly in a diagonal
-		// so pointless to resolve. By returning a CN={0,0} even though its
-		// considered a hit, the resolver wont change anything.
 		return true;
-	}
-	float another_swept_check(TransformF& box1, TransformF& box2, vec2f& normal) {
-		float xInvEntry, yInvEntry;
-		float xInvExit, yInvExit;
-
-		auto& b1 = box1.mBox;
-		auto& b2 = box2.mBox;
-		// find the distance between the objects on the near and far sides for both x and y 
-		if (box1.mVelocity.x > 0.0f)
-		{
-			xInvEntry = b2.x - (b1.x + b1.w);
-			xInvExit = (b2.x + b2.w) - b1.x;
-		}
-		else
-		{
-			xInvEntry = (b2.x + b2.w) - b1.x;
-			xInvExit = b2.x - (b1.x + b1.w);
-		}
-
-		if (box1.mVelocity.y > 0.0f)
-		{
-			yInvEntry = b2.y - (b1.y + b1.h);
-			yInvExit = (b2.y + b2.h) - b1.y;
-		}
-		else
-		{
-			yInvEntry = (b2.y + b2.h) - b1.y;
-			yInvExit = b2.y - (b1.y + b1.h);
-		}
-		// find time of collision and time of leaving for each axis (if statement is to prevent divide by zero) 
-		float xEntry, yEntry;
-		float xExit, yExit;
-
-		if (box1.mVelocity.x == 0.0f)
-		{
-			xEntry = -std::numeric_limits<float>::infinity();
-			xExit = std::numeric_limits<float>::infinity();
-		}
-		else
-		{
-			xEntry = xInvEntry / box1.mVelocity.x;
-			xExit = xInvExit / box1.mVelocity.x;
-		}
-
-		if (box1.mVelocity.y == 0.0f)
-		{
-			yEntry = -std::numeric_limits<float>::infinity();
-			yExit = std::numeric_limits<float>::infinity();
-		}
-		else
-		{
-			yEntry = yInvEntry / box1.mVelocity.y;
-			yExit = yInvExit / box1.mVelocity.y;
-		}
-		// find the earliest/latest times of collisionfloat 
-		float entryTime = std::max(xEntry, yEntry);
-		float exitTime = std::min(xExit, yExit);
-		if (entryTime > exitTime || xEntry < 0.0f && yEntry < 0.0f || xEntry > 1.0f || yEntry > 1.0f)
-		{
-			normal = vec2f(0, 0);
-			return 1.0f;
-		}
-		else // if there was a collision 
-		{
-			// calculate normal of collided surface
-			if (xEntry > yEntry)
-			{
-				if (xInvEntry < 0.0f)
-				{
-					normal = vec2f(1, 0);
-				}
-				else
-				{
-					normal = vec2f(-1, 0);
-				}
-			}
-			else
-			{
-				if (yInvEntry < 0.0f)
-				{
-					normal = vec2f(0, 1);
-				}
-				else
-				{
-					normal = vec2f(0, -1);
-				}
-			} // return the time of collisionreturn entryTime; 
-		}
-		return entryTime;
 	}
 	bool do_swept_collision(TransformF& box1, TransformF& box2, vec2f& contactNormal, float& contactTime) {
 
 		rectF broadPhaseBox = make_broad_phase_box(box2);
 
 		if (rect_vs_rect(box1.mBox, broadPhaseBox)) {
-
+			printf("yey2\n");
 			vec2f relativeVelocity = box1.mVelocity - box2.mVelocity;
 
-			if (ray_vs_rect(box1.mBox.get_center_point(), relativeVelocity, box2.mBox, contactNormal, contactTime)) {
-
+			if (ray_vs_rect(box1.mBox.get_center_point(), relativeVelocity, box2.mBox, contactTime, contactNormal)) {
+				printf("yey3\n");
 				return (contactTime >= 0.0f && contactTime < 1.0f);
 			}
 		}

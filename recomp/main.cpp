@@ -121,23 +121,29 @@ int main() {
            //    tester2.mBox.y += tester2.mVelocity.y;
            //}
 
-           // float contactTime = 1.0f;
-           // vec2f contactNormal;
-           //
-           //
-           //
-           //
-           // if (do_swept_collision(tester1, tester2, contactNormal, contactTime)) {
-           //     printf("yey\n");
-           //     tester1.mVelocity = vec2f(0, 0);
-           //     tester2.mVelocity = vec2f(0, 0);
-           // }
-           //
-           //
-           // tester1.mBox.x += (tester1.mVelocity.x*contactTime);
-           // tester1.mBox.y += (tester1.mVelocity.y*contactTime);
-           // tester2.mBox.x += (tester2.mVelocity.x*contactTime);
-           // tester2.mBox.y += (tester2.mVelocity.y*contactTime);
+            float contactTime = 1.0f;
+            vec2f contactNormal;
+           
+     
+            if (do_swept_collision(tester1, tester2, contactNormal, contactTime)) {
+                printf("yey\n");
+              
+                tester1.mBox.x += (tester1.mVelocity.x * contactTime);
+                tester1.mBox.y += (tester1.mVelocity.y * contactTime);
+
+                float remainder = 1.0f - contactTime;
+               
+                tester2.mBox.x += (tester2.mVelocity.x * remainder);
+                tester2.mBox.y += (tester2.mVelocity.y * remainder);
+              
+                tester1.mVelocity = vec2f(0, 0);
+                tester2.mVelocity = vec2f(0, 0);
+            }
+           
+            tester1.mBox.x += (tester1.mVelocity.x*contactTime);
+            tester1.mBox.y += (tester1.mVelocity.y*contactTime);
+            tester2.mBox.x += (tester2.mVelocity.x*contactTime);
+            tester2.mBox.y += (tester2.mVelocity.y*contactTime);
 
            //world wall collision
            // for (int i = 0; i < 10;i++) {
