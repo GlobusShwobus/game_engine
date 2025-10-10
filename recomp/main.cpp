@@ -54,6 +54,12 @@ int main() {
         mRects.element_assign(TransformF(rect, vel));
     }
 
+    TransformF tester1(rectF(0,100,64,64), vec2f(10,0));
+    TransformF tester2(rectF(900,100,64,64),vec2f(-10,0));
+    Color tester1Col = Colors::Magenta;
+    Color tester2Col = Colors::Blue;
+
+
     ////#################################################################################
 
     //main loop
@@ -88,45 +94,63 @@ int main() {
         if (hold >= 0.008f) {
 
 
-            
-            for (int i = 0; i < 10;i++) {
+            float contactTime = 1.0f;
+            vec2f contactNormal;
 
-                auto& rect = mRects[i].mBox;
-                auto& vel = mRects[i].mVelocity;
-
-                if (rect.x < 0) {
-                    rect.x = 0;
-                    vel.x *= -1;
-                }
-                if (rect.y < 0) {
-                    rect.y = 0;
-                    vel.y *= -1;
-                }
-                if (rect.x + rect.w > 960) {
-                    rect.x = 960 - rect.w;
-                    vel.x *= -1;
-                }
-                if (rect.y + rect.h > 540) {
-                    rect.y = 540 - rect.h;
-                    vel.y *= -1;
-                }
+            if (do_swept_collision(tester1, tester2, contactNormal, contactTime)) {
+                printf("yey\n");
+                tester1.mVelocity = vec2f(0, 0);
+                tester2.mVelocity = vec2f(0, 0);
             }
 
-            //FINAL STEP IS TO MOVE, ANY OTHER ISSUES GET RESOLVED NEXT FRAME
-            for (int i = 0; i < 10; i++) {
-                auto& rect = mRects[i].mBox;
-                auto& vel = mRects[i].mVelocity;
-            }
 
+            tester1.mBox.x += (tester1.mVelocity.x*contactTime);
+            tester1.mBox.y += (tester1.mVelocity.y*contactTime);
+            tester2.mBox.x += (tester2.mVelocity.x*contactTime);
+            tester2.mBox.y += (tester2.mVelocity.y*contactTime);
+
+           //world wall collision
+           // for (int i = 0; i < 10;i++) {
+           //
+           //     auto& rect = mRects[i].mBox;
+           //     auto& vel = mRects[i].mVelocity;
+           //
+           //     if (rect.x < 0) {
+           //         rect.x = 0;
+           //         vel.x *= -1;
+           //     }
+           //     if (rect.y < 0) {
+           //         rect.y = 0;
+           //         vel.y *= -1;
+           //     }
+           //     if (rect.x + rect.w > 960) {
+           //         rect.x = 960 - rect.w;
+           //         vel.x *= -1;
+           //     }
+           //     if (rect.y + rect.h > 540) {
+           //         rect.y = 540 - rect.h;
+           //         vel.y *= -1;
+           //     }
+           // }
             hold = 0;
         }
 
         //just coloring in
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester1Col.get_red(), tester1Col.get_green(), tester1Col.get_blue(), tester1Col.get_alpha());
+        SDL_FRect box1 = rectF_to_SDL_FRect(tester1.mBox);
+        SDL_RenderFillRect(sysManager.get_renderer(), &box1);
+
+        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester2Col.get_red(), tester2Col.get_green(), tester2Col.get_blue(), tester2Col.get_alpha());
+        SDL_FRect box2 = rectF_to_SDL_FRect(tester2.mBox);
+        SDL_RenderFillRect(sysManager.get_renderer(), &box2);
+
         for (int i = 0; i < 10;i++) {
-            Color color = mColors[i];
-            SDL_SetRenderDrawColor(sysManager.get_renderer(),color.get_red(), color.get_green(),color.get_blue(), color.get_alpha());
-            SDL_FRect box = rectF_to_SDL_FRect(mRects[i].mBox);
-            SDL_RenderFillRect(sysManager.get_renderer(), &box);
+
+
+            //Color color = mColors[i];
+            //SDL_SetRenderDrawColor(sysManager.get_renderer(),color.get_red(), color.get_green(),color.get_blue(), color.get_alpha());
+            //SDL_FRect box = rectF_to_SDL_FRect(mRects[i].mBox);
+            //SDL_RenderFillRect(sysManager.get_renderer(), &box);
         }
 
         //#################################################################################
