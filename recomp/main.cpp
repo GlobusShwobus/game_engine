@@ -129,8 +129,8 @@ int main() {
                         mRects[co.first].set_current_velocity(mRects[co.first].mVelocity * time);
                         mRects[i].set_current_velocity(mRects[i].mVelocity * time);
 
-                        mRects[co.first].set_velocity(mRects[co.first].mVelocity *= -1);
-                        mRects[i].set_velocity(mRects[i].mVelocity *= -1);
+                        mRects[co.first].mVelocity *= -1;
+                        mRects[i].mVelocity *= -1;
 
                     }
 
@@ -154,10 +154,6 @@ int main() {
                     //mRects[i].mVelocity *= -1;
                 }
             }
-            // rectI edge(0, 0, 960, 540);
-            // for (int i = 0; i < 10; i++) {
-            //     do_if_edge_collision(edge, mRects[i]);
-            // }
             hold = 0;
         }
 
