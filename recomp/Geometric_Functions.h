@@ -99,6 +99,35 @@ namespace badEngine {
 			);
 	}
 
+
+
+
+
+
+	template<typename T, typename U>
+	constexpr rectF get_swept_expanded_target(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
+		return rectF(
+			b2.x - (b1.w * 0.5f),
+			b2.y - (b1.h * 0.5f),
+			b2.w + b1.w,
+			b2.h + b1.h
+		);
+	}
+	vec2f get_swept_result_normal(const vec2f& entryTime, const vec2f& reciprocal) {
+		vec2f normal;
+		if (entryTime.x > entryTime.y)
+			if (reciprocal.x < 0)
+				normal = { 1, 0 };
+			else
+				normal = { -1, 0 };
+		else if (entryTime.x < entryTime.y)
+			if (reciprocal.y < 0)
+				normal = { 0, 1 };
+			else
+				normal = { 0, -1 };
+
+		return normal;
+	}
 	bool ray_vs_rect(
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
@@ -141,12 +170,13 @@ namespace badEngine {
 		if (contactPoint)
 			*contactPoint = (rayVector * hitFar) + rayOrigin;
 		*/
-		//the fuggin normal
+
+		//get normal
+		contactNormal = get_swept_result_normal(tNear, reciprocal);
 
 		return true;
 	}
-
-	bool AABB_swept_dynamic_collision(
+	bool do_swept_collision(
 		const TransformF& a,
 		const TransformF& b,
 		float& contactTime,
@@ -158,32 +188,37 @@ namespace badEngine {
 
 		rectF expandedTarget = get_swept_expanded_target(a.mBox, b.mBox);
 
-		if (AABB_swept(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
+		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
 			return (contactTime >= 0.0f && contactTime < 1.0f);
 		}
 		return false;
 	}
 
-	void do_if_edge_collision(const rectI&edge, TransformF& box) {
-		auto& rect = box.mBox;
-		auto& vel = box.mVelocity;
+	template <typename T, typename U>
+	constexpr bool contaier_vs_rect(const Rectangle<T>& bigBox, const Rectangle<U>& smallBox, vec2f& displacement)noexcept {
+		/*
+		WILL BE BUGGY IF CALLED WITH A SMALLER BOX AS FIRST PARAMETER, SHOULD NOT BE USED THAT WAY
+		*/
 
-		if (rect.x < edge.x) {
-			rect.x = 0;
-			vel.x *= -1;
-		} 
-		if (rect.y < edge.y) {
-			rect.y = 0;
-			vel.y *= -1;
+		bool isDisplacement = false;
+		if (smallBox.x < bigBox.x) {
+			displacement.x = bigBox.x - smallBox.x;
+			isDisplacement = true;
 		}
-		if (rect.x + rect.w > edge.x + edge.w) {
-			rect.x = 960 - rect.w;
-			vel.x *= -1;
+		else if (smallBox.x + smallBox.w > bigBox.x + bigBox.w) {
+			displacement.x = (bigBox.x + bigBox.w) - (smallBox.x + smallBox.w);
+			isDisplacement = true;
 		}
-		if (rect.y + rect.h > edge.y + edge.h) {
-			rect.y = 540 - rect.h;
-			vel.y *= -1;
+
+		if (smallBox.y < bigBox.y) {
+			displacement.y = bigBox.y - smallBox.y;
+			isDisplacement = true;
 		}
+		else if (smallBox.y + smallBox.h > bigBox.y + bigBox.h) {
+			displacement.y = (bigBox.y + bigBox.h) - (smallBox.y + smallBox.h);
+			isDisplacement = true;
+		}
+
+		return isDisplacement;
 	}
-
 }
