@@ -100,7 +100,7 @@ int main() {
                     float time;
 
                     //only say this index collided with something, currently the only thing that matters is who and time
-                    if (swept::AABB_swept_dynamic_collision(mRects[i], mRects[j], time, normal)) {
+                    if (AABB_swept_dynamic_collision(mRects[i], mRects[j], time, normal)) {
                         cols.element_create(i, time);
                     }
                 }
@@ -122,7 +122,7 @@ int main() {
                     vec2f normal;
                     float time;
 
-                    if (swept::AABB_swept_dynamic_collision(mRects[co.first], mRects[i], time, normal)) {
+                    if (AABB_swept_dynamic_collision(mRects[co.first], mRects[i], time, normal)) {
 
                         mRects[co.first].set_current_velocity(mRects[co.first].mVelocity* time);
                         mRects[i].set_current_velocity(mRects[i].mVelocity* time);

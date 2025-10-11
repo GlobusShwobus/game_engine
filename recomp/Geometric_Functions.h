@@ -8,6 +8,15 @@
 
 namespace badEngine {
 
+	template <typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
+	constexpr auto mValue_max(const T& x, const U& y)noexcept {
+		return (x < y) ? y : x;
+	}
+	template<typename T, typename U> requires IS_LESS_THAN_COMPARABLE<T, U>
+	constexpr auto mValue_min(const T& x, const U& y)noexcept {
+		return (x < y) ? x : y;
+	}
+
 	template<typename T>
 	constexpr Vec2M<T> abs_vector(const Vec2M<T>& vec)noexcept {
 		return Vec2M<T>(std::abs(vec.x), std::abs(vec.y));
@@ -84,9 +93,9 @@ namespace badEngine {
 	constexpr bool rect_vs_rect(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
 		return(
 			(b1.x < (b2.x + b2.w) &&
-			(b1.x + b1.w) > b2.x) &&
+				(b1.x + b1.w) > b2.x) &&
 			(b1.y < (b2.y + b2.h) &&
-			(b1.y + b1.h) > b2.y)
+				(b1.y + b1.h) > b2.y)
 			);
 	}
 
@@ -118,44 +127,95 @@ namespace badEngine {
 		return isDisplacement;
 	}
 
-	namespace swept {
+	template <typename T, typename U>
+	constexpr rectF get_swept_expanded_target(const Rectangle<T>& box, const Rectangle<U>& target)noexcept {
+		return rectF(
+			target.x - (box.w * 0.5f),
+			target.y - (box.h * 0.5f),
+			target.w + box.w,
+			target.h + box.h
+		);
+	}
+	constexpr vec2f get_swept_result_normal(const vec2f& entryHit, const vec2f& reciprocal)noexcept {
+		vec2f normal;
+		if (entryHit.x > entryHit.y)
+			if (reciprocal.x < 0)
+				normal = { 1, 0 };
+			else
+				normal = { -1, 0 };
+		else if (entryHit.x < entryHit.y)
+			if (reciprocal.y < 0)
+				normal = { 0, 1 };
+			else
+				normal = { 0, -1 };
+		return normal;
+	}
 
+	bool AABB_swept(
+		const vec2f& rayOrigin,
+		const vec2f& rayVector,
+		const rectF& target,
+		float& contactTime,
+		vec2f& contactNormal) noexcept
+	{
+		auto reciprocal = reciprocal_vector(rayVector);
 
-		bool AABB_swept(
-			const vec2f& rayOrigin,
-			const vec2f& rayVector,
-			const rectF& target,
-			float& contactTime,
-			vec2f& contactNormal) noexcept;
+		vec2d tNear = vec2d(
+			(target.x - rayOrigin.x) * reciprocal.x,
+			(target.y - rayOrigin.y) * reciprocal.y
+		);
+		vec2d tFar = vec2d(
+			(target.x + target.w - rayOrigin.x) * reciprocal.x,
+			(target.y + target.h - rayOrigin.y) * reciprocal.y
+		);
 
-		bool AABB_swept_dynamic_collision(
-			const TransformF& a,
-			const TransformF& b,
-			float& contactTime,
-			vec2f& contactNormal)noexcept;
+		//broken float value (division by 0 probably)
+		if (
+			std::isnan(tNear.x) ||
+			std::isnan(tNear.y) ||
+			std::isnan(tFar.x) ||
+			std::isnan(tFar.y)) return false;
+		//order
+		if (tNear.x > tFar.x) std::swap(tNear.x, tFar.x);
+		if (tNear.y > tFar.y) std::swap(tNear.y, tFar.y);
+		//if no hit == false
+		if (tNear.x > tFar.y || tNear.y > tFar.x)
+			return false;
+		contactTime = std::max(tNear.x, tNear.y);
+		float hitFar = std::min(tFar.x, tFar.y);
 
-		template <typename T, typename U>
-		constexpr rectF get_swept_expanded_target(const Rectangle<T>& box, const Rectangle<U>& target)noexcept {
-			return rectF(
-				target.x - (box.w * 0.5f),
-				target.y - (box.h * 0.5f),
-				target.w + box.w,
-				target.h + box.h
-			);
+		//if hit but opposite direction, then no actual hit, just on same line
+		if (hitFar < 0.0f)
+			return false;
+
+		/*
+		* NOT REQUIRED FOR NOW
+		//set the point where contact was made, idk what to do with it, can remove later tho
+		if (contactPoint)
+			*contactPoint = (rayVector * hitFar) + rayOrigin;
+		*/
+		//the fuggin normal
+
+		contactNormal = get_swept_result_normal(tNear, reciprocal);
+
+		return true;
+	}
+
+	bool AABB_swept_dynamic_collision(
+		const TransformF& a,
+		const TransformF& b,
+		float& contactTime,
+		vec2f& contactNormal)noexcept
+	{
+		auto relativeVelocity = a.mVelocity - b.mVelocity;
+		//no movement
+		if (relativeVelocity.x == 0 && relativeVelocity.y == 0) return false;
+
+		rectF expandedTarget = get_swept_expanded_target(a.mBox, b.mBox);
+
+		if (AABB_swept(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
+			return (contactTime >= 0.0f && contactTime < 1.0f);
 		}
-		constexpr vec2i get_swept_result_normal(const vec2f& entryHit, const vec2f& reciprocal)noexcept {
-			vec2i normal;
-			if (entryHit.x > entryHit.y)
-				if (reciprocal.x < 0)
-					normal = { 1, 0 };
-				else
-					normal = { -1, 0 };
-			else if (entryHit.x < entryHit.y)
-				if (reciprocal.y < 0)
-					normal = { 0, 1 };
-				else
-					normal = { 0, -1 };
-			return normal;
-		}
+		return false;
 	}
 }
