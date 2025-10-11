@@ -145,8 +145,19 @@ int main() {
             //do wall check
             rectI edge(0, 0, 960, 540);
             for (int i = 0; i < 10; i++) {
-                do_if_edge_collision(edge, mRects[i]);
+                vec2f output;
+                if (contaier_vs_rect(edge, mRects[i].mBox, output)) {
+                    mRects[i].mBox.x += output.x;
+                    mRects[i].mBox.y += output.y;
+                   
+                    //tester code
+                    //mRects[i].mVelocity *= -1;
+                }
             }
+          // rectI edge(0, 0, 960, 540);
+          // for (int i = 0; i < 10; i++) {
+          //     do_if_edge_collision(edge, mRects[i]);
+          // }
             hold = 0;
         }
 
