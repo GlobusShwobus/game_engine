@@ -94,15 +94,13 @@ int main() {
             SequenceM<std::pair<int , float>> cols;
 
             for (int i = 0; i < 10; i++) {
-                for (int j = 0; j < 10; j++) {
-
-                    if (i == j)continue;
+                for (int j = i + 1; j < 10; j++) {//j=i+1 BECAUSE A COLLIDES WITH B, THEN IT IS A WASTE TO CHECK IF B COLLIDES WITH A
 
                     vec2f normal;
                     float time;
 
                     //only say this index collided with something, currently the only thing that matters is who and time
-                    if (do_swept_collision(mRects[i], mRects[j], time, normal)) {
+                    if (swept::AABB_swept_dynamic_collision(mRects[i], mRects[j], time, normal)) {
                         cols.element_create(i, time);
                     }
                 }
@@ -124,11 +122,14 @@ int main() {
                     vec2f normal;
                     float time;
 
-                    if (do_swept_collision(mRects[co.first], mRects[i], time, normal)) {
+                    if (swept::AABB_swept_dynamic_collision(mRects[co.first], mRects[i], time, normal)) {
 
                         mRects[co.first].set_current_velocity(mRects[co.first].mVelocity* time);
                         mRects[i].set_current_velocity(mRects[i].mVelocity* time);
 
+                        /*
+                        THE FOLLOWING SHOULD ACTUALLY BE SOME SORT OF RESOLUTION LIKE DEFLECT/SLIDE/PUSH/ETC
+                        */
                         mRects[co.first].set_velocity(mRects[co.first].mVelocity *= -1);
                         mRects[i].set_velocity(mRects[i].mVelocity *= -1);
 
@@ -145,7 +146,11 @@ int main() {
             //do wall check
             rectI edge(0, 0, 960, 540);
             for (int i = 0; i < 10; i++) {
-                do_if_edge_collision(edge, mRects[i]);
+                vec2f output;
+                if (contaier_vs_rect(edge, mRects[i].mBox, output)) {
+                    mRects[i].mBox.x += output.x;
+                    mRects[i].mBox.y += output.y;
+                }
             }
             hold = 0;
         }

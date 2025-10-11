@@ -84,6 +84,9 @@
     <ClCompile Include="SystemManager.cpp">
       <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
+    <ClCompile Include="Geometric_Functions.cpp">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="SystemManagerConfig.json">

@@ -162,6 +162,7 @@
     <ClInclude Include="SystemManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Geometric_Functions.cpp" />
     <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SystemManager.cpp" />
