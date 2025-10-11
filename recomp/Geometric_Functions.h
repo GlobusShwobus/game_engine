@@ -99,59 +99,7 @@ namespace badEngine {
 			);
 	}
 
-	template <typename T, typename U>
-	constexpr bool contaier_vs_rect(const Rectangle<T>& bigBox, const Rectangle<U>& smallBox, vec2f& displacement)noexcept {
-		/*
-		WILL BE BUGGY IF CALLED WITH A SMALLER BOX AS FIRST PARAMETER, SHOULD NOT BE USED THAT WAY
-		*/
-
-		bool isDisplacement = false;
-		if (smallBox.x < bigBox.x) {
-			displacement.x = bigBox.x - smallBox.x;
-			isDisplacement = true;
-		}
-		else if (smallBox.x + smallBox.w > bigBox.x + bigBox.w) {
-			displacement.x = (bigBox.x + bigBox.w) - (smallBox.x + smallBox.w);
-			isDisplacement = true;
-		}
-
-		if (smallBox.y < bigBox.y) {
-			displacement.y = bigBox.y - smallBox.y;
-			isDisplacement = true;
-		}
-		else if (smallBox.y + smallBox.h > bigBox.y + bigBox.h) {
-			displacement.y = (bigBox.y + bigBox.h) - (smallBox.y + smallBox.h);
-			isDisplacement = true;
-		}
-
-		return isDisplacement;
-	}
-
-	template <typename T, typename U>
-	constexpr rectF get_swept_expanded_target(const Rectangle<T>& box, const Rectangle<U>& target)noexcept {
-		return rectF(
-			target.x - (box.w * 0.5f),
-			target.y - (box.h * 0.5f),
-			target.w + box.w,
-			target.h + box.h
-		);
-	}
-	constexpr vec2f get_swept_result_normal(const vec2f& entryHit, const vec2f& reciprocal)noexcept {
-		vec2f normal;
-		if (entryHit.x > entryHit.y)
-			if (reciprocal.x < 0)
-				normal = { 1, 0 };
-			else
-				normal = { -1, 0 };
-		else if (entryHit.x < entryHit.y)
-			if (reciprocal.y < 0)
-				normal = { 0, 1 };
-			else
-				normal = { 0, -1 };
-		return normal;
-	}
-
-	bool AABB_swept(
+	bool ray_vs_rect(
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
 		const rectF& target,
@@ -189,14 +137,11 @@ namespace badEngine {
 			return false;
 
 		/*
-		* NOT REQUIRED FOR NOW
 		//set the point where contact was made, idk what to do with it, can remove later tho
 		if (contactPoint)
 			*contactPoint = (rayVector * hitFar) + rayOrigin;
 		*/
 		//the fuggin normal
-
-		contactNormal = get_swept_result_normal(tNear, reciprocal);
 
 		return true;
 	}
@@ -218,4 +163,27 @@ namespace badEngine {
 		}
 		return false;
 	}
+
+	void do_if_edge_collision(const rectI&edge, TransformF& box) {
+		auto& rect = box.mBox;
+		auto& vel = box.mVelocity;
+
+		if (rect.x < edge.x) {
+			rect.x = 0;
+			vel.x *= -1;
+		}
+		if (rect.y < edge.y) {
+			rect.y = 0;
+			vel.y *= -1;
+		}
+		if (rect.x + rect.w > edge.x + edge.w) {
+			rect.x = 960 - rect.w;
+			vel.x *= -1;
+		}
+		if (rect.y + rect.h > edge.y + edge.h) {
+			rect.y = 540 - rect.h;
+			vel.y *= -1;
+		}
+	}
+
 }
