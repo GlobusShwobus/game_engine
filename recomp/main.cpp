@@ -54,17 +54,6 @@ int main() {
         mRects.element_assign(TransformF(rect, vel));
     }
 
-    TransformF tester1(rectF(0,100,64,64), vec2f(10,0));
-    TransformF tester2(rectF(900,100,64,64),vec2f(-10,0));
-    Color tester1Col = Colors::Magenta;
-    Color tester2Col = Colors::Blue;
-
-    TransformF tester3(rectF(0, 300, 64, 64), vec2f(999, 0));
-    TransformF tester4(rectF(900, 300, 64, 64), vec2f(-999, 0));
-    Color tester3Col = Colors::Gray;
-    Color tester4Col = Colors::Red;
-
-
     ////#################################################################################
 
     //main loop
@@ -97,87 +86,75 @@ int main() {
         static float hold = 0;
         hold += dt;
         if (hold >= 0.008f) {
-
-            float contactTime1 = 1.0f;
-            vec2f contactNormal1;
-           
-     
-            if (do_swept_collision(tester1, tester2, contactTime1, contactNormal1)) {
-                printf("yey\n");
-              
-                tester1.mBox.x += (tester1.mVelocity.x * contactTime1);
-                tester1.mBox.y += (tester1.mVelocity.y * contactTime1);
-
-                tester2.mBox.x += (tester2.mVelocity.x * contactTime1);
-                tester2.mBox.y += (tester2.mVelocity.y * contactTime1);
-              
-                tester1.mVelocity *= -1;
-                tester2.mVelocity *= -1;
+            //first current frame velocity to velocity
+            for (int i = 0; i < 10; i++) {
+                mRects[i].reset_velocity();
             }
-            else {
-                tester1.mBox.x += (tester1.mVelocity.x);
-                tester1.mBox.y += (tester1.mVelocity.y);
-                
-                tester2.mBox.x += (tester2.mVelocity.x);
-                tester2.mBox.y += (tester2.mVelocity.y);
+            //do braod phase check and store colliders
+            SequenceM<std::pair<int , float>> cols;
+
+            for (int i = 0; i < 10; i++) {
+                for (int j = 0; j < 10; j++) {
+
+                    if (i == j)continue;
+
+                    vec2f normal;
+                    float time;
+
+                    //only say this index collided with something, currently the only thing that matters is who and time
+                    if (do_swept_collision(mRects[i], mRects[j], time, normal)) {
+                        cols.element_create(i, time);
+                    }
+                }
             }
-            float contactTime2 = 1.0f;
-            vec2f contactNormal2;
+            //sort priority
+            std::sort(cols.begin(), cols.end(),
+                [](const std::pair<int, float>& a, const std::pair<int, float>& b){
+                    return a.second < b.second;
+                });
+            //do final collision based on priority and set velocity for both current frame and what to do next frame
+            for (const auto& co:cols) {
+            
+                for (int i = 0; i < 10;i++) {
 
+                    if (co.first == i) {
+                        continue;
+                    }
 
-            if (do_swept_collision(tester3, tester4, contactTime2, contactNormal2)) {
-                printf("yey\n");
+                    vec2f normal;
+                    float time;
 
-                tester3.mBox.x += (tester3.mVelocity.x * contactTime2);
-                tester3.mBox.y += (tester3.mVelocity.y * contactTime2);
+                    if (do_swept_collision(mRects[co.first], mRects[i], time, normal)) {
 
-                tester4.mBox.x += (tester4.mVelocity.x * contactTime2);
-                tester4.mBox.y += (tester4.mVelocity.y * contactTime2);
+                        mRects[co.first].set_current_velocity(mRects[co.first].mVelocity* time);
+                        mRects[i].set_current_velocity(mRects[i].mVelocity* time);
 
-                tester3.mVelocity *= -1;
-                tester4.mVelocity *= -1;
+                        mRects[co.first].set_velocity(mRects[co.first].mVelocity *= -1);
+                        mRects[i].set_velocity(mRects[i].mVelocity *= -1);
+
+                    }
+
+                }
+
             }
-            else {
-                tester3.mBox.x += (tester3.mVelocity.x);
-                tester3.mBox.y += (tester3.mVelocity.y);
-
-                tester4.mBox.x += (tester4.mVelocity.x);
-                tester4.mBox.y += (tester4.mVelocity.y);
+            //set position, sets on current velocity. if current wasn't set it just sets whatever was velocity
+            for (int i = 0; i < 10; i++) {
+                mRects[i].update_position();
             }
 
-
+            //do wall check
             rectI edge(0, 0, 960, 540);
-            do_if_edge_collision(edge, tester1);
-            do_if_edge_collision(edge, tester2);
-            do_if_edge_collision(edge, tester3);
-            do_if_edge_collision(edge, tester4);
+            for (int i = 0; i < 10; i++) {
+                do_if_edge_collision(edge, mRects[i]);
+            }
             hold = 0;
         }
 
-        //just coloring in
-        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester1Col.get_red(), tester1Col.get_green(), tester1Col.get_blue(), tester1Col.get_alpha());
-        SDL_FRect box1 = rectF_to_SDL_FRect(tester1.mBox);
-        SDL_RenderFillRect(sysManager.get_renderer(), &box1);
-
-        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester2Col.get_red(), tester2Col.get_green(), tester2Col.get_blue(), tester2Col.get_alpha());
-        SDL_FRect box2 = rectF_to_SDL_FRect(tester2.mBox);
-        SDL_RenderFillRect(sysManager.get_renderer(), &box2);
-
-        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester3Col.get_red(), tester3Col.get_green(), tester3Col.get_blue(), tester3Col.get_alpha());
-        SDL_FRect box3 = rectF_to_SDL_FRect(tester3.mBox);
-        SDL_RenderFillRect(sysManager.get_renderer(), &box3);
-
-        SDL_SetRenderDrawColor(sysManager.get_renderer(), tester4Col.get_red(), tester4Col.get_green(), tester4Col.get_blue(), tester4Col.get_alpha());
-        SDL_FRect box4 = rectF_to_SDL_FRect(tester4.mBox);
-        SDL_RenderFillRect(sysManager.get_renderer(), &box4);
-
         for (int i = 0; i < 10;i++) {
-
-
-            //Color color = mColors[i];
-            //SDL_SetRenderDrawColor(sysManager.get_renderer(),color.get_red(), color.get_green(),color.get_blue(), color.get_alpha());
-            //SDL_FRect box = rectF_to_SDL_FRect(mRects[i].mBox);
-            //SDL_RenderFillRect(sysManager.get_renderer(), &box);
+            Color color = mColors[i];
+            SDL_SetRenderDrawColor(sysManager.get_renderer(),color.get_red(), color.get_green(),color.get_blue(), color.get_alpha());
+            SDL_FRect box = rectF_to_SDL_FRect(mRects[i].mBox);
+            SDL_RenderFillRect(sysManager.get_renderer(), &box);
         }
 
         //#################################################################################
