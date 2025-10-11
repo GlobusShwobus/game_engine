@@ -86,17 +86,18 @@ int main() {
         static float hold = 0;
         hold += dt;
         if (hold >= 0.008f) {
-            //first current frame velocity to velocity
+            //first reset current velocity to whatever velocity was set to
             for (int i = 0; i < 10; i++) {
                 mRects[i].reset_velocity();
             }
+
             //do braod phase check and store colliders
             SequenceM<std::pair<int, float>> cols;
-
+            /*
+            WHAT IF SWEPT IS CALLED WITH A RAY THAT STARTS WITHIN A RECTANGLE
+            */
             for (int i = 0; i < 10; i++) {
-                for (int j = 0; j < 10; j++) {
-
-                    if (i == j)continue;
+                for (int j = i + 1; j < 10; j++) {//if A vs B, so then B vs A not needed
 
                     vec2f normal;
                     float time;
@@ -126,33 +127,38 @@ int main() {
 
                     if (do_swept_collision(mRects[co.first], mRects[i], time, normal)) {
 
-                        mRects[co.first].set_current_velocity(mRects[co.first].mVelocity * time);
-                        mRects[i].set_current_velocity(mRects[i].mVelocity * time);
+                        mRects[co.first].mCurrVelocity = mRects[co.first].mVelocity * time;
+                        mRects[i].mCurrVelocity = mRects[i].mVelocity * time;
 
                         mRects[co.first].mVelocity *= -1;
                         mRects[i].mVelocity *= -1;
 
                     }
-
                 }
+            }
 
-            }
-            //set position, sets on current velocity. if current wasn't set it just sets whatever was velocity
-            for (int i = 0; i < 10; i++) {
-                mRects[i].update_position();
-            }
 
             //do wall check
             rectI edge(0, 0, 960, 540);
             for (int i = 0; i < 10; i++) {
                 vec2f output;
-                if (contaier_vs_rect(edge, mRects[i].mBox, output)) {
+                if (container_vs_rect(edge, mRects[i].mBox, output)) {
                     mRects[i].mBox.x += output.x;
                     mRects[i].mBox.y += output.y;
 
                     //tester code
-                    //mRects[i].mVelocity *= -1;
+                    /*
+                    NOT REVERING OR DOING ANYTHING WITH VELOCITY HERE SHOULD NOT AFFECT SWEPT LOGIC
+                    CURRENTLY VELOCITY IS NOT CHANGED AT ALL, ONLY DISPALCEMENT
+                    */
+                    //mRects[i].mCurrVelocity *= -1;
                 }
+            }
+
+
+            //position should be last
+            for (int i = 0; i < 10; i++) {
+                mRects[i].update_position();
             }
             hold = 0;
         }

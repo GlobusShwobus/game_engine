@@ -78,14 +78,13 @@ namespace badEngine {
 	}
 
 	template <typename T, typename U>
-	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, rectF& output)noexcept {
+	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, vec2f& output)noexcept {
 		auto distances = (a.get_center_point() - b.get_center_point());
 		auto overlap = (a.get_half_size() + b.get_half_size()) - abs_vector(distances);
 
 		if (overlap.x < 0.0f || overlap.y < 0.0f) return false;
 
-		output.set_XY(distances);
-		output.set_WH(overlap);
+		output = overlap;
 		return true;
 	}
 
@@ -98,9 +97,6 @@ namespace badEngine {
 				(b1.y + b1.h) > b2.y)
 			);
 	}
-
-
-
 
 
 
@@ -176,12 +172,18 @@ namespace badEngine {
 
 		return true;
 	}
+
 	bool do_swept_collision(
 		const TransformF& a,
 		const TransformF& b,
 		float& contactTime,
 		vec2f& contactNormal)noexcept
 	{
+		if (rect_vs_rect(a.mBox, b.mBox)) {
+			contactTime = 0.0f;
+			contactNormal = vec2f(0, 0);
+			return true; // already overlapping
+		}
 		auto relativeVelocity = a.mVelocity - b.mVelocity;
 		//no movement
 		if (relativeVelocity.x == 0 && relativeVelocity.y == 0) return false;
@@ -195,7 +197,7 @@ namespace badEngine {
 	}
 
 	template <typename T, typename U>
-	constexpr bool contaier_vs_rect(const Rectangle<T>& bigBox, const Rectangle<U>& smallBox, vec2f& displacement)noexcept {
+	constexpr bool container_vs_rect(const Rectangle<T>& bigBox, const Rectangle<U>& smallBox, vec2f& displacement)noexcept {
 		/*
 		WILL BE BUGGY IF CALLED WITH A SMALLER BOX AS FIRST PARAMETER, SHOULD NOT BE USED THAT WAY
 		*/
