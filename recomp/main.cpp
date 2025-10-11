@@ -91,29 +91,31 @@ int main() {
                 mRects[i].reset_velocity();
             }
             //do braod phase check and store colliders
-            SequenceM<std::pair<int , float>> cols;
+            SequenceM<std::pair<int, float>> cols;
 
             for (int i = 0; i < 10; i++) {
-                for (int j = i + 1; j < 10; j++) {//j=i+1 BECAUSE A COLLIDES WITH B, THEN IT IS A WASTE TO CHECK IF B COLLIDES WITH A
+                for (int j = 0; j < 10; j++) {
+
+                    if (i == j)continue;
 
                     vec2f normal;
                     float time;
 
                     //only say this index collided with something, currently the only thing that matters is who and time
-                    if (AABB_swept_dynamic_collision(mRects[i], mRects[j], time, normal)) {
+                    if (do_swept_collision(mRects[i], mRects[j], time, normal)) {
                         cols.element_create(i, time);
                     }
                 }
             }
             //sort priority
             std::sort(cols.begin(), cols.end(),
-                [](const std::pair<int, float>& a, const std::pair<int, float>& b){
+                [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
                     return a.second < b.second;
                 });
             //do final collision based on priority and set velocity for both current frame and what to do next frame
-            for (const auto& co:cols) {
-            
-                for (int i = 0; i < 10;i++) {
+            for (const auto& co : cols) {
+
+                for (int i = 0; i < 10; i++) {
 
                     if (co.first == i) {
                         continue;
@@ -122,14 +124,11 @@ int main() {
                     vec2f normal;
                     float time;
 
-                    if (AABB_swept_dynamic_collision(mRects[co.first], mRects[i], time, normal)) {
+                    if (do_swept_collision(mRects[co.first], mRects[i], time, normal)) {
 
-                        mRects[co.first].set_current_velocity(mRects[co.first].mVelocity* time);
-                        mRects[i].set_current_velocity(mRects[i].mVelocity* time);
+                        mRects[co.first].set_current_velocity(mRects[co.first].mVelocity * time);
+                        mRects[i].set_current_velocity(mRects[i].mVelocity * time);
 
-                        /*
-                        THE FOLLOWING SHOULD ACTUALLY BE SOME SORT OF RESOLUTION LIKE DEFLECT/SLIDE/PUSH/ETC
-                        */
                         mRects[co.first].set_velocity(mRects[co.first].mVelocity *= -1);
                         mRects[i].set_velocity(mRects[i].mVelocity *= -1);
 
@@ -146,12 +145,19 @@ int main() {
             //do wall check
             rectI edge(0, 0, 960, 540);
             for (int i = 0; i < 10; i++) {
-                do_if_edge_collision(edge, mRects[i]);
+                vec2f output;
+                if (contaier_vs_rect(edge, mRects[i].mBox, output)) {
+                    mRects[i].mBox.x += output.x;
+                    mRects[i].mBox.y += output.y;
+
+                    //tester code
+                    //mRects[i].mVelocity *= -1;
+                }
             }
-          // rectI edge(0, 0, 960, 540);
-          // for (int i = 0; i < 10; i++) {
-          //     do_if_edge_collision(edge, mRects[i]);
-          // }
+            // rectI edge(0, 0, 960, 540);
+            // for (int i = 0; i < 10; i++) {
+            //     do_if_edge_collision(edge, mRects[i]);
+            // }
             hold = 0;
         }
 
