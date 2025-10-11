@@ -171,7 +171,7 @@ namespace badEngine {
 		if (rect.x < edge.x) {
 			rect.x = 0;
 			vel.x *= -1;
-		}
+		} 
 		if (rect.y < edge.y) {
 			rect.y = 0;
 			vel.y *= -1;
