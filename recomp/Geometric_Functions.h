@@ -85,7 +85,7 @@ namespace badEngine {
 	struct CollisionOutput {
 		vec2f mDisplacementVec;
 		float mContactTime = 1.0f;
-		bool isCollision = false;
+		bool isAlreadyOverLapping = false;
 	};
 
 	template <typename T, typename U>
@@ -97,7 +97,7 @@ namespace badEngine {
 		if (overlap.x < 0.0f || overlap.y < 0.0f) 
 			return false;
 
-		output.isCollision = true;
+		output.isAlreadyOverLapping = true;
 
 		if (overlap.x < overlap.y) {
 			output.mDisplacementVec = vec2f(
@@ -142,8 +142,7 @@ namespace badEngine {
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
 		const rectF& target,
-		float& contactTime,
-		vec2f& contactNormal) noexcept
+		CollisionOutput& output) noexcept
 	{
 		auto reciprocal = reciprocal_vector(rayVector);
 
@@ -168,7 +167,7 @@ namespace badEngine {
 		//if no hit == false
 		if (tNear.x > tFar.y || tNear.y > tFar.x)
 			return false;
-		contactTime = std::max(tNear.x, tNear.y);
+		output.mContactTime = std::max(tNear.x, tNear.y);
 		float hitFar = std::min(tFar.x, tFar.y);
 
 		//if hit but opposite direction, then no actual hit, just on same line
@@ -182,30 +181,22 @@ namespace badEngine {
 		*/
 
 		//get normal
-		contactNormal = get_swept_result_normal(tNear, reciprocal);
-
+		output.mDisplacementVec = get_swept_result_normal(tNear, reciprocal);
+		output.isAlreadyOverLapping = false;
 		return true;
 	}
+	bool do_swept_collision(const TransformF& a, const TransformF& b, CollisionOutput& output)noexcept{
+		if (rect_vs_rect(a.mBox, b.mBox, output))//check if they're already overlaping, in which case swept will bug out as origin would be from the inside of another
+			return true; 
 
-	bool do_swept_collision(
-		const TransformF& a,
-		const TransformF& b,
-		float& contactTime,
-		vec2f& contactNormal)noexcept
-	{
-		if (rect_vs_rect(a.mBox, b.mBox)) {
-			contactTime = 0.0f;
-			contactNormal = vec2f(0, 0);
-			return true; // already overlapping
-		}
-		auto relativeVelocity = a.mVelocity - b.mVelocity;
+		auto relativeVelocity = a.mVelocity - b.mVelocity;//since both objects move, do relative velocity
 		//no movement
 		if (relativeVelocity.x == 0 && relativeVelocity.y == 0) return false;
 
 		rectF expandedTarget = get_swept_expanded_target(a.mBox, b.mBox);
 
-		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
-			return (contactTime >= 0.0f && contactTime < 1.0f);
+		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, output)) {
+			return (output.mContactTime >= 0.0f && output.mContactTime < 1.0f);//determine if collision occured somewhere in the middle of the frame
 		}
 		return false;
 	}
