@@ -78,28 +78,42 @@ namespace badEngine {
 	}
 
 	template <typename T, typename U>
-	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, vec2f& output)noexcept {
-		auto distances = (a.get_center_point() - b.get_center_point());
-		auto overlap = (a.get_half_size() + b.get_half_size()) - abs_vector(distances);
-
-		if (overlap.x < 0.0f || overlap.y < 0.0f) return false;
-
-		output = overlap;
-		return true;
+	constexpr bool rect_vs_rect(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
+		return (b1.x < b2.x + b2.w && b1.x + b1.w > b2.x && b1.y < b2.y + b2.h && b1.y + b1.h > b2.y);
 	}
+
+	struct CollisionOutput {
+		vec2f mDisplacementVec;
+		float mContactTime = 1.0f;
+		bool isCollision = false;
+	};
 
 	template <typename T, typename U>
-	constexpr bool rect_vs_rect(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
-		return(
-			(b1.x < (b2.x + b2.w) &&
-				(b1.x + b1.w) > b2.x) &&
-			(b1.y < (b2.y + b2.h) &&
-				(b1.y + b1.h) > b2.y)
+	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, CollisionOutput& output)noexcept {
+
+		auto distances = (a.get_center_point() - b.get_center_point());
+		auto overlap   = (a.get_half_size() + b.get_half_size()) - abs_vector(distances);
+
+		if (overlap.x < 0.0f || overlap.y < 0.0f) 
+			return false;
+
+		output.isCollision = true;
+
+		if (overlap.x < overlap.y) {
+			output.mDisplacementVec = vec2f(
+				(distances.x > 0) ? overlap.x : -overlap.x,
+				0.0f
 			);
+		}
+		else {
+			output.mDisplacementVec = vec2f(
+				0.0f,
+				(distances.y > 0) ? overlap.y : -overlap.y
+			);
+		}
+
+		return true;
 	}
-
-
-
 	template<typename T, typename U>
 	constexpr rectF get_swept_expanded_target(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
 		return rectF(

@@ -146,12 +146,8 @@ int main() {
                     mRects[i].mBox.x += output.x;
                     mRects[i].mBox.y += output.y;
 
-                    //tester code
-                    /*
-                    NOT REVERING OR DOING ANYTHING WITH VELOCITY HERE SHOULD NOT AFFECT SWEPT LOGIC
-                    CURRENTLY VELOCITY IS NOT CHANGED AT ALL, ONLY DISPALCEMENT
-                    */
-                    //mRects[i].mCurrVelocity *= -1;
+                    //TEMPORARY VELOCITY SHOULD BE SET TO 0 IN THE DIRECTION IT GOT PUSHED BACK
+                    //NOT REFLECTING VELOCITY SHOULD NOT BE AN ISSUE FOR SWEPT LOGIC BEFORE IT
                 }
             }
 
