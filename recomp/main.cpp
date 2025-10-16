@@ -91,51 +91,43 @@ int main() {
                 mRects[i].reset_velocity();
             }
 
-            //do braod phase check and store colliders
-            SequenceM<std::pair<int, float>> cols;
-            /*
-            WHAT IF SWEPT IS CALLED WITH A RAY THAT STARTS WITHIN A RECTANGLE
-            */
-            for (int i = 0; i < 10; i++) {
-                for (int j = i + 1; j < 10; j++) {//if A vs B, so then B vs A not needed
+            for (int i = 0; i < 10;i++) {
+                for (int j = 0; j < 10;j++) {
 
-                    vec2f normal;
-                    float time;
-
-                    //only say this index collided with something, currently the only thing that matters is who and time
-                    if (do_swept_collision(mRects[i], mRects[j], time, normal)) {
-                        cols.element_create(i, time);
-                    }
-                }
-            }
-            //sort priority
-            std::sort(cols.begin(), cols.end(),
-                [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
-                    return a.second < b.second;
-                });
-            //do final collision based on priority and set velocity for both current frame and what to do next frame
-            for (const auto& co : cols) {
-
-                for (int i = 0; i < 10; i++) {
-
-                    if (co.first == i) {
+                    if (i == j) {
                         continue;
                     }
 
-                    vec2f normal;
-                    float time;
 
-                    if (do_swept_collision(mRects[co.first], mRects[i], time, normal)) {
+                    float contactTime;
+                    vec2f contactNormal;
 
-                        mRects[co.first].mCurrVelocity = mRects[co.first].mVelocity * time;
-                        mRects[i].mCurrVelocity = mRects[i].mVelocity * time;
 
-                        mRects[co.first].mVelocity *= -1;
-                        mRects[i].mVelocity *= -1;
+                    if (do_swept_collision(mRects[i], mRects[j], contactTime, contactNormal)) {
+
+                        mRects[i].mBox.x += mRects[i].mCurrVelocity.x * contactTime;
+                        mRects[i].mBox.y += mRects[i].mCurrVelocity.y * contactTime;
+                        mRects[i].mCurrVelocity = vec2f(0, 0);
+
+
+                        mRects[j].mBox.x += mRects[j].mCurrVelocity.x * contactTime;
+                        mRects[j].mBox.y += mRects[j].mCurrVelocity.y * contactTime;
+                        mRects[j].mCurrVelocity = vec2f(0, 0);
 
                     }
+
+
+
+
                 }
             }
+
+
+
+            /*
+            WHAT IF SWEPT IS CALLED WITH A RAY THAT STARTS WITHIN A RECTANGLE
+            */
+
 
 
             //do wall check
@@ -146,8 +138,6 @@ int main() {
                     mRects[i].mBox.x += output.x;
                     mRects[i].mBox.y += output.y;
 
-                    //TEMPORARY VELOCITY SHOULD BE SET TO 0 IN THE DIRECTION IT GOT PUSHED BACK
-                    //NOT REFLECTING VELOCITY SHOULD NOT BE AN ISSUE FOR SWEPT LOGIC BEFORE IT
                 }
             }
 

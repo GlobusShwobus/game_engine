@@ -82,14 +82,9 @@ namespace badEngine {
 		return (b1.x < b2.x + b2.w && b1.x + b1.w > b2.x && b1.y < b2.y + b2.h && b1.y + b1.h > b2.y);
 	}
 
-	struct CollisionOutput {
-		vec2f mDisplacementVec;
-		float mContactTime = 1.0f;
-		bool isAlreadyOverLapping = false;
-	};
 
 	template <typename T, typename U>
-	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, CollisionOutput& output)noexcept {
+	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, vec2f& output)noexcept {
 
 		auto distances = (a.get_center_point() - b.get_center_point());
 		auto overlap   = (a.get_half_size() + b.get_half_size()) - abs_vector(distances);
@@ -97,16 +92,14 @@ namespace badEngine {
 		if (overlap.x < 0.0f || overlap.y < 0.0f) 
 			return false;
 
-		output.isAlreadyOverLapping = true;
-
 		if (overlap.x < overlap.y) {
-			output.mDisplacementVec = vec2f(
+			output = vec2f(
 				(distances.x > 0) ? overlap.x : -overlap.x,
 				0.0f
 			);
 		}
 		else {
-			output.mDisplacementVec = vec2f(
+			output = vec2f(
 				0.0f,
 				(distances.y > 0) ? overlap.y : -overlap.y
 			);
@@ -142,7 +135,8 @@ namespace badEngine {
 		const vec2f& rayOrigin,
 		const vec2f& rayVector,
 		const rectF& target,
-		CollisionOutput& output) noexcept
+		float& contactTime,
+		vec2f& contactNormal) noexcept
 	{
 		auto reciprocal = reciprocal_vector(rayVector);
 
@@ -167,7 +161,7 @@ namespace badEngine {
 		//if no hit == false
 		if (tNear.x > tFar.y || tNear.y > tFar.x)
 			return false;
-		output.mContactTime = std::max(tNear.x, tNear.y);
+		contactTime = std::max(tNear.x, tNear.y);
 		float hitFar = std::min(tFar.x, tFar.y);
 
 		//if hit but opposite direction, then no actual hit, just on same line
@@ -181,13 +175,11 @@ namespace badEngine {
 		*/
 
 		//get normal
-		output.mDisplacementVec = get_swept_result_normal(tNear, reciprocal);
-		output.isAlreadyOverLapping = false;
+		contactNormal = get_swept_result_normal(tNear, reciprocal);
+
 		return true;
 	}
-	bool do_swept_collision(const TransformF& a, const TransformF& b, CollisionOutput& output)noexcept{
-		if (rect_vs_rect(a.mBox, b.mBox, output))//check if they're already overlaping, in which case swept will bug out as origin would be from the inside of another
-			return true; 
+	bool do_swept_collision(const TransformF& a, const TransformF& b, float& contactTime, vec2f& contactNormal)noexcept{
 
 		auto relativeVelocity = a.mVelocity - b.mVelocity;//since both objects move, do relative velocity
 		//no movement
@@ -195,8 +187,8 @@ namespace badEngine {
 
 		rectF expandedTarget = get_swept_expanded_target(a.mBox, b.mBox);
 
-		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, output)) {
-			return (output.mContactTime >= 0.0f && output.mContactTime < 1.0f);//determine if collision occured somewhere in the middle of the frame
+		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
+			return (contactTime >= 0.0f && contactTime < 1.0f);//determine if collision occured somewhere in the middle of the frame
 		}
 		return false;
 	}
