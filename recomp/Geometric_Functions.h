@@ -79,44 +79,122 @@ namespace badEngine {
 
 	template <typename T, typename U>
 	constexpr bool rect_vs_rect(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
-		return (b1.x < b2.x + b2.w && b1.x + b1.w > b2.x && b1.y < b2.y + b2.h && b1.y + b1.h > b2.y);
+		return
+			b1.x < b2.x + b2.w &&
+			b1.x + b1.w > b2.x &&
+			b1.y < b2.y + b2.h &&
+			b1.y + b1.h > b2.y;
+	}
+	float AABB_SWEPT(const rectF& objA, const rectF& objB, const vec2f& relativeVel, vec2f& normal) {
+		float xInvEntry, yInvEntry;
+		float xInvExit, yInvExit;
+
+		// find the distance between the objects on the near and far sides for both x and y 
+
+		if (relativeVel.x > 0.0f)
+		{
+			xInvEntry = objB.x - (objA.x + objA.w);
+			xInvExit = (objB.x + objB.w) - objA.x;
+		}
+		else
+		{
+			xInvEntry = (objB.x + objB.w) - objA.x;
+			xInvExit = objB.x - (objA.x + objA.w);
+		}
+
+		if (relativeVel.y > 0.0f)
+		{
+			yInvEntry = objB.y - (objA.y + objA.h);
+			yInvExit = (objB.y + objB.h) - objA.y;
+		}
+		else
+		{
+			yInvEntry = (objB.y + objB.h) - objA.y;
+			yInvExit = objB.y - (objA.y + objA.h);
+		}
+
+		float xEntry, yEntry;
+		float xExit, yExit;
+
+		if (relativeVel.x == 0.0f)
+		{
+			xEntry = -std::numeric_limits<float>::infinity();
+			xExit = std::numeric_limits<float>::infinity();
+		}
+		else
+		{
+			xEntry = xInvEntry / relativeVel.x;
+			xExit = xInvExit / relativeVel.x;
+		}
+
+		if (relativeVel.y == 0.0f)
+		{
+			yEntry = -std::numeric_limits<float>::infinity();
+			yExit = std::numeric_limits<float>::infinity();
+		}
+		else
+		{
+			yEntry = yInvEntry / relativeVel.y;
+			yExit = yInvExit / relativeVel.y;
+		}
+
+
+		float entryTime = std::max(xEntry, yEntry);
+		float exitTime = std::min(xExit, yExit);
+
+		if (entryTime > exitTime || xEntry < 0.0f && yEntry < 0.0f || xEntry > 1.0f || yEntry > 1.0f)
+		{
+			normal = vec2f(0, 0);
+			return 1.0f;
+		}
+		else // if there was a collision 
+		{
+			// calculate normal of collided surface
+			if (xEntry > yEntry)
+			{
+				if (xInvEntry < 0.0f)
+				{
+					normal = vec2f(1, 0);
+				}
+				else
+				{
+					normal = vec2f(-1, 0);
+				}
+			}
+			else
+			{
+				if (yInvEntry < 0.0f)
+				{
+					normal = vec2f(0, 1);
+				}
+				else
+				{
+					normal = vec2f(0, -1);
+				}
+			} // return the time of collisionreturn entryTime; 
+		}
+		return entryTime;
 	}
 
+	bool do_collision(TransformF& objA, TransformF& objB, vec2f& normal, float& contactTime) {
 
-	template <typename T, typename U>
-	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, vec2f& output)noexcept {
+		vec2f relativeVel = objA.mCurrVelocity - objB.mCurrVelocity;
+		rectF expandedA = objA.get_expanded_rect(relativeVel);
 
-		auto distances = (a.get_center_point() - b.get_center_point());
-		auto overlap   = (a.get_half_size() + b.get_half_size()) - abs_vector(distances);
-
-		if (overlap.x < 0.0f || overlap.y < 0.0f) 
+		if (!rect_vs_rect(expandedA, objB.mBox)) {
 			return false;
-
-		if (overlap.x < overlap.y) {
-			output = vec2f(
-				(distances.x > 0) ? overlap.x : -overlap.x,
-				0.0f
-			);
-		}
-		else {
-			output = vec2f(
-				0.0f,
-				(distances.y > 0) ? overlap.y : -overlap.y
-			);
 		}
 
-		return true;
+		contactTime = AABB_SWEPT(objA.mBox, objB.mBox, relativeVel, normal);
+
+		return (contactTime >= 0.f && contactTime < 1.f);
 	}
-	template<typename T, typename U>
-	constexpr rectF get_swept_expanded_target(const Rectangle<T>& b1, const Rectangle<U>& b2)noexcept {
-		return rectF(
-			b2.x - (b1.w * 0.5f),
-			b2.y - (b1.h * 0.5f),
-			b2.w + b1.w,
-			b2.h + b1.h
-		);
-	}
-	vec2f get_swept_result_normal(const vec2f& entryTime, const vec2f& reciprocal) {
+
+}
+/*
+* 
+* 
+* 	vec2f get_swept_result_normal(const vec2f& entryTime, const vec2f& reciprocal) {
 		vec2f normal;
 		if (entryTime.x > entryTime.y)
 			if (reciprocal.x < 0)
@@ -168,56 +246,65 @@ namespace badEngine {
 		if (hitFar < 0.0f)
 			return false;
 
-		/*
+		
 		//set the point where contact was made, idk what to do with it, can remove later tho
 		if (contactPoint)
 			*contactPoint = (rayVector * hitFar) + rayOrigin;
-		*/
+		
 
 		//get normal
-		contactNormal = get_swept_result_normal(tNear, reciprocal);
+contactNormal = get_swept_result_normal(tNear, reciprocal);
+
+return true;
+	}
+
+	template <typename T, typename U>
+	constexpr bool rect_vs_rect(const Rectangle<T>& a, const Rectangle<U>& b, vec2f& output)noexcept {
+
+		auto distances = (a.get_center_point() - b.get_center_point());
+		auto overlap   = (a.get_half_size() + b.get_half_size()) - abs_vector(distances);
+
+		if (overlap.x < 0.0f || overlap.y < 0.0f)
+			return false;
+
+		if (overlap.x < overlap.y) {
+			output = vec2f(
+				(distances.x > 0) ? overlap.x : -overlap.x,
+				0.0f
+			);
+		}
+		else {
+			output = vec2f(
+				0.0f,
+				(distances.y > 0) ? overlap.y : -overlap.y
+			);
+		}
 
 		return true;
-	}
-	bool do_swept_collision(const TransformF& a, const TransformF& b, float& contactTime, vec2f& contactNormal)noexcept{
-
-		auto relativeVelocity = a.mVelocity - b.mVelocity;//since both objects move, do relative velocity
-		//no movement
-		if (relativeVelocity.x == 0 && relativeVelocity.y == 0) return false;
-
-		rectF expandedTarget = get_swept_expanded_target(a.mBox, b.mBox);
-
-		if (ray_vs_rect(a.mBox.get_center_point(), relativeVelocity, expandedTarget, contactTime, contactNormal)) {
-			return (contactTime >= 0.0f && contactTime < 1.0f);//determine if collision occured somewhere in the middle of the frame
-		}
-		return false;
 	}
 
 	template <typename T, typename U>
 	constexpr bool container_vs_rect(const Rectangle<T>& bigBox, const Rectangle<U>& smallBox, vec2f& displacement)noexcept {
-		/*
-		WILL BE BUGGY IF CALLED WITH A SMALLER BOX AS FIRST PARAMETER, SHOULD NOT BE USED THAT WAY
-		*/
 
-		bool isDisplacement = false;
-		if (smallBox.x < bigBox.x) {
-			displacement.x = bigBox.x - smallBox.x;
-			isDisplacement = true;
-		}
-		else if (smallBox.x + smallBox.w > bigBox.x + bigBox.w) {
-			displacement.x = (bigBox.x + bigBox.w) - (smallBox.x + smallBox.w);
-			isDisplacement = true;
-		}
-
-		if (smallBox.y < bigBox.y) {
-			displacement.y = bigBox.y - smallBox.y;
-			isDisplacement = true;
-		}
-		else if (smallBox.y + smallBox.h > bigBox.y + bigBox.h) {
-			displacement.y = (bigBox.y + bigBox.h) - (smallBox.y + smallBox.h);
-			isDisplacement = true;
-		}
-
-		return isDisplacement;
-	}
+bool isDisplacement = false;
+if (smallBox.x < bigBox.x) {
+	displacement.x = bigBox.x - smallBox.x;
+	isDisplacement = true;
 }
+else if (smallBox.x + smallBox.w > bigBox.x + bigBox.w) {
+	displacement.x = (bigBox.x + bigBox.w) - (smallBox.x + smallBox.w);
+	isDisplacement = true;
+}
+
+if (smallBox.y < bigBox.y) {
+	displacement.y = bigBox.y - smallBox.y;
+	isDisplacement = true;
+}
+else if (smallBox.y + smallBox.h > bigBox.y + bigBox.h) {
+	displacement.y = (bigBox.y + bigBox.h) - (smallBox.y + smallBox.h);
+	isDisplacement = true;
+}
+
+return isDisplacement;
+	}
+*/

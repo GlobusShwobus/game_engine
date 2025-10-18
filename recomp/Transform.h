@@ -43,6 +43,15 @@ namespace badEngine {
 			mCurrVelocity = mVelocity;
 		}
 
+		constexpr Rectangle<T> get_expanded_rect(const Vec2M<T>& velocity)const {
+			return Rectangle<T>(
+				(velocity.x > 0) ? mBox.x : mBox.x + velocity.x,
+				(velocity.y > 0) ? mBox.y : mBox.y + velocity.y,
+				mBox.w + std::abs(velocity.x),
+				mBox.h + std::abs(velocity.y)
+			);
+		}
+
 	public:
 		Rectangle<T> mBox;
 		
