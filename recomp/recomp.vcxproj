@@ -159,12 +159,12 @@
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vec2M.h" />
-    <ClInclude Include="SystemManager.h" />
+    <ClInclude Include="RenderManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="SystemManager.cpp" />
+    <ClCompile Include="RenderManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="entity_config.json" />

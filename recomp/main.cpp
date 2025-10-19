@@ -1,5 +1,5 @@
 #include "Stopwatch.h"
-#include "SystemManager.h"
+#include "RenderManager.h"
 #include "Configs.h"
 #include <thread>
 
@@ -31,9 +31,9 @@ int main() {
         return -1;
     }
     //initalize SDL system, can throw
-    SystemManager sysManager;
+    RenderManager renManager;
     try {
-        sysManager.init(windowConfig.get());
+        renManager.init(windowConfig.get());
     }
     catch (const std::exception& excpt) {
         printf(excpt.what());
@@ -64,9 +64,9 @@ int main() {
     while (GAME_RUNNING) {
         float dt = UPDATE_DELTA_TIMER.dt_float();
         //############################## VISUAL TEMP
-        SDL_SetRenderDrawColor(sysManager.get_renderer(), 0, 0, 0, 255);
+        SDL_SetRenderDrawColor(renManager.get_renderer_ref(), 0, 0, 0, 255);
         //##############################
-        sysManager.renderer_clear();
+        renManager.renderer_clear();
 
         //LISTEN TO EVENTS
         while (SDL_PollEvent(&EVENT)) {
@@ -177,14 +177,14 @@ int main() {
 
         for (int i = 0; i < 10;i++) {
             Color color = mColors[i];
-            SDL_SetRenderDrawColor(sysManager.get_renderer(),color.get_red(), color.get_green(),color.get_blue(), color.get_alpha());
+            SDL_SetRenderDrawColor(renManager.get_renderer_ref(),color.get_red(), color.get_green(),color.get_blue(), color.get_alpha());
             SDL_FRect box = rectF_to_SDL_FRect(mRects[i].mBox);
-            SDL_RenderFillRect(sysManager.get_renderer(), &box);
+            SDL_RenderFillRect(renManager.get_renderer_ref(), &box);
         }
 
         //#################################################################################
 
-        sysManager.renderer_present();
+        renManager.renderer_present();
 
         //HANDLE TASKS BETWEEN FRAMES
         /*

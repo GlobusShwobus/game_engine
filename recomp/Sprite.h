@@ -12,16 +12,16 @@ namespace badEngine {
 	static SDL_FRect rectF_to_SDL_FRect(const rectF& rect)noexcept {
 		return SDL_FRect(rect.x, rect.y, rect.w, rect.h);
 	}
-
+	
+	//to be moved to factory
+	struct SDLTextureDeleter {
+		void operator()(SDL_Texture* t)const {
+			SDL_DestroyTexture(t);
+		}
+	};
 
 	class Sprite {
-		
-		struct SDLTextureDeleter {
-			void operator()(SDL_Texture* t)const {
-				SDL_DestroyTexture(t);
-			}
-		};
-	
+			
 		void on_init_default_dimensions() {
 			mSource = rectF(0, 0, (float)mTexture->w, (float)mTexture->h);
 			mDestination = rectF(0, 0, (float)mTexture->w, (float)mTexture->h);
@@ -29,30 +29,41 @@ namespace badEngine {
 
 	public:
 
-		Sprite(SDL_Texture* texture) :mTexture(texture) {
+		//does not take ownership
+		Sprite(std::shared_ptr<SDL_Texture> owner):mTexture(owner) {
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 			on_init_default_dimensions();
 		}
-		Sprite(SDL_Surface& surface, SDL_Renderer* renderer) {
-			mTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(SDL_CreateTextureFromSurface(renderer, &surface));
+
+		//takes ownership
+		Sprite(SDL_Texture* wildRaw) {
+			mTexture = std::shared_ptr<SDL_Texture>(wildRaw, SDLTextureDeleter());
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 			on_init_default_dimensions();
 		}
-		Sprite(std::string_view path, SDL_Renderer* renderer) {
-			mTexture = std::unique_ptr<SDL_Texture, SDLTextureDeleter>(IMG_LoadTexture(renderer, path.data()));
+		//takes ownership
+		Sprite(SDL_Surface& surface, SDL_Renderer* rendererRef) {
+			mTexture = std::shared_ptr<SDL_Texture>(SDL_CreateTextureFromSurface(rendererRef, &surface), SDLTextureDeleter());
+			if (mTexture == nullptr)
+				throw std::runtime_error("Failed to create an SDL_Texture");
+			on_init_default_dimensions();
+		}
+		//takes ownership
+		Sprite(std::string_view path, SDL_Renderer* rendererRef) {
+			mTexture = std::shared_ptr<SDL_Texture>(IMG_LoadTexture(rendererRef, path.data()), SDLTextureDeleter());
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 			on_init_default_dimensions();
 		}
 
 		//THE IMPORTANT SHIT
-		void draw(SDL_Renderer* renderer) {
+		void draw(SDL_Renderer* rendererRef) {
 			SDL_FRect source = rectF_to_SDL_FRect(mSource);
-			SDL_FRect dest = rectF_to_SDL_FRect(mDestination);
+			SDL_FRect dest   = rectF_to_SDL_FRect(mDestination);
 
-			SDL_RenderTexture( renderer, mTexture.get(), &source, &dest );
+			SDL_RenderTexture(rendererRef, mTexture.get(), &source, &dest );
 		}
 		//##########################################################################
 
@@ -106,7 +117,7 @@ namespace badEngine {
 		rectF mSource = { 0,0,0,0 };
 		rectF mDestination = { 0,0,0,0 };
 
-		std::unique_ptr<SDL_Texture, SDLTextureDeleter> mTexture;
+		std::shared_ptr<SDL_Texture> mTexture;
 	};
 
 }

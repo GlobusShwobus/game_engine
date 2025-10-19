@@ -48,11 +48,9 @@ namespace badEngine {
 			}
 		}
 
-	public:
+	private:
 
 		Sprite& mSprite;
-
-	private:
 
 		const uint32_t mColumnsCount = 0;
 		const uint32_t mRowsCount = 0;

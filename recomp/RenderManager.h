@@ -1,10 +1,24 @@
 #pragma once
 
+#include <memory>
 #include "SDL3/SDL.h"
 #include "json.hpp"
 
 namespace badEngine {
-	class SystemManager {
+	class RenderManager {
+
+		struct SDLWindowDeleter {
+			void operator()(SDL_Window* window) const noexcept {
+				if (window) SDL_DestroyWindow(window);
+			}
+		};
+
+		struct SDLRendererDeleter {
+			void operator()(SDL_Renderer* renderer) const noexcept {
+				if (renderer) SDL_DestroyRenderer(renderer);
+			}
+		};
+
 
 		struct system_setup_data {
 			std::string windowHeading = default_window_heading.data();
@@ -21,18 +35,16 @@ namespace badEngine {
 
 	public:
 
-		SystemManager() = default;
-		SystemManager(const nlohmann::json& windowConfig) {
+		RenderManager() = default;
+		RenderManager(const nlohmann::json& windowConfig) {
 			init(windowConfig);
 		}
-		SystemManager(const SystemManager&) = delete;
-		SystemManager(SystemManager&&)noexcept = delete;
-		SystemManager& operator=(const SystemManager&) = delete;
-		SystemManager& operator=(SystemManager&&)noexcept = delete;
+		RenderManager(const RenderManager&) = delete;
+		RenderManager(RenderManager&&)noexcept = delete;
+		RenderManager& operator=(const RenderManager&) = delete;
+		RenderManager& operator=(RenderManager&&)noexcept = delete;
 
-		~SystemManager() {
-			SDL_DestroyRenderer(mRenderer);
-			SDL_DestroyWindow(mWindow);
+		~RenderManager() {
 			SDL_Quit();
 		}
 
@@ -51,17 +63,18 @@ namespace badEngine {
 
 
 		
-		SDL_Renderer* get_renderer()noexcept {
-			return mRenderer;
+		SDL_Renderer* get_renderer_ref()noexcept {
+			return mRenderer.get();
 		}
-		SDL_Window* get_window()noexcept {
-			return mWindow;
+		SDL_Window* get_window_ref()noexcept {
+			return mWindow.get();
 		}
 		
 
 	private:
-		SDL_Window*   mWindow = nullptr;
-		SDL_Renderer* mRenderer = nullptr;
+		/* ORDER MATTERS BECAUSE OF DELETER! */
+		std::unique_ptr<SDL_Renderer, SDLRendererDeleter> mRenderer;
+		std::unique_ptr<SDL_Window, SDLWindowDeleter> mWindow;
 
 		static constexpr std::string_view default_window_heading = "DEFAULT HEADING";
 		static constexpr size_t default_window_width  = 960;
