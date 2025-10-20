@@ -7,18 +7,14 @@
 namespace badEngine {
 	class RenderManager {
 
-		struct SDLWindowDeleter {
-			void operator()(SDL_Window* window) const noexcept {
-				if (window) SDL_DestroyWindow(window);
-			}
-		};
+		static constexpr auto SDLWindowDeleter = [](SDL_Window* window)noexcept {
+			if (window) SDL_DestroyWindow(window);
+			};
 
-		struct SDLRendererDeleter {
-			void operator()(SDL_Renderer* renderer) const noexcept {
-				if (renderer) SDL_DestroyRenderer(renderer);
-			}
-		};
 
+		static constexpr auto SDLRendererDeleter = [](SDL_Renderer* renderer)noexcept {
+			if (renderer) SDL_DestroyRenderer(renderer);
+			};
 
 		struct system_setup_data {
 			std::string windowHeading = default_window_heading.data();
@@ -73,8 +69,8 @@ namespace badEngine {
 
 	private:
 		/* ORDER MATTERS BECAUSE OF DELETER! */
-		std::unique_ptr<SDL_Renderer, SDLRendererDeleter> mRenderer;
-		std::unique_ptr<SDL_Window, SDLWindowDeleter> mWindow;
+		std::unique_ptr<SDL_Renderer, decltype(SDLRendererDeleter)> mRenderer{nullptr, SDLRendererDeleter };
+		std::unique_ptr<SDL_Window, decltype(SDLWindowDeleter)>     mWindow{nullptr, SDLWindowDeleter };
 
 		static constexpr std::string_view default_window_heading = "DEFAULT HEADING";
 		static constexpr size_t default_window_width  = 960;

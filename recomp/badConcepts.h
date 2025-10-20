@@ -16,8 +16,8 @@ namespace badEngine {
 	template <typename T>
 	concept IS_MATHMATICAL_T = std::_Is_any_of_v<std::remove_cv_t<T>, short, unsigned short, int, unsigned int, long int, unsigned long, long long, unsigned long long, float, double, long double>;
 
-	template <typename T, typename U>
-	concept IS_LESS_THAN_COMPARABLE = requires (T a, U b) {
+	template <typename T>
+	concept IS_LESS_THAN_COMPARABLE = requires (T a, T b) {
 		{ a < b }->std::convertible_to<bool>;
 	};
 

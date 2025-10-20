@@ -14,11 +14,10 @@ namespace badEngine {
 	}
 	
 	//to be moved to factory
-	struct SDLTextureDeleter {
-		void operator()(SDL_Texture* t)const {
-			SDL_DestroyTexture(t);
-		}
-	};
+	static constexpr auto SDLTextureDeleter = [](SDL_Texture* t) {
+		if(t)SDL_DestroyTexture(t);
+		};
+	
 
 	class Sprite {
 			
@@ -38,21 +37,21 @@ namespace badEngine {
 
 		//takes ownership
 		Sprite(SDL_Texture* wildRaw) {
-			mTexture = std::shared_ptr<SDL_Texture>(wildRaw, SDLTextureDeleter());
+			mTexture = std::shared_ptr<SDL_Texture>(wildRaw, SDLTextureDeleter);
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 			on_init_default_dimensions();
 		}
 		//takes ownership
 		Sprite(SDL_Surface& surface, SDL_Renderer* rendererRef) {
-			mTexture = std::shared_ptr<SDL_Texture>(SDL_CreateTextureFromSurface(rendererRef, &surface), SDLTextureDeleter());
+			mTexture = std::shared_ptr<SDL_Texture>(SDL_CreateTextureFromSurface(rendererRef, &surface), SDLTextureDeleter);
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 			on_init_default_dimensions();
 		}
 		//takes ownership
 		Sprite(std::string_view path, SDL_Renderer* rendererRef) {
-			mTexture = std::shared_ptr<SDL_Texture>(IMG_LoadTexture(rendererRef, path.data()), SDLTextureDeleter());
+			mTexture = std::shared_ptr<SDL_Texture>(IMG_LoadTexture(rendererRef, path.data()), SDLTextureDeleter);
 			if (mTexture == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
 			on_init_default_dimensions();

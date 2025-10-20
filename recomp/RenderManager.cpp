@@ -19,13 +19,13 @@ namespace badEngine {
 		if (!SDL_Init(SDL_INIT_VIDEO))
 			throw std::runtime_error(std::string("SDL_Init fail: ") + SDL_GetError());
 		//setup window
-		mWindow = std::unique_ptr<SDL_Window, SDLWindowDeleter>(
+		mWindow.reset(
 			SDL_CreateWindow(setup.windowHeading.c_str(), setup.windowWidth, setup.windowHeight, SDL_WindowFlags(setup.flags))
 		);
 		if (!mWindow)
 			throw std::runtime_error(std::string("SDL_Window init fail: ") + SDL_GetError());
 		//setup renderer
-		mRenderer = std::unique_ptr<SDL_Renderer, SDLRendererDeleter>(
+		mRenderer.reset(
 			SDL_CreateRenderer(mWindow.get(), nullptr)
 		);
 		if (!mRenderer)

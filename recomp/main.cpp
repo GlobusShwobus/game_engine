@@ -104,7 +104,7 @@ int main() {
                     float t;
                     vec2f normal;
 
-                    if (do_collision(mRects[i], mRects[j], normal, t)) {
+                    if (dynamic_vs_dynamic_collision(mRects[i], mRects[j], normal, t)) {
                         collisions.element_create(CollisionResult{i,j,t,normal });
                     }
                 }
