@@ -1,7 +1,7 @@
-#include "Geometric_Functions.h"
+#include "Collision_Functions.h"
+#include <limits>
 
 namespace badEngine {
-
 	float rect_vs_ray(const rectF& objA, const rectF& objB, const vec2f& velocity, vec2f& normal) {
 		/*
 		InvEntry and yInvEntry both specify how far away the closest edges of the objects are from each other.
@@ -88,5 +88,46 @@ namespace badEngine {
 		}
 		// return the time of collisionreturn entryTime; 
 		return entryTime;
+	}
+
+	SequenceM<CollisionResult> determine_colliders(SequenceM<TransformF>& objects) {
+		const int entityCount = objects.size_in_use();
+
+		SequenceM<CollisionResult> collisions;
+
+		for (int i = 0; i < entityCount; ++i) {
+			for (int j = i + 1; j < entityCount; ++j) {//j=i+1 becasue A vs B is same as B vs A
+
+				float collisionTime = 1.0f;
+				vec2f collisionNormal;
+
+				if (dynamic_vs_dynamic_rectangle(objects[i], objects[j], collisionNormal, collisionTime)) {
+					collisions.element_create(CollisionResult(i, j, collisionTime, collisionNormal));
+				}
+
+			}
+		}
+		return collisions;
+	}
+
+	void objects_vs_container_resolved(SequenceM<TransformF>& objects, const rectI& container)noexcept {
+		for (auto& box : objects) {
+			if (box.mBox.x < container.x) {
+				box.mBox.x = container.x;
+				box.mVelocity.x *= -1;
+			}
+			if (box.mBox.y < container.y) {
+				box.mBox.y = container.y;
+				box.mVelocity.y *= -1;
+			}
+			if (box.mBox.x + box.mBox.w > container.x + container.w) {
+				box.mBox.x = (container.x + container.w) - box.mBox.w;
+				box.mVelocity.x *= -1;
+			}
+			if (box.mBox.y + box.mBox.h > container.y + container.h) {
+				box.mBox.y = (container.y + container.h) - box.mBox.h;
+				box.mVelocity.y *= -1;
+			}
+		}
 	}
 }

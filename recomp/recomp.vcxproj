@@ -146,10 +146,11 @@
     <ClInclude Include="Animation.h" />
     <ClInclude Include="badConcepts.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Collision_Functions.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="FrameTimer.h" />
-    <ClInclude Include="Geometric_Functions.h" />
+    <ClInclude Include="Simple_Geometric_Functions.h" />
     <ClInclude Include="Configs.h" />
     <ClInclude Include="NumberGenerator.h" />
     <ClInclude Include="Rectangle.h" />
@@ -162,7 +163,7 @@
     <ClInclude Include="RenderManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Geometric_Functions.cpp" />
+    <ClCompile Include="Collision_Functions.cpp" />
     <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderManager.cpp" />

@@ -47,6 +47,7 @@ namespace badEngine {
 			x = X;
 			y = Y;
 		}
+
 		constexpr void set_WH(const Vec2M<T>& size)noexcept {
 			set_WH(size.x, size.y);
 		}
@@ -59,6 +60,11 @@ namespace badEngine {
 		}
 		Vec2M<T> get_half_size()const noexcept {
 			return Vec2M<T>(w * 0.5f, h * 0.5f);
+		}
+
+		constexpr void move_by(const Vec2M<T>& expression)noexcept {
+			x += expression.x;
+			y += expression.y;
 		}
 
 	public:

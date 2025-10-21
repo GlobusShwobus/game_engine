@@ -6,7 +6,7 @@
 #include "Sprite.h"
 #include "Animation.h"
 #include "Font.h"
-#include "Geometric_Functions.h"
+#include "Collision_Functions.h"
 
 
 #include "SequenceM.h"
@@ -86,91 +86,22 @@ int main() {
         static float hold = 0;
         hold += dt;
         if (hold >= 0.008f) {
-            //first reset current velocity to whatever velocity was set to
+            
+            //BEFORE ANYTHING, UPDATE VELOCITY 
             for (int i = 0; i < 10; i++) {
                 mRects[i].reset_velocity();
             }
-            //START
-            struct CollisionResult {
-                int i, j;
-                float t;
-                vec2f normal;
-            };
-            SequenceM<CollisionResult> collisions;
-            //first check if collision
-            for (int i = 0; i < 10; i++) {
-                for (int j = i + 1; j < 10; j++) {
 
-                    float t;
-                    vec2f normal;
+            collision_algorithm_executable(mRects, COLLISION_POLICY_REFLECT_BOTH);
 
-                    if (dynamic_vs_dynamic_collision(mRects[i], mRects[j], normal, t)) {
-                        collisions.element_create(CollisionResult{i,j,t,normal });
-                    }
-                }
-            }
-            //second sort priority of collisions
-            std::sort(collisions.begin(), collisions.end(), [](const auto& a, const auto& b) {
-                return a.t < b.t;
-                });
-            //third only colliders have special logic for collision
-            for (auto& c : collisions) {
-                int iIndex = c.i;
-                int jIndex = c.j;
-                float t = c.t;
-                vec2f normal = c.normal;
-
-                auto& objA = mRects[iIndex];
-                auto& objB = mRects[jIndex];
-
-                // Move both up to their collision time
-                objA.mBox.x += objA.mCurrVelocity.x * t;
-                objA.mBox.y += objA.mCurrVelocity.y * t;
-                objB.mBox.x += objB.mCurrVelocity.x * t;
-                objB.mBox.y += objB.mCurrVelocity.y * t;
-
-                // Zero current velocity so they won't move again this frame
-                objA.mCurrVelocity = vec2f(0, 0);
-                objB.mCurrVelocity = vec2f(0, 0);
-
-                // Reflect for next frame (response)
-                if (normal.x != 0) {
-                    objA.mVelocity.x *= -1;
-                    objB.mVelocity.x *= -1;
-                }
-                if (normal.y != 0) {
-                    objA.mVelocity.y *= -1;
-                    objB.mVelocity.y *= -1;
-                }
-            }
-
-            rectF edges(0, 0, 960, 540);
-
-            //update position
+            //AFTER COLLISION, MOVE BLINDLY (if there was collision and resolution applied, mCurrentVelocity should be zeroed out meaning no movement)
             for (int i = 0; i < 10; i++) {
                 mRects[i].update_position();
             }
 
-
             //check for being off the edge and reflect
-            for (auto& box : mRects) {
-                if (box.mBox.x < edges.x) {
-                    box.mBox.x = edges.x;
-                    box.mVelocity.x *= -1;
-                }
-                if (box.mBox.y < edges.y) {
-                    box.mBox.y = edges.y;
-                    box.mVelocity.y *= -1;
-                }
-                if (box.mBox.x + box.mBox.w > edges.x + edges.w) {
-                    box.mBox.x = (edges.x + edges.w) - box.mBox.w;
-                    box.mVelocity.x *= -1;
-                }
-                if (box.mBox.y + box.mBox.h > edges.x + edges.h) {
-                    box.mBox.y = (edges.y + edges.h) - box.mBox.h;
-                    box.mVelocity.y *= -1;
-                }
-            }
+            static rectI container(0, 0, 960, 540);
+            objects_vs_container_resolved(mRects, container);
 
             hold = 0;
         }
