@@ -8,10 +8,6 @@
 #include <SDL3_image/SDL_image.h>
 
 namespace badEngine {
-
-	static SDL_FRect rectF_to_SDL_FRect(const rectF& rect)noexcept {
-		return SDL_FRect(rect.x, rect.y, rect.w, rect.h);
-	}
 	
 	//to be moved to factory
 	static constexpr auto SDLTextureDeleter = [](SDL_Texture* t) {
@@ -59,8 +55,8 @@ namespace badEngine {
 
 		//THE IMPORTANT SHIT
 		void draw(SDL_Renderer* rendererRef) {
-			SDL_FRect source = rectF_to_SDL_FRect(mSource);
-			SDL_FRect dest   = rectF_to_SDL_FRect(mDestination);
+			SDL_FRect source = SDL_FRect(mSource.x, mSource.y, mSource.w, mSource.h);
+			SDL_FRect dest = SDL_FRect(mDestination.x, mDestination.y, mDestination.w, mDestination.h);
 
 			SDL_RenderTexture(rendererRef, mTexture.get(), &source, &dest );
 		}

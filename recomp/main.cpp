@@ -76,13 +76,6 @@ int main() {
             }
         }
         //TEST CODE
-
-        /*
-        ### 
-        ALSO ADD RENDER COLOR TO SYS MANAGER/RENAME TO RENDER MANAGER FOR BETTER REP?
-        ###
-        */
-
         static float hold = 0;
         hold += dt;
         if (hold >= 0.008f) {
@@ -107,12 +100,8 @@ int main() {
         }
 
         for (int i = 0; i < 10;i++) {
-            Color color = mColors[i];
-            SDL_SetRenderDrawColor(renManager.get_renderer_ref(),color.get_red(), color.get_green(),color.get_blue(), color.get_alpha());
-            SDL_FRect box = rectF_to_SDL_FRect(mRects[i].mBox);
-            SDL_RenderFillRect(renManager.get_renderer_ref(), &box);
+            renManager.fill_area_with(mRects[i].mBox, mColors[i]);
         }
-
         //#################################################################################
 
         renManager.renderer_present();
