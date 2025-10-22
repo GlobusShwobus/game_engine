@@ -62,11 +62,18 @@ int main() {
     ////#################################################################################
 
     //TEST CODE 2
-    testObj tester(255, 2, true);
+    //testObj tester(255, 2, true);
+    //
+    //std::ofstream bfout("C:/Users/ADMIN/Desktop/test_serialize/text.bin", std::ios::binary);
+    //tester.serialize(bfout);
+    //bfout.close();
 
-    std::ofstream bfout("C:/Users/ADMIN/Desktop/test_serialize/text.bin");
-    tester.serialize(bfout);
-    bfout.close();
+
+    testObj tester2;
+    std::ifstream ifin("C:/Users/ADMIN/Desktop/test_serialize/text.bin", std::ios::binary);
+    tester2.deserialize(ifin);
+
+    std::cout << tester2.field1 << " " << tester2.field2 << " " << tester2.field3 << "\n";
 
     ////#################################################################################
 
