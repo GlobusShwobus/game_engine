@@ -67,7 +67,7 @@ namespace badEngine {
 			set_render_draw_color(color);
 			SDL_FRect sdlArea = SDL_FRect(area.x, area.y, area.w, area.h);
 			SDL_RenderFillRect(mRenderer.get(), &sdlArea);
-			set_render_draw_color(Color(a,r,g,b));
+			set_render_draw_color(Color(r,g,b,a));
 		}
 
 		void renderer_clear();

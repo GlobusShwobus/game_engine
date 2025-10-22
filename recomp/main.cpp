@@ -14,9 +14,6 @@
 #include "Transform.h"
 #include "Color.h"
 
-#include <tuple>
-
-
 int main() {
     using namespace badEngine;
     
@@ -48,7 +45,7 @@ int main() {
     for (int i = 0; i < 10;i++) {
         rectF rect = rectF(mRng.get_random(0, 900), mRng.get_random(0, 500), 35, 35);
         vec2f vel = vec2f(mRng.get_random(-5, 5), mRng.get_random(-5, 5));
-        Color color = Colors::makeRGB(255u, mRng.get_random(0,255), mRng.get_random(0,255), mRng.get_random(0,255));
+        Color color = Colors::makeRGBA(mRng.get_random(0,255), mRng.get_random(0,255), mRng.get_random(0,255), 255u);
         
         mColors.element_create(color);
         mRects.element_assign(TransformF(rect, vel));

@@ -33,9 +33,10 @@ namespace badEngine {
 
 		//takes ownership
 		Sprite(SDL_Texture* wildRaw) {
-			mTexture = std::shared_ptr<SDL_Texture>(wildRaw, SDLTextureDeleter);
-			if (mTexture == nullptr)
+			if (wildRaw == nullptr)
 				throw std::runtime_error("Failed to create an SDL_Texture");
+
+			mTexture = std::shared_ptr<SDL_Texture>(wildRaw, SDLTextureDeleter);
 			on_init_default_dimensions();
 		}
 		//takes ownership

@@ -20,6 +20,9 @@
     <Filter Include="MATHY_GEOMETRY">
       <UniqueIdentifier>{23dee9f4-19a6-42ef-8f04-3bd25fb30a85}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Entity">
+      <UniqueIdentifier>{533b2fbe-4f0f-4701-88c0-0fa9fea5e181}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Serialization.h">
@@ -75,6 +78,9 @@
     </ClInclude>
     <ClInclude Include="Collision_Functions.h">
       <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity_Factory.h">
+      <Filter>Entity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
