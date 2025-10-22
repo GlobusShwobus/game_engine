@@ -58,7 +58,7 @@ namespace badEngine {
 		return (contactTime >= 0.f && contactTime < 1.f);
 	}
 
-
+	void objects_vs_container_resolved(SequenceM<TransformF>& objects, const rectI& container)noexcept;
 
 	struct CollisionResult {
 		int indexA, indexB;
@@ -68,9 +68,11 @@ namespace badEngine {
 
 	SequenceM<CollisionResult> determine_colliders(SequenceM<TransformF>& objects);
 
-	template <typename ExecutionPolicy>
-		requires std::invocable<ExecutionPolicy, TransformF&, TransformF&, const CollisionResult&>
-	void collision_algorithm_executable(SequenceM<TransformF>& objects, ExecutionPolicy&& policy) {
+	template<typename Policy>
+	concept CollisionResponsePolicy = std::invocable<Policy, TransformF&, TransformF&, const CollisionResult&>;
+
+	template <CollisionResponsePolicy ExecutionPolicy>
+	void collision_algorithm(SequenceM<TransformF>& objects, ExecutionPolicy&& policy) {
 		//determine who collides
 		auto collisionResults = determine_colliders(objects);
 		//sort order of priority
@@ -96,10 +98,25 @@ namespace badEngine {
 
 			//response behavior for velocity in next frame (only mods velocity)
 
-			policy(objA, objB, collision);
+			std::forward<ExecutionPolicy>(policy)(objA, objB, collision);//can take both named and unnamed functors
 		}
+	}
+	template <CollisionResponsePolicy ExecutionPolicy>
+	void collision_algorithm_executable(SequenceM<TransformF>& objects, rectI globalBorders, ExecutionPolicy&& policy) {
+		const size_t entityCount = objects.size_in_use();
+		//BEFORE ANYTHING, UPDATE VELOCITY 
+		for (auto& each : objects)
+			each.reset_velocity();
 
+		//do collision checks
+		collision_algorithm(objects, std::forward<ExecutionPolicy>(policy));
 
+		//AFTER COLLISION, MOVE BLINDLY (if there was collision and resolution applied, mCurrentVelocity should be zeroed out meaning no movement)
+		for (auto& each : objects)
+			each.update_position();
+
+		//do border checks
+		objects_vs_container_resolved(objects, globalBorders);
 	}
 
 	static constexpr auto COLLISION_POLICY_REFLECT_BOTH = [](TransformF& A, TransformF& B, const CollisionResult& collisionData)noexcept {
@@ -113,7 +130,5 @@ namespace badEngine {
 			B.mVelocity.y *= -1;
 		}
 		};
-
-	void objects_vs_container_resolved(SequenceM<TransformF>& objects, const rectI& container)noexcept;
 
 }

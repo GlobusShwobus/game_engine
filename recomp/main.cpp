@@ -14,6 +14,15 @@
 #include "Transform.h"
 #include "Color.h"
 
+
+#include "Serialization.h"
+/*
+SERIALIZE FIRST
+MORE COLLISION RESOLUTIONS SECOND
+QUADTREE THIRD
+?????
+*/
+
 int main() {
     using namespace badEngine;
     
@@ -50,6 +59,14 @@ int main() {
         mColors.element_create(color);
         mRects.element_assign(TransformF(rect, vel));
     }
+    ////#################################################################################
+
+    //TEST CODE 2
+    testObj tester(255, 2, true);
+
+    std::ofstream bfout("C:/Users/ADMIN/Desktop/test_serialize/text.bin");
+    tester.serialize(bfout);
+    bfout.close();
 
     ////#################################################################################
 
@@ -72,26 +89,12 @@ int main() {
                 continue;
             }
         }
-        //TEST CODE
+        //COLLISION
         static float hold = 0;
         hold += dt;
         if (hold >= 0.008f) {
             
-            //BEFORE ANYTHING, UPDATE VELOCITY 
-            for (int i = 0; i < 10; i++) {
-                mRects[i].reset_velocity();
-            }
-
-            collision_algorithm_executable(mRects, COLLISION_POLICY_REFLECT_BOTH);
-
-            //AFTER COLLISION, MOVE BLINDLY (if there was collision and resolution applied, mCurrentVelocity should be zeroed out meaning no movement)
-            for (int i = 0; i < 10; i++) {
-                mRects[i].update_position();
-            }
-
-            //check for being off the edge and reflect
-            static rectI container(0, 0, 960, 540);
-            objects_vs_container_resolved(mRects, container);
+            collision_algorithm_executable(mRects, rectI(0, 0, 960, 540), COLLISION_POLICY_REFLECT_BOTH);
 
             hold = 0;
         }
