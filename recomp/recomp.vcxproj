@@ -165,7 +165,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Collision_Functions.cpp" />
-    <ClCompile Include="Serialization.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderManager.cpp" />
   </ItemGroup>

@@ -6,7 +6,9 @@
 
 
 #include <vector>
-
+/*
+* NOT THERE (besides gamestate can be saved and read class internally)
+*/
 namespace badEngine {
 
 

@@ -15,6 +15,17 @@ namespace badEngine {
 			:rng(std::make_unique<std::mt19937>(std::random_device{}())) {
 		}
 
+
+		int random_int(int min, int max)const noexcept {
+			return std::uniform_int_distribution<int>(min, max)(*rng);
+		}
+
+		float random_float(float min, float max)const noexcept {
+			return std::uniform_real_distribution<float>(min, max)(*rng);
+		}
+
+		/*
+		//DEPRICATED (over templetization)
 		template <typename T>
 			requires IS_INTEGER_TYPE_T<T> || IS_FLOATING_TYPE_T<T>
 		T get_random(T min, T max)const {
@@ -26,6 +37,7 @@ namespace badEngine {
 				return std::uniform_real_distribution<T>(min, max)(*rng);
 			}
 		}
+		*/
 	};
 
 }

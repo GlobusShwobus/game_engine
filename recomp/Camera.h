@@ -18,27 +18,25 @@ namespace badEngine {
 		constexpr void set_screen_dimensions(int screenWidth, int screenHeight)noexcept {
 			set_screen_dimensions(vec2i(screenWidth, screenHeight));
 		}
-		template<typename S>
-		constexpr void set_screen_dimensions(Vec2M<S> dimensions)noexcept {
+		constexpr void set_screen_dimensions(vec2i dimensions)noexcept {
 			mScreenDimensions = dimensions;
 		}
 		constexpr void zoom(float factor)noexcept {
 			mScale *= factor;
 		}
 
-		template<typename S>
-		constexpr void focus_on(Vec2M<S> point)noexcept {
+		constexpr void focus_on(vec2i point)noexcept {
 			mOffset = point - (mScreenDimensions * 0.5f) / mScale;
 		}
 		template<typename S>
 		constexpr void focus_on(const Rectangle<S>& rect)noexcept {
 			focus_on(rect.get_center_point());
 		}
-		constexpr void focus_on(float x, float y)noexcept {
-			focus_on(vec2f(x, y));
+		constexpr void focus_on(int x, int y)noexcept {
+			focus_on(vec2i(x, y));
 		}
-		template<typename S>
-		constexpr void move(Vec2M<S> point)noexcept {
+
+		constexpr void move(vec2f point)noexcept {
 			mOffset += point / mScale;
 		}
 		constexpr void move(float x, float y)noexcept {

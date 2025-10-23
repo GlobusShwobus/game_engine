@@ -8,19 +8,18 @@
 #include "Font.h"
 #include "Collision_Functions.h"
 
-
 #include "SequenceM.h"
 #include "NumberGenerator.h"
 #include "Transform.h"
 #include "Color.h"
 
-
-#include "Serialization.h"
 /*
-SERIALIZE FIRST
 MORE COLLISION RESOLUTIONS SECOND
 QUADTREE THIRD
+ENTITY+ continue chilis lessons
 ?????
+
+SERIALIZE FIRST (Too early, still not there yet)
 */
 
 int main() {
@@ -52,28 +51,13 @@ int main() {
     NumberGenerator mRng;
 
     for (int i = 0; i < 10;i++) {
-        rectF rect = rectF(mRng.get_random(0, 900), mRng.get_random(0, 500), 35, 35);
-        vec2f vel = vec2f(mRng.get_random(-5, 5), mRng.get_random(-5, 5));
-        Color color = Colors::makeRGBA(mRng.get_random(0,255), mRng.get_random(0,255), mRng.get_random(0,255), 255u);
+        rectF rect = rectF(mRng.random_int(0, 900), mRng.random_int(0, 500), 35, 35);
+        vec2f vel = vec2f(mRng.random_int(-5, 5), mRng.random_int(-5, 5));
+        Color color = Colors::makeRGBA(mRng.random_int(0,255), mRng.random_int(0,255), mRng.random_int(0,255), 255u);
         
         mColors.element_create(color);
         mRects.element_assign(TransformF(rect, vel));
     }
-    ////#################################################################################
-
-    //TEST CODE 2
-    //testObj tester(255, 2, true);
-    Test1 t1(69);//generic
-    Test2 t2(420); //big oopsie, still serializes but leaves hidden data as garbage == big bad
-    Test3 t3;//throws static assert == good
-
-
-    //std::ofstream ff("C:/Users/ADMIN/Desktop/test_serialize/t3.bin", std::ios::binary);
-    //POD_serialize(ff, t3);
-
-    std::ifstream ff("C:/Users/ADMIN/Desktop/test_serialize/t1.bin", std::ios::binary);
-    POD_deserialize(ff, t2);//AYY CARAMBA!!!   
-
     ////#################################################################################
 
     //main loop

@@ -60,15 +60,8 @@ namespace badEngine {
 		void set_render_draw_color(Color color) {
 			SDL_SetRenderDrawColor(mRenderer.get(), color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
 		}
-		template<typename T>
-		void fill_area_with(const Rectangle<T>& area, Color color) {
-			Uint8 r, g, b, a;//CURRENT COLOR
-			SDL_GetRenderDrawColor(mRenderer.get(), &r, &g, &b, &a);
-			set_render_draw_color(color);
-			SDL_FRect sdlArea = SDL_FRect(area.x, area.y, area.w, area.h);
-			SDL_RenderFillRect(mRenderer.get(), &sdlArea);
-			set_render_draw_color(Color(r,g,b,a));
-		}
+
+		void fill_area_with(const rectF& area, Color color);
 
 		void renderer_clear();
 		void renderer_present();

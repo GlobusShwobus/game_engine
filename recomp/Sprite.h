@@ -63,33 +63,26 @@ namespace badEngine {
 		}
 		//##########################################################################
 
-		template <typename T>
-		void set_source(const Rectangle<T>& source)noexcept {
+		void set_source(const rectF& source)noexcept {
 			mSource = source;
 		}
-		template <typename T>
-		void set_destination(const Rectangle<T>& destination)noexcept {
+		void set_destination(const rectF& destination)noexcept {
 			mDestination = destination;
 		}
 
-
-		template<typename T>
-		void set_source_position(const Vec2M<T>& position)noexcept {
+		void set_source_position(const vec2f& position)noexcept {
 			mSource.set_XY(position);
 		}
-		template<typename T>
-		void set_source_size(const Vec2M<T>& size)noexcept {
+		void set_source_size(const vec2f& size)noexcept {
 			mSource.set_WH(size);
 		}
-		template<typename T>
-		void set_destination_position(const Vec2M<T>& position)noexcept {
+
+		void set_destination_position(const vec2f& position)noexcept {
 			mDestination.set_XY(position);
 		}
-		template<typename T>
-		void set_destination_size(const Vec2M<T>& size)noexcept {
+		void set_destination_size(const vec2f& size)noexcept {
 			mDestination.set_WH(size);
 		}
-
 
 		int get_texture_width()const {
 			return mTexture->w;

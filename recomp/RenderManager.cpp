@@ -34,6 +34,15 @@ namespace badEngine {
 	void RenderManager::set_logical_presentation(SDL_RendererLogicalPresentation mode, uint32_t width, uint32_t height) {
 		SDL_SetRenderLogicalPresentation(mRenderer.get(), width, height, SDL_LOGICAL_PRESENTATION_STRETCH);
 	}
+	void RenderManager::fill_area_with(const rectF& area, Color color) {
+		Uint8 r, g, b, a;//CURRENT COLOR
+		SDL_GetRenderDrawColor(mRenderer.get(), &r, &g, &b, &a);
+		set_render_draw_color(color);
+		SDL_FRect sdlArea = SDL_FRect(area.x, area.y, area.w, area.h);
+		SDL_RenderFillRect(mRenderer.get(), &sdlArea);
+		set_render_draw_color(Color(r, g, b, a));
+	}
+
 	void RenderManager::renderer_clear() {
 		SDL_RenderClear(mRenderer.get());
 	}
