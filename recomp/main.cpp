@@ -63,17 +63,16 @@ int main() {
 
     //TEST CODE 2
     //testObj tester(255, 2, true);
-    //
-    //std::ofstream bfout("C:/Users/ADMIN/Desktop/test_serialize/text.bin", std::ios::binary);
-    //tester.serialize(bfout);
-    //bfout.close();
+    Test1 t1(69);//generic
+    Test2 t2(420); //big oopsie, still serializes but leaves hidden data as garbage == big bad
+    Test3 t3;//throws static assert == good
 
 
-    testObj tester2;
-    std::ifstream ifin("C:/Users/ADMIN/Desktop/test_serialize/text.bin", std::ios::binary);
-    tester2.deserialize(ifin);
+    //std::ofstream ff("C:/Users/ADMIN/Desktop/test_serialize/t3.bin", std::ios::binary);
+    //POD_serialize(ff, t3);
 
-    std::cout << tester2.field1 << " " << tester2.field2 << " " << tester2.field3 << "\n";
+    std::ifstream ff("C:/Users/ADMIN/Desktop/test_serialize/t1.bin", std::ios::binary);
+    POD_deserialize(ff, t2);//AYY CARAMBA!!!   
 
     ////#################################################################################
 
