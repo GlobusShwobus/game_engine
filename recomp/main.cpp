@@ -58,6 +58,8 @@ int main() {
         mColors.element_create(color);
         mRects.element_assign(TransformF(rect, vel));
     }
+
+
     ////#################################################################################
 
     //main loop

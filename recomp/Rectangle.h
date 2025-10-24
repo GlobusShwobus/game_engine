@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Vec2M.h"
-#include "badConcepts.h"
 
 namespace badEngine {
 
@@ -40,21 +39,6 @@ namespace badEngine {
 			return!(*this == rhs);
 		}
 
-		constexpr void set_XY(const Vec2M<T>& pos)noexcept {
-			set_XY(pos.x, pos.y);
-		}
-		constexpr void set_XY(T X, T Y)noexcept {
-			x = X;
-			y = Y;
-		}
-
-		constexpr void set_WH(const Vec2M<T>& size)noexcept {
-			set_WH(size.x, size.y);
-		}
-		constexpr void set_WH(T W, T H)noexcept {
-			w = W;
-			h = H;
-		}
 		constexpr Vec2M<T> get_center_point()const noexcept {
 			return Vec2M<T>(x + (w * 0.5f), y + (h * 0.5f));
 		}
@@ -65,6 +49,39 @@ namespace badEngine {
 		constexpr void move_by(const Vec2M<T>& expression)noexcept {
 			x += expression.x;
 			y += expression.y;
+		}
+
+
+
+		constexpr bool rect_vs_point(T X, T Y)noexcept {
+			return (
+				X >= x &&
+				Y >= y &&
+				X < x + w &&
+				Y < y + h
+				);
+		}
+		constexpr bool rect_vs_point(const Vec2M<T>& pos)noexcept {
+			return rect_vs_point(pos.x, pos.y);
+		}
+
+		template <typename S>
+		constexpr bool rect_vs_rect(const Rectangle<S>& rhs)noexcept {
+			return(
+				x < rhs.x + rhs.w &&
+				x + w > rhs.x &&
+				y < rhs.y + rhs.h &&
+				y + h > rhs.y
+				);
+		}
+		template <typename S>
+		bool rect_contains(const Rectangle<S>& contained)noexcept {
+			return (
+				contained.x >= x &&
+				contained.y >= y &&
+				contained.x + contained.w <= x + w &&
+				contained.y + contained.h <= y + h
+				);
 		}
 
 	public:

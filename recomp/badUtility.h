@@ -28,4 +28,13 @@ namespace badEngine {
 		std::is_nothrow_move_assignable_v<T> &&
 		std::destructible<T> &&
 		!std::is_const_v<T>;
+
+	template <typename T> requires IS_LESS_THAN_COMPARABLE<T>
+	constexpr auto mValue_max(const T& x, const T& y)noexcept {
+		return (x < y) ? y : x;
+	}
+	template<typename T> requires IS_LESS_THAN_COMPARABLE<T>
+	constexpr auto mValue_min(const T& x, const T& y)noexcept {
+		return (x < y) ? x : y;
+	}
 }

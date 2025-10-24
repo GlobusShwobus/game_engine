@@ -43,7 +43,7 @@
     <ClInclude Include="Font.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
-    <ClInclude Include="badConcepts.h">
+    <ClInclude Include="badUtility.h">
       <Filter>GENERIC_UTILITY</Filter>
     </ClInclude>
     <ClInclude Include="FrameTimer.h">
@@ -57,9 +57,6 @@
     </ClInclude>
     <ClInclude Include="Stopwatch.h">
       <Filter>GENERIC_UTILITY</Filter>
-    </ClInclude>
-    <ClInclude Include="Simple_Geometric_Functions.h">
-      <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
     <ClInclude Include="Rectangle.h">
       <Filter>MATHY_GEOMETRY</Filter>
@@ -92,6 +89,15 @@
     </ClCompile>
     <ClCompile Include="Collision_Functions.cpp">
       <Filter>MATHY_GEOMETRY</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClCompile>
+    <ClCompile Include="Animation.cpp">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

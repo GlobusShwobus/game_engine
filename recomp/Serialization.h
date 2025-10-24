@@ -7,7 +7,8 @@
 
 #include <vector>
 /*
-* NOT THERE (besides gamestate can be saved and read class internally)
+* NOT THERE YET IN TERMS OF EXPERIENCE (besides gamestate can be saved and read class internally in specific use cases)
+* GENERIC REFLECTION IS NOT KEKW TIER
 */
 namespace badEngine {
 

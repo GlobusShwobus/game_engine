@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Simple_Geometric_Functions.h"
+#include "badUtility.h"
 #include "Rectangle.h"
 #include "Transform.h"
 #include "SequenceM.h"
@@ -13,58 +13,32 @@
 
 namespace badEngine {
 
-	template <typename T>
-	constexpr bool rect_vs_point(const Rectangle<T>& rect, T X, T Y)noexcept {
-		return (
-			X >= rect.x &&
-			Y >= rect.y &&
-			X < rect.x + rect.w &&
-			Y < rect.y + rect.h);
-	}
-	template <typename T>
-	constexpr bool rect_vs_point(const Rectangle<T>& rect, Vec2M<T>& pos)noexcept {
-		return rect_vs_point(rect, pos.x, pos.y);
-	}
-
-
-
-	template <typename T>
-	constexpr bool rect_vs_rect(const Rectangle<T>& b1, const Rectangle<T>& b2)noexcept {
-		return
-			b1.x < b2.x + b2.w &&
-			b1.x + b1.w > b2.x &&
-			b1.y < b2.y + b2.h &&
-			b1.y + b1.h > b2.y;
-	}
-
-
-
-	float rect_vs_ray(const rectF& objA, const rectF& objB, const vec2f& velocity, vec2f& normal);
-
-
-
-	template <typename T>
-	bool dynamic_vs_dynamic_rectangle(Transform<T>& objA, Transform<T>& objB, vec2f& normal, float& contactTime) {
-
-		vec2f relativeVel = objA.mCurrVelocity - objB.mCurrVelocity;
-		rectF expandedA = objA.get_expanded_rect(relativeVel);
-
-		if (!rect_vs_rect(expandedA, objB.mBox)) {
-			return false;
-		}
-
-		contactTime = rect_vs_ray(objA.mBox, objB.mBox, relativeVel, normal);
-
-		return (contactTime >= 0.f && contactTime < 1.f);
-	}
 
 	void objects_vs_container_resolved(SequenceM<TransformF>& objects, const rectI& container)noexcept;
+
 
 	struct CollisionResult {
 		int indexA, indexB;
 		float collisionTime;
 		vec2f collisionNormal;
 	};
+
+	float sweptAABB(const rectF& objA, const rectF& objB, const vec2f& velocity, vec2f& normal);
+	
+	template <typename T>
+	bool sweptAABB_dynamic_vs_dynamic(Transform<T>& objA, Transform<T>& objB, vec2f& normal, float& contactTime) {
+
+		vec2f relativeVel = objA.mCurrVelocity - objB.mCurrVelocity;
+		rectF expandedA = objA.get_expanded_rect(relativeVel);
+
+		if (!expandedA.rect_vs_rect(objB.mBox)) {
+			return false;
+		}
+
+		contactTime = sweptAABB(objA.mBox, objB.mBox, relativeVel, normal);
+
+		return (contactTime >= 0.f && contactTime < 1.f);
+	}
 
 	SequenceM<CollisionResult> determine_colliders(SequenceM<TransformF>& objects);
 

@@ -2,7 +2,6 @@
 
 #include <random>
 #include <memory>
-#include "badConcepts.h"
 
 namespace badEngine {
 
@@ -26,6 +25,7 @@ namespace badEngine {
 
 		/*
 		//DEPRICATED (over templetization)
+		//also requries #include badUtility
 		template <typename T>
 			requires IS_INTEGER_TYPE_T<T> || IS_FLOATING_TYPE_T<T>
 		T get_random(T min, T max)const {

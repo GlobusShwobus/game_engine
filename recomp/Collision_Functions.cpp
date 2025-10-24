@@ -2,7 +2,7 @@
 #include <limits>
 
 namespace badEngine {
-	float rect_vs_ray(const rectF& objA, const rectF& objB, const vec2f& velocity, vec2f& normal) {
+	float sweptAABB(const rectF& objA, const rectF& objB, const vec2f& velocity, vec2f& normal) {
 		/*
 		InvEntry and yInvEntry both specify how far away the closest edges of the objects are from each other.
 		xInvExit and yInvExit is the distance to the far side of the object.
@@ -101,7 +101,7 @@ namespace badEngine {
 				float collisionTime = 1.0f;
 				vec2f collisionNormal;
 
-				if (dynamic_vs_dynamic_rectangle(objects[i], objects[j], collisionNormal, collisionTime)) {
+				if (sweptAABB_dynamic_vs_dynamic(objects[i], objects[j], collisionNormal, collisionTime)) {
 					collisions.element_create(CollisionResult(i, j, collisionTime, collisionNormal));
 				}
 
