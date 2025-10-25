@@ -59,7 +59,6 @@ int main() {
         mRects.element_assign(TransformF(rect, vel));
     }
 
-
     ////#################################################################################
 
     //main loop
@@ -92,7 +91,7 @@ int main() {
         }
 
         for (int i = 0; i < 10;i++) {
-            renManager.fill_area_with(mRects[i].mBox, mColors[i]);
+            renManager.fill_area_with(mRects[i].get_rectangle(), mColors[i]);
         }
         //#################################################################################
 

@@ -46,14 +46,7 @@ namespace badEngine {
 			return Vec2M<T>(w * 0.5f, h * 0.5f);
 		}
 
-		constexpr void move_by(const Vec2M<T>& expression)noexcept {
-			x += expression.x;
-			y += expression.y;
-		}
-
-
-
-		constexpr bool rect_vs_point(T X, T Y)noexcept {
+		constexpr bool contains_point(T X, T Y)noexcept {
 			return (
 				X >= x &&
 				Y >= y &&
@@ -61,21 +54,12 @@ namespace badEngine {
 				Y < y + h
 				);
 		}
-		constexpr bool rect_vs_point(const Vec2M<T>& pos)noexcept {
-			return rect_vs_point(pos.x, pos.y);
+		constexpr bool contains_point(const Vec2M<T>& pos)noexcept {
+			return contains_point(pos.x, pos.y);
 		}
 
 		template <typename S>
-		constexpr bool rect_vs_rect(const Rectangle<S>& rhs)noexcept {
-			return(
-				x < rhs.x + rhs.w &&
-				x + w > rhs.x &&
-				y < rhs.y + rhs.h &&
-				y + h > rhs.y
-				);
-		}
-		template <typename S>
-		bool rect_contains(const Rectangle<S>& contained)noexcept {
+		bool contains_rect(const Rectangle<S>& contained)noexcept {
 			return (
 				contained.x >= x &&
 				contained.y >= y &&
@@ -84,8 +68,21 @@ namespace badEngine {
 				);
 		}
 
+		template <typename S>
+		constexpr bool intersects_rect(const Rectangle<S>& rhs)noexcept {
+			return(
+				x < rhs.x + rhs.w &&
+				x + w > rhs.x &&
+				y < rhs.y + rhs.h &&
+				y + h > rhs.y
+				);
+		}
+
 	public:
-		T x, y, w, h;
+		T x = 0;
+		T y = 0;
+		T w = 0;
+		T h = 0;
 	};
 
 	using rectS  = Rectangle<short>;

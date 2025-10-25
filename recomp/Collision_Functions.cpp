@@ -90,10 +90,10 @@ namespace badEngine {
 		return entryTime;
 	}
 
-	SequenceM<CollisionResult> determine_colliders(SequenceM<TransformF>& objects) {
+	SequenceM<SweptAABB_Data> determine_colliders(SequenceM<TransformF>& objects) {
 		const int entityCount = objects.size_in_use();
 
-		SequenceM<CollisionResult> collisions;
+		SequenceM<SweptAABB_Data> collisions;
 
 		for (int i = 0; i < entityCount; ++i) {
 			for (int j = i + 1; j < entityCount; ++j) {//j=i+1 becasue A vs B is same as B vs A
@@ -102,7 +102,9 @@ namespace badEngine {
 				vec2f collisionNormal;
 
 				if (sweptAABB_dynamic_vs_dynamic(objects[i], objects[j], collisionNormal, collisionTime)) {
-					collisions.element_create(CollisionResult(i, j, collisionTime, collisionNormal));
+					collisions.element_create(
+						SweptAABB_Data(&objects[i], &objects[j], collisionTime, collisionNormal)
+					);
 				}
 
 			}
@@ -111,23 +113,18 @@ namespace badEngine {
 	}
 
 	void objects_vs_container_resolved(SequenceM<TransformF>& objects, const rectI& container)noexcept {
-		for (auto& box : objects) {
-			if (box.mBox.x < container.x) {
-				box.mBox.x = container.x;
-				box.mVelocity.x *= -1;
+		for (auto& obj : objects) {
+		
+			auto result = obj.force_contained_in(container);
+
+			if (result.first) {
+				obj.flip_X_mainVel();
 			}
-			if (box.mBox.y < container.y) {
-				box.mBox.y = container.y;
-				box.mVelocity.y *= -1;
+
+			if (result.second) {
+				obj.flip_Y_mainVel();
 			}
-			if (box.mBox.x + box.mBox.w > container.x + container.w) {
-				box.mBox.x = (container.x + container.w) - box.mBox.w;
-				box.mVelocity.x *= -1;
-			}
-			if (box.mBox.y + box.mBox.h > container.y + container.h) {
-				box.mBox.y = (container.y + container.h) - box.mBox.h;
-				box.mVelocity.y *= -1;
-			}
+
 		}
 	}
 }

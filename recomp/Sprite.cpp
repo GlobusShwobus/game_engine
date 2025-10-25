@@ -52,7 +52,7 @@ namespace badEngine {
 	//##########################################################################
 
 	bool Sprite::set_source(const rectF& setter)noexcept {
-		if (mControlBlock.rect_contains(setter)) {
+		if (mControlBlock.contains_rect(setter)) {
 			mSource = setter;
 			return true;
 		}
@@ -66,7 +66,7 @@ namespace badEngine {
 
 	bool Sprite::set_source_position(const vec2f& position)noexcept {
 		rectF tester = rectF(position, mSource.w, mSource.h);
-		if (mControlBlock.rect_contains(tester)) {
+		if (mControlBlock.contains_rect(tester)) {
 			mSource.x = position.x;
 			mSource.y = position.y;
 			return true;
@@ -75,7 +75,7 @@ namespace badEngine {
 	}
 	bool Sprite::set_source_size(const vec2f& size)noexcept {
 		rectF tester = rectF(mSource.x, mSource.y, size.x, size.y);
-		if (mControlBlock.rect_contains(tester)) {
+		if (mControlBlock.contains_rect(tester)) {
 			mSource.w = size.x;
 			mSource.h = size.y;
 			return true;
