@@ -2,113 +2,86 @@
 #include <limits>
 
 namespace badEngine {
-	float sweptAABB(const rectF& objA, const rectF& objB, const vec2f& velocity, vec2f& normal) {
+
+	float SweptAABB_collision_exe::sweptAABB(const rectF& objA, const rectF& objB, const vec2f& velocity, vec2f& normal)const noexcept {
 		/*
 		InvEntry and yInvEntry both specify how far away the closest edges of the objects are from each other.
 		xInvExit and yInvExit is the distance to the far side of the object.
 		*/
-		float xInvEntry, yInvEntry;
-		float xInvExit, yInvExit;
-
-		if (velocity.x > 0.0f) {
-			xInvEntry = objB.x - (objA.x + objA.w);
-			xInvExit = (objB.x + objB.w) - objA.x;
-		}
-		else {
-			xInvEntry = (objB.x + objB.w) - objA.x;
-			xInvExit = objB.x - (objA.x + objA.w);
-		}
-
-		if (velocity.y > 0.0f) {
-			yInvEntry = objB.y - (objA.y + objA.h);
-			yInvExit = (objB.y + objB.h) - objA.y;
-		}
-		else {
-			yInvEntry = (objB.y + objB.h) - objA.y;
-			yInvExit = objB.y - (objA.y + objA.h);
-		}
-
+		const vec2f invEntry = inv_entry(objA, objB, velocity);
+		const vec2f invExit = inv_exit(objA, objB, velocity);
 
 		/*
 		dividing the xEntry, yEntry, xExit and yExit by the object's velocity.
 		These new variables will give us our value between 0 and 1 of when each collision occurred on each axis.
 		*/
-		float xEntry, yEntry;
-		float xExit, yExit;
-
-		if (velocity.x == 0.0f) {
-			xEntry = -std::numeric_limits<float>::infinity();
-			xExit = std::numeric_limits<float>::infinity();
-		}
-		else {
-			xEntry = xInvEntry / velocity.x;
-			xExit = xInvExit / velocity.x;
-		}
-
-		if (velocity.y == 0.0f) {
-			yEntry = -std::numeric_limits<float>::infinity();
-			yExit = std::numeric_limits<float>::infinity();
-		}
-		else {
-			yEntry = yInvEntry / velocity.y;
-			yExit = yInvExit / velocity.y;
-		}
+		const vec2f entry = entry_point(invEntry, velocity);
+		const vec2f exit = exit_point(invExit, velocity);
 
 		// find the earliest/latest times of collisionfloat 
-		float entryTime = mValue_max(xEntry, yEntry);
-		float exitTime = mValue_min(xExit, yExit);
+		float entryTime = mValue_max(entry.x, entry.y);
+		float exitTime = mValue_min(exit.x, exit.y);
 
 		// if there was no collision
-		if (entryTime > exitTime || xEntry < 0.0f && yEntry < 0.0f || xEntry > 1.0f || yEntry > 1.0f)
-		{
+		if (entryTime > exitTime || entry.x < 0.0f && entry.y < 0.0f || entry.x > 1.0f || entry.y > 1.0f) {
 			normal = vec2f(0, 0);
 			return 1.0f;//1.0f means the object can travel for it's full lenght
 		}
-		else // if there was a collision 
-		{
-			// calculate normal of collided surface
-			if (xEntry > yEntry)
-			{
-				if (xInvEntry < 0.0f) {
-					normal = vec2f(1, 0);
-				}
-				else {
-					normal = vec2f(-1, 0);
-				}
-			}
-			else
-			{
-				if (yInvEntry < 0.0f) {
-					normal = vec2f(0, 1);
-				}
-				else {
-					normal = vec2f(0, -1);
-				}
-			}
+		//normal
+		if (entry.x > entry.y) {
+			normal = (invEntry.x < 0.0f) ? vec2f{ 1.0f, 0.0f } : vec2f{ -1.0f, 0.0f };
 		}
+		else {
+			normal = (invEntry.y < 0.0f) ? vec2f{ 0.0f, 1.0f } : vec2f{ 0.0f, -1.0f };
+		}
+
 		// return the time of collisionreturn entryTime; 
 		return entryTime;
 	}
+	bool SweptAABB_collision_exe::sweptAABB_dynamic_vs_dynamic(SweptResult& pair)const noexcept {
 
-	SequenceM<SweptAABB_Data> determine_colliders(SequenceM<TransformF>& objects) {
+		const auto rectA = pair.refA->get_rectangle();
+		const auto rectB = pair.refB->get_rectangle();
+
+		//since both objects are moving, of if B isn't doesn't matter, the logic needs to run on relative velocity
+		vec2f relativeVel = pair.refA->get_currVel() - pair.refB->get_currVel();
+		//expanded rectangle must also be with the consideration of relative velocity
+		rectF expandedA = sweptAABB_expand_rect(rectA, relativeVel);
+		//early return
+		if (!expandedA.intersects_rect(rectB))
+			return false;
+		//get contact time of collision, default should be 1.0f which means no collision in the span of the current frame
+		pair.collisionTime = sweptAABB(rectA, rectB, relativeVel, pair.collisionNormal);
+
+		return (pair.collisionTime >= 0.f && pair.collisionTime < 1.f);
+	}
+	rectF SweptAABB_collision_exe::sweptAABB_expand_rect(const rectF& rect, const vec2f& velocity)const noexcept {
+		return rectF(
+			(velocity.x > 0) ? rect.x : rect.x + velocity.x,
+			(velocity.y > 0) ? rect.y : rect.y + velocity.y,
+			rect.w + std::abs(velocity.x),
+			rect.h + std::abs(velocity.y)
+		);
+	}
+	SequenceM<SweptAABB_collision_exe::SweptResult> SweptAABB_collision_exe::get_colliders(SequenceM<TransformF>& objects) {
 		const int entityCount = objects.size_in_use();
 
-		SequenceM<SweptAABB_Data> collisions;
+		SequenceM<SweptResult> collisions;
 
 		for (int i = 0; i < entityCount; ++i) {
 			for (int j = i + 1; j < entityCount; ++j) {//j=i+1 becasue A vs B is same as B vs A
 
-				float collisionTime = 1.0f;
-				vec2f collisionNormal;
+				SweptResult pair(&objects[i], &objects[j], 1.0f, vec2f(0, 0));
 
-				if (sweptAABB_dynamic_vs_dynamic(objects[i], objects[j], collisionNormal, collisionTime)) {
-					collisions.element_create(
-						SweptAABB_Data(&objects[i], &objects[j], collisionTime, collisionNormal)
-					);
-				}
+				if (sweptAABB_dynamic_vs_dynamic(pair))
+					collisions.element_create(pair);
 
 			}
 		}
+		std::sort(collisions.begin(), collisions.end(), [](const auto& a, const auto& b) {
+			return a.collisionTime < b.collisionTime;
+			});
+
 		return collisions;
 	}
 

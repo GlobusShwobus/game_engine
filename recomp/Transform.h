@@ -13,13 +13,13 @@ namespace badEngine {
 
 		constexpr Transform()noexcept = default;
 
-		constexpr Transform(Rectangle<T> rectangle, Vec2M<T> velocity)noexcept :mBox(std::move(rectangle)), mVelocity(std::move(velocity)), mCurrVelocity(mVelocity){}
+		constexpr Transform(Rectangle<T> rectangle, Vec2M<T> velocity)noexcept :mBox(std::move(rectangle)), mVelocity(std::move(velocity)), mCurrVelocity(mVelocity) {}
 
 		constexpr Transform(Rectangle<T> rectangle)noexcept :mBox(std::move(rectangle)) {}
 
 
 		template<typename S>
-		constexpr Transform(const Transform<S>& rhs)noexcept :mBox(rhs.mBox), mVelocity(rhs.mVelocity), mCurrVelocity(rhs.mVelocity){}
+		constexpr Transform(const Transform<S>& rhs)noexcept :mBox(rhs.mBox), mVelocity(rhs.mVelocity), mCurrVelocity(rhs.mVelocity) {}
 
 		template <typename S>
 		constexpr Transform& operator=(const Transform<S>& rhs)noexcept {
@@ -53,11 +53,11 @@ namespace badEngine {
 		Vec2M<T> get_currVel()const noexcept {
 			return mCurrVelocity;
 		}
-		
-		/* 
+
+		/*
 		# 1) clamps the rectangle to the axis of container if there is an this isn't fully contained by container
 		#    if this is larger than the container, it will be buggy
-		# 
+		#
 		# 2) returns a pair of bools telling what axis penetration occured in (X or Y)
 		*/
 		std::pair<bool, bool> force_contained_in(const rectI& container)noexcept {
@@ -83,13 +83,13 @@ namespace badEngine {
 			return axis;
 		}
 
-		void flip_X_mainVel()noexcept{
+		void flip_X_mainVel()noexcept {
 			mVelocity.x *= -1;
 		}
 		void flip_Y_mainVel()noexcept {
 			mVelocity.y *= -1;
 		}
-		
+
 		void set_mainVel(Vec2M<T> expression)noexcept {
 			mVelocity = expression;
 		}
@@ -100,7 +100,7 @@ namespace badEngine {
 
 	private:
 		Rectangle<T> mBox;
-		
+
 		Vec2M<T> mVelocity;
 		Vec2M<T> mCurrVelocity;
 	};
@@ -108,5 +108,28 @@ namespace badEngine {
 	using TransformI = Transform<int>;
 	using TransformF = Transform<float>;
 
+
+	static constexpr auto COLLISION_POLICY_REFLECT = [](TransformF& entity, float time, const vec2f& normal)noexcept {
+		/*NOTE: if velocity is zero in object then reversing it is meaning less, 0 times anything is 0*/
+		if (normal.x != 0) {
+			entity.flip_X_mainVel();
+		}
+		if (normal.y != 0) {
+			entity.flip_Y_mainVel();
+		}
+		};
+
+	static constexpr auto COLLISION_POLICY_PUSH = [](TransformF& entity, float time, const vec2f& normal)noexcept {
+		const float remainingTime = 1.0f - time;
+		vec2f vel = entity.get_mainVel();
+
+		const float vn = dot_vector(vel, normal);
+		const vec2f vNormal = normal * vn;
+		const vec2f vTangent = vel - vNormal;
+
+		const vec2f newVel = vTangent * remainingTime;
+
+		entity.set_mainVel(newVel);
+		};
 
 }

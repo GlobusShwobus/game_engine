@@ -80,17 +80,28 @@ int main() {
                 continue;
             }
         }
-        //COLLISION
+        //COLLISION/MOVEMENT (LATER ISOLATE INTO SOME SCRIPT FUNC)
         static float hold = 0;
         hold += dt;
         if (hold >= 0.008f) {
             
-            collision_algorithm_executable(mRects, rectI(0, 0, 960, 540), COLLISION_POLICY_REFLECT_BOTH);
+            //FIRST UPDATE VELOCITY
+            for (auto& each : mRects)//later entities
+                each.set_currVel_to_mainVel();
+            //OR ANY OTHER COLLISION ALGO IN THE FUTURE IF SIMPLER NEEDED OR EVEN A SWITCH
+            sweptAABB_algorithm(mRects, COLLISION_POLICY_PUSH);
+           
+            //THEN MOVE BLINDLY
+            for (auto& each : mRects)//later entities
+                each.update_position_default();
+
+            //THIS IS EXTRA THAT MIGHT NOT BE REQUIRED IN THE END, WORLD EDGE DETECTION
+            objects_vs_container_resolved(mRects, rectI(0, 0, 960, 540));
 
             hold = 0;
         }
-
-        for (int i = 0; i < 10;i++) {
+        
+        for (int i = 0; i < 10;i++) {//THIS IS NOT PART OF COLLISION, REMOVE LATER
             renManager.fill_area_with(mRects[i].get_rectangle(), mColors[i]);
         }
         //#################################################################################
