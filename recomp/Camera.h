@@ -25,8 +25,15 @@ namespace badEngine {
 		void set_scale(vec2f scale)noexcept {
 			mScale = std::move(scale);
 		}
-		void zoom(float factor)noexcept {
+		void zoom_towards(float factor, const vec2f& focus)noexcept {
+			//before zoom coordiante
+			vec2f worldBefore = screen_to_world_point(focus);
+			//apply zoom
 			mScale *= factor;
+			//after zoom coordinate
+			vec2f worldAfter = screen_to_world_point(focus);
+			//diffrence to keep offset fixed
+			mOffset += (worldBefore - worldAfter);
 		}
 
 
@@ -51,17 +58,12 @@ namespace badEngine {
 				worldRect.h * mScale.y
 			);
 		}
-
-		template<typename S>
-		rectF screen_to_world(const Rectangle<S>& screenRect)const noexcept {
-			return rectF(
-				(screenRect.x / mScale.x) + mOffset.x,
-				(screenRect.y / mScale.y) + mOffset.y,
-				screenRect.w / mScale.x,
-				screenRect.h / mScale.y
+		vec2f screen_to_world_point(const vec2f& screenPoint)const noexcept {
+			return vec2f(
+				(screenPoint.x / mScale.x) + mOffset.x,
+				(screenPoint.y / mScale.y) + mOffset.y
 			);
 		}
-
 
 		//UPDATE CAMERA
 		void focus_on(vec2f point)noexcept {
@@ -72,11 +74,12 @@ namespace badEngine {
 			focus_on(rect.get_center_point());
 		}
 
-		void move(vec2f point)noexcept {
+		
+		void pan(vec2f point)noexcept {
 			mOffset += point / mScale;
 		}
-		void move(float x, float y)noexcept {
-			move(vec2f(x, y));
+		void pan(float x, float y)noexcept {
+			pan(vec2f(x, y));
 		}
 
 	private:

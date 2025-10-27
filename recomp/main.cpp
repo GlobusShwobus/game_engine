@@ -73,7 +73,8 @@ int main() {
     rectF testRectCameraRect = rectF(960 / 2, 540 / 2, 50, 50);
     Color testRectCameraCol = Color(255, 0, 0, 255);
     camera.set_scale(1, 1);
-    camera.focus_on(testRectCameraRect);
+
+    bool mouseHeld = false;
     ////#################################################################################
 
     //main loop
@@ -89,6 +90,10 @@ int main() {
         renManager.renderer_clear();
 
         //LISTEN TO EVENTS
+
+        float MouseX, MouseY;
+        SDL_GetMouseState(&MouseX, &MouseY);
+
         while (SDL_PollEvent(&EVENT)) {
             if (EVENT.type == SDL_EVENT_QUIT) {
                 GAME_RUNNING = false;
@@ -96,24 +101,36 @@ int main() {
             }
 
             if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-                float x, y;
-                SDL_GetMouseState(&x, &y);
-
-                camera.move(x, y);
+                mouseHeld = true;
+            }
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+                mouseHeld = false;
             }
 
             if (EVENT.type == SDL_EVENT_KEY_DOWN) {
                 SDL_Keycode key = EVENT.key.key;
 
                 if (key == SDLK_A) {
-                    camera.zoom(1.1f);
+                    camera.zoom_towards(1.1f, vec2f(MouseX, MouseY));
                 }
                 if (key == SDLK_S) {
-                    camera.zoom(0.9f);
+                    camera.zoom_towards(0.9f, vec2f(MouseX, MouseY));
+                }
+
+                if (key == SDLK_D) {
+                    camera.pan(vec2f(1, 0));
+                }
+
+                if (key == SDLK_F) {
+                    camera.pan(vec2f(-1, 0));
                 }
             }
-
         }
+
+        if (mouseHeld) {
+            camera.focus_on(vec2f(MouseX, MouseY));
+        }
+
         //COLLISION/MOVEMENT (LATER ISOLATE INTO SOME SCRIPT FUNC)
         static float hold = 0;
         hold += dt;
