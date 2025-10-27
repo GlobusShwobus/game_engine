@@ -23,6 +23,9 @@
     <Filter Include="Entity">
       <UniqueIdentifier>{533b2fbe-4f0f-4701-88c0-0fa9fea5e181}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scripts">
+      <UniqueIdentifier>{4bec3fdd-bf36-4a6b-a2e1-e58aea8e5e3b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Serialization.h">
@@ -78,6 +81,12 @@
     </ClInclude>
     <ClInclude Include="Entity_Factory.h">
       <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="QuadTree.h">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts.h">
+      <Filter>Scripts</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

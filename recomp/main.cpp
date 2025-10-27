@@ -12,6 +12,7 @@
 #include "NumberGenerator.h"
 #include "Transform.h"
 #include "Color.h"
+#include "Camera.h"
 
 /*
 MORE COLLISION RESOLUTIONS SECOND
@@ -46,19 +47,33 @@ int main() {
     }
 
     //TEST CODE
-    SequenceM<TransformF> mRects;
-    SequenceM<Color> mColors;
-    NumberGenerator mRng;
+    NumberGenerator rng;
+    Camera2D camera(960,540);
 
-    for (int i = 0; i < 10;i++) {
-        rectF rect = rectF(mRng.random_int(0, 900), mRng.random_int(0, 500), 35, 35);
-        vec2f vel = vec2f(mRng.random_int(-5, 5), mRng.random_int(-5, 5));
-        Color color = Colors::makeRGBA(mRng.random_int(0,255), mRng.random_int(0,255), mRng.random_int(0,255), 255u);
+    /*
+    struct SomeObjWithArea {
+        rectF rect;
+        vec2f vel;
+        Color col;
+    };
+
+    SequenceM<SomeObjWithArea> myObjs;
+
+    float farea = 100000.0f;
+
+    for (int i = 0; i < 1000000; i++) {
         
-        mColors.element_create(color);
-        mRects.element_assign(TransformF(rect, vel));
+        myObjs.element_create(
+            rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1,10), rng.random_float(1, 10)),
+            vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
+            Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
+            );
     }
-
+    */
+    rectF testRectCameraRect = rectF(960 / 2, 540 / 2, 50, 50);
+    Color testRectCameraCol = Color(255, 0, 0, 255);
+    camera.set_scale(1, 1);
+    camera.focus_on(testRectCameraRect);
     ////#################################################################################
 
     //main loop
@@ -79,33 +94,40 @@ int main() {
                 GAME_RUNNING = false;
                 continue;
             }
+
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                float x, y;
+                SDL_GetMouseState(&x, &y);
+
+                camera.move(x, y);
+            }
+
+            if (EVENT.type == SDL_EVENT_KEY_DOWN) {
+                SDL_Keycode key = EVENT.key.key;
+
+                if (key == SDLK_A) {
+                    camera.zoom(1.1f);
+                }
+                if (key == SDLK_S) {
+                    camera.zoom(0.9f);
+                }
+            }
+
         }
         //COLLISION/MOVEMENT (LATER ISOLATE INTO SOME SCRIPT FUNC)
         static float hold = 0;
         hold += dt;
         if (hold >= 0.008f) {
             
-            //FIRST UPDATE VELOCITY
-            for (auto& each : mRects)//later entities
-                each.set_currVel_to_mainVel();
-            //OR ANY OTHER COLLISION ALGO IN THE FUTURE IF SIMPLER NEEDED OR EVEN A SWITCH
-            sweptAABB_algorithm(mRects, COLLISION_POLICY_PUSH);
-           
-            //THEN MOVE BLINDLY
-            for (auto& each : mRects)//later entities
-                each.update_position_default();
 
-            //THIS IS EXTRA THAT MIGHT NOT BE REQUIRED IN THE END, WORLD EDGE DETECTION
-            objects_vs_container_resolved(mRects, rectI(0, 0, 960, 540));
 
             hold = 0;
         }
-        
-        for (int i = 0; i < 10;i++) {//THIS IS NOT PART OF COLLISION, REMOVE LATER
-            renManager.fill_area_with(mRects[i].get_rectangle(), mColors[i]);
-        }
         //#################################################################################
 
+        rectF screenRect = camera.world_to_screen(testRectCameraRect);
+        
+        renManager.fill_area_with(screenRect, testRectCameraCol);
         renManager.renderer_present();
 
         //HANDLE TASKS BETWEEN FRAMES
@@ -133,6 +155,7 @@ int main() {
         //#################################################################################
         
     }
+
     SDL_Quit();
 
     return 0;

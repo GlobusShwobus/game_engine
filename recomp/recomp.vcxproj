@@ -153,7 +153,9 @@
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Configs.h" />
     <ClInclude Include="NumberGenerator.h" />
+    <ClInclude Include="QuadTree.h" />
     <ClInclude Include="Rectangle.h" />
+    <ClInclude Include="Scripts.h" />
     <ClInclude Include="SequenceM.h" />
     <ClInclude Include="Serialization.h" />
     <ClInclude Include="Sprite.h" />

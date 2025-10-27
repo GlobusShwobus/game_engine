@@ -108,7 +108,7 @@ namespace badEngine {
 	using TransformI = Transform<int>;
 	using TransformF = Transform<float>;
 
-
+	// TRANSFORM WILL BE UPDATED TO ALSO INCLUDE WEIGHT THEN THESE NEED CHANGING
 	static constexpr auto COLLISION_POLICY_REFLECT = [](TransformF& entity, float time, const vec2f& normal)noexcept {
 		/*NOTE: if velocity is zero in object then reversing it is meaning less, 0 times anything is 0*/
 		if (normal.x != 0) {

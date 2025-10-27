@@ -6,67 +6,83 @@
 namespace badEngine {
 
 	class Camera2D {
+
 	public:
-		constexpr Camera2D(int screenWidth, int screenHeight)noexcept :mScreenDimensions(screenWidth, screenHeight) {}
-		template<typename S>
-		constexpr Camera2D(const Vec2M<S>& screenDimensions)noexcept :mScreenDimensions(screenDimensions) {}
 
+		Camera2D(int screenWidth, int screenHeight)noexcept :mScreenSize(screenWidth, screenHeight) {}
+		Camera2D(vec2i screenSize)noexcept :mScreenSize(std::move(screenSize)) {}
 
-		constexpr vec2i get_scale()const noexcept {
+		//SCALE AND ZOOM
+		vec2f get_scale()const noexcept {
 			return mScale;
 		}
-		constexpr void set_screen_dimensions(int screenWidth, int screenHeight)noexcept {
-			set_screen_dimensions(vec2i(screenWidth, screenHeight));
+		void set_scale(float x, float y)noexcept {
+			mScale = vec2f(x, y);
 		}
-		constexpr void set_screen_dimensions(vec2i dimensions)noexcept {
-			mScreenDimensions = dimensions;
+		void set_scale(float x)noexcept {
+			mScale = vec2f(x, x);
 		}
-		constexpr void zoom(float factor)noexcept {
+		void set_scale(vec2f scale)noexcept {
+			mScale = std::move(scale);
+		}
+		void zoom(float factor)noexcept {
 			mScale *= factor;
 		}
 
-		constexpr void focus_on(vec2i point)noexcept {
-			mOffset = point - (mScreenDimensions * 0.5f) / mScale;
+
+		//SCREEN
+		vec2i get_screen()const noexcept {
+			return mScreenSize;
+		}
+		void set_screen(int screenWidth, int screenHeight)noexcept {
+			mScreenSize = vec2i(screenWidth, screenHeight);
+		}
+		void set_screen(vec2i size)noexcept {
+			mScreenSize = std::move(size);
+		}
+
+		//TRANSLATE A BEWEEN WORLD AND SCREEN SPACE
+		template<typename S>
+		rectF world_to_screen(const Rectangle<S>& worldRect)const noexcept {
+			return rectF(
+				(worldRect.x - mOffset.x) * mScale.x,
+				(worldRect.y - mOffset.y) * mScale.y,
+				worldRect.w * mScale.x,
+				worldRect.h * mScale.y
+			);
+		}
+
+		template<typename S>
+		rectF screen_to_world(const Rectangle<S>& screenRect)const noexcept {
+			return rectF(
+				(screenRect.x / mScale.x) + mOffset.x,
+				(screenRect.y / mScale.y) + mOffset.y,
+				screenRect.w / mScale.x,
+				screenRect.h / mScale.y
+			);
+		}
+
+
+		//UPDATE CAMERA
+		void focus_on(vec2f point)noexcept {
+			mOffset = point - (mScreenSize * 0.5f) / mScale;
 		}
 		template<typename S>
-		constexpr void focus_on(const Rectangle<S>& rect)noexcept {
+		void focus_on(const Rectangle<S>& rect)noexcept {
 			focus_on(rect.get_center_point());
 		}
-		constexpr void focus_on(int x, int y)noexcept {
-			focus_on(vec2i(x, y));
-		}
 
-		constexpr void move(vec2f point)noexcept {
+		void move(vec2f point)noexcept {
 			mOffset += point / mScale;
 		}
-		constexpr void move(float x, float y)noexcept {
+		void move(float x, float y)noexcept {
 			move(vec2f(x, y));
-		}
-
-		template<typename S>
-		constexpr vec2f world_to_screen_point(const Vec2M<S>& worldPoint)const noexcept {
-			return vec2f((worldPoint - mOffset) * mScale);
-		}
-		template<typename S>
-		constexpr rectF world_to_screen_rectangle(const Rectangle<S>& worldRect)const noexcept {
-			auto position = world_to_screen_point(worldRect.mPosition);
-			return rectF(position, worldRect.mDimensions * mScale);
-		}
-
-		template <typename S>
-		constexpr vec2f screen_to_world_point(const Vec2M<S>& screenPoint)const noexcept {
-			return vec2f((screenPoint / mScale) + mOffset);
-		}
-		template <typename S>
-		constexpr rectF screen_to_world_rectangle(const Rectangle<S>& screenRect)const noexcept {
-			auto position = screen_to_world_point(screenRect.mPosition);
-			return rectF(position, screenRect.mDimensions / mScale);
 		}
 
 	private:
 		vec2f mOffset;
-		vec2f mScale;
+		vec2f mScale = vec2f(1.0f, 1.0f);
 
-		vec2i mScreenDimensions;
+		vec2i mScreenSize;
 	};
 }
