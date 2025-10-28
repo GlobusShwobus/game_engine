@@ -64,16 +64,16 @@ namespace badEngine {
 				(screenPoint.y / mScale.y) + mOffset.y
 			);
 		}
+		
+		rectF get_view_rect()const noexcept {
+			return rectF(
+				mOffset.x, mOffset.y, mScreenSize.x / mScale.x, mScreenSize.y / mScale.y
+			);
+		}
 
-		//UPDATE CAMERA
-		void focus_on(vec2f point)noexcept {
+		void focus_on(const vec2f& point)noexcept {
 			mOffset = point - (mScreenSize * 0.5f) / mScale;
 		}
-		template<typename S>
-		void focus_on(const Rectangle<S>& rect)noexcept {
-			focus_on(rect.get_center_point());
-		}
-
 		
 		void pan(vec2f point)noexcept {
 			mOffset += point / mScale;

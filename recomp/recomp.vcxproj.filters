@@ -108,6 +108,9 @@
     <ClCompile Include="Font.cpp">
       <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
+    <ClCompile Include="Scripts.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="SystemManagerConfig.json">
