@@ -39,4 +39,15 @@ namespace badEngine {
 	private:
 		std::chrono::steady_clock::time_point mWatch;
 	};
+
+
+
+	auto timeMyFunction = [](auto&& func, auto&&... args)->float {
+		Stopwatch timer;
+
+		std::forward<decltype(func)>(func)(
+			std::forward<decltype(args)>(args)...
+			);
+		return timer.dt_float();
+		};
 }

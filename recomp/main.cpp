@@ -97,15 +97,13 @@ int main() {
         renManager.renderer_clear();
 
         //LISTEN TO EVENTS
-        float MouseX, MouseY;
-        SDL_GetMouseState(&MouseX, &MouseY);
 
         while (SDL_PollEvent(&EVENT)) {
             if (EVENT.type == SDL_EVENT_QUIT) {
                 GAME_RUNNING = false;
                 continue;
             }
-            script_handle_camera_mouse(EVENT, camera, vec2f(MouseX, MouseY));
+            script_handle_camera_mouse(EVENT, camera);
         }
 
 

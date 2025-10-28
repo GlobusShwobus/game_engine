@@ -53,6 +53,6 @@ if (dt < limit) {
 
 namespace badEngine {
 
-    void script_handle_camera_mouse(SDL_Event& event, Camera2D& camera, vec2f mousePos)noexcept;
+    void script_handle_camera_mouse(SDL_Event& event, Camera2D& camera)noexcept;
 
 }
