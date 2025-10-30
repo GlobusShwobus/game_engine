@@ -60,7 +60,7 @@ int main() {
         Color col;
     };
     SequenceM<SomeObjWithArea> myObjsSeq;
-    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0,0, farea, farea), 0);
+    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0,0, farea, farea));
 
     for (int i = 0; i < 1000000; i++) {
         
