@@ -60,7 +60,7 @@ int main() {
         Color col;
     };
     SequenceM<SomeObjWithArea> myObjsSeq;
-    StaticQuadTree<SomeObjWithArea> myObjsQuad(rectF(0,0, farea, farea), 0);
+    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0,0, farea, farea), 0);
 
     for (int i = 0; i < 1000000; i++) {
         
@@ -145,11 +145,11 @@ int main() {
         }
         else {
 
-            for (const auto& each : myObjsQuad.search(cameraSpace)) {
+            for (const auto each : myObjsQuad.search(cameraSpace)) {
 
 
-                rectF cameraAdjusted = camera.world_to_screen(each.rect);
-                renManager.fill_area_with(cameraAdjusted, each.col);
+                rectF cameraAdjusted = camera.world_to_screen(each->rect);
+                renManager.fill_area_with(cameraAdjusted, each->col);
                 DrawObjCount++;
 
 

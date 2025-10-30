@@ -2,157 +2,150 @@
 #include "Rectangle.h"
 #include <memory>
 #include <array>
-#include <list>
 #include "SequenceM.h"
 //STATIC QUADTREE
 
 namespace badEngine {
 
 
-	template <typename OBJECT_TYPE>
-	class StaticQuadTree {
+	template<typename OBJECT>
+	class QuadTree {
 
 		static constexpr std::size_t FOUR_WINDOWS = 4;
 		static constexpr std::size_t MAX_DEPTH = 8;
 
-		struct Branch {
-			rectF mBranchRect;
-			std::shared_ptr<StaticQuadTree<OBJECT_TYPE>> mBranch;
-		};
-
 	public:
 
-		StaticQuadTree(const rectF size , const std::size_t depth = 0):mDepth(depth)
-		{
-			resize(size);
+		QuadTree(const rectF& window, std::size_t depth = 0) : mDepth(depth) {
+			init(window);
 		}
 
-		void resize(const rectF& area) {
-			clear();
-			mWindow = area;
 
+		void init(const rectF& size) {
+			clear();
+			mWindow = size;
 			const float width = mWindow.w / 2.0f;
 			const float height = mWindow.h / 2.0f;
 
-			mBranches[0].mBranchRect = rectF(mWindow.x, mWindow.y, width, height);
-			mBranches[1].mBranchRect = rectF(mWindow.x + width, mWindow.y, width, height);
-			mBranches[2].mBranchRect = rectF(mWindow.x, mWindow.y + height, width, height);
-			mBranches[3].mBranchRect = rectF(mWindow.x + width, mWindow.y + height, width, height);
+			mBranchPos[0] = rectF(mWindow.x, mWindow.y, width, height);
+			mBranchPos[1] = rectF(mWindow.x + width, mWindow.y, width, height);
+			mBranchPos[2] = rectF(mWindow.x, mWindow.y + height, width, height);
+			mBranchPos[3] = rectF(mWindow.x + width, mWindow.y + height, width, height);
 		}
 
 		void clear() {
-			//first clear objects in this layer
 			mObjects.clear();
 
-			//then recursivly call clear on all branches + set the branch to nullptr afterwards
-			for (auto& each : mBranches) {
-				if (each.mBranch) {
-					each.mBranch->clear();
+			for (int i = 0; i < 4; i++) {
+				if (mBranchStorage[i]) {
+					mBranchStorage[i]->clear();
 				}
-				each.mBranch.reset();
+				mBranchStorage[i].reset();
 			}
+
 		}
 
 		std::size_t size()const {
-			//first take the count of the objects in this layer
-			std::size_t nCount = mObjects.size_in_use();
+			std::size_t size = mObjects.size_in_use();
 
-			//then recurisvly add the counts of objects in branches
-			for (auto& each : mBranches) {
-				if (each.mBranch) {
-					nCount += each.mBranch->size();
-				}
-			}
-		}
+			for (int i = 0; i < 4; i++) {
 
-		void insert(const OBJECT_TYPE& item, const rectF& itemsize) {
-			
-			//first check if the given object may fit into any of the branches
-			for (auto& each : mBranches) {
-
-				if (each.mBranchRect.contains_rect(itemsize)) {
-					//if objects fits onto a branch, check depth and limit it
-
-					if (mDepth+1< MAX_DEPTH) {
-
-						//check for nullptr
-						if (!each.mBranch) {
-							//make new branch if nullptr
-							each.mBranch = std::make_shared<StaticQuadTree<OBJECT_TYPE>>(each.mBranchRect, mDepth + 1);
-						}
-						//add the item into the branch (IF IT FITS)
-						each.mBranch->insert(item, itemsize);//recursive call to heck futher if the item fits
-						return;
-					}
+				if (mBranchStorage[i]) {
+					size += mBranchStorage[i]->size();
 				}
 
 			}
-			//if the item does not fit then it must mean it fits into the current layer
-			mObjects.element_create(itemsize, item);
+
+			return size;
 		}
 
-		std::list<OBJECT_TYPE> search(const rectF& searchArea)const {
-			std::list<OBJECT_TYPE> itemList;
-			search(searchArea, itemList);
+		void insert(const OBJECT& object, const rectF& objectArea) {
+
+			//first, check structures depth limit, if going deeper is fine, try going deeper
+			if (mDepth + 1 < MAX_DEPTH) {
+
+				//check all 4 branches
+				for (int i = 0; i < 4; i++) {
+					//check which window the object exists in (this check wholely; in case all 4 checks fail, it must mean we add to this layer as this layer is larger)
+					if (!mBranchPos[i].contains_rect(objectArea))
+						continue;
+
+					//check for nullptr and initalize the branch if not yet set
+					if (!mBranchStorage[i])
+						mBranchStorage[i] = std::make_unique<QuadTree<OBJECT>>(mBranchPos[i], mDepth + 1);
+
+
+					//add the item into the branch
+					mBranchStorage[i]->insert(object, objectArea);//recursive call to heck futher if the item fits
+					//return early as there is now nothing else to do
+					return;
+				}
+
+			}
+
+			//in case the depth limit is reached or the objectArea doesn't fit into any sub branches, add it here
+			mObjects.element_create(objectArea, object);
+		}
+
+		SequenceM<OBJECT*> search(const rectF& searchArea) {
+			SequenceM<OBJECT*> itemList;
+			conditional_add(searchArea, itemList);
 			return itemList;
 		}
-		void search(const rectF& searchArea, std::list<OBJECT_TYPE>& list)const {
-			
+	private:
+		void conditional_add(const rectF& searchArea, SequenceM<OBJECT*>& list) {
+
 			//first check for items belonging to this layer
-			for (const auto& item: mObjects) {
+			for (auto& item : mObjects) {
 
 				if (searchArea.intersects_rect(item.first)) {
-					list.push_back(item.second);
+					list.element_create(&item.second);
 				}
 
 			}
 
 			//second check all branches and get their objects
-
-			for (auto& each : mBranches) {
-
+			for (int i = 0; i < 4; i++) {
 				//check for nullptr, if null then it means there is nothing there
-				if (!each.mBranch) continue;
+				if (!mBranchStorage[i]) continue;
 
 				//check if searched area contains branch wholely, if yes then just add everything there
-				if (searchArea.contains_rect(each.mBranchRect)) {
-					each.mBranch->items(list);
+				if (searchArea.contains_rect(mBranchPos[i])) {
+					mBranchStorage[i]->unconditional_add(list);
 				}//if it does not contain whole but does insersect then need recursive call for percise items
-				else if (each.mBranchRect.intersects_rect(searchArea)) {
-					each.mBranch->search(searchArea, list);
+				else if (mBranchPos[i].intersects_rect(searchArea)) {
+					mBranchStorage[i]->conditional_add(searchArea, list);
 				}
-
 			}
 		}
-		void items(std::list<OBJECT_TYPE>& listItems)const  {
+
+		void unconditional_add(SequenceM<OBJECT*>& listItems) {
 			//first add all items from this layer
-			for (const auto& each : mObjects) {
-				listItems.push_back(each.second);
+			for (auto& each : mObjects) {
+				listItems.element_create(&each.second);
 			}
 			//secondly add all items from branches
-			for (auto& each : mBranches) {
-				if (each.mBranch) {
-					each.mBranch->items(listItems);
+			for (int i = 0; i < 4; i++) {
+
+				if (mBranchStorage[i]) {
+					mBranchStorage[i]->unconditional_add(listItems);
 				}
 			}
 		}
 
-		const rectF& get_area()const {
-			return mWindow;
-		}
+	private:
+		//LAYER DEPTH
+		std::size_t mDepth;
 
-	protected:
-		//depth tracker
-		std::size_t mDepth = 0;
-
-		//area of the quadtree
+		//THE SIZE OF THIS WINDOW
 		rectF mWindow;
 
-		//4 child trees
-		std::array<Branch, FOUR_WINDOWS> mBranches;
+		//BRANCHES, FIRST SIMPLY POSITION, SECOND THEIR SUBSTORAGE
+		std::array<rectF, 4> mBranchPos;
+		std::array<std::unique_ptr<QuadTree<OBJECT>>, 4> mBranchStorage;
 
-		//objects that belong to this QuadTree, containing area of the object and object itself
-		SequenceM<std::pair<rectF, OBJECT_TYPE>> mObjects;
+		//STORE ALL OBJECTS BY VALUE, THIS IS THEIR OWNER
+		SequenceM<std::pair<rectF, OBJECT>> mObjects;
 	};
 
 }
