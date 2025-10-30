@@ -2,6 +2,7 @@
 #include "Rectangle.h"
 #include <memory>
 #include <array>
+
 #include "SequenceM.h"
 //STATIC QUADTREE
 
@@ -89,6 +90,7 @@ namespace badEngine {
 
 		SequenceM<OBJECT*> search(const rectF& searchArea) {
 			SequenceM<OBJECT*> itemList;
+			itemList.set_growth_resist_low();
 			conditional_add(searchArea, itemList);
 			return itemList;
 		}
