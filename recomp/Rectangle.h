@@ -46,7 +46,7 @@ namespace badEngine {
 			return Vec2M<T>(w * 0.5f, h * 0.5f);
 		}
 
-		constexpr bool contains_point(T X, T Y)noexcept {
+		constexpr bool contains_point(T X, T Y)const noexcept {
 			return (
 				X >= x &&
 				Y >= y &&
@@ -54,12 +54,12 @@ namespace badEngine {
 				Y < y + h
 				);
 		}
-		constexpr bool contains_point(const Vec2M<T>& pos)noexcept {
+		constexpr bool contains_point(const Vec2M<T>& pos)const noexcept {
 			return contains_point(pos.x, pos.y);
 		}
 
 		template <typename S>
-		bool contains_rect(const Rectangle<S>& contained)noexcept {
+		bool contains_rect(const Rectangle<S>& contained)const noexcept {
 			return (
 				contained.x >= x &&
 				contained.y >= y &&
@@ -69,7 +69,7 @@ namespace badEngine {
 		}
 
 		template <typename S>
-		constexpr bool intersects_rect(const Rectangle<S>& rhs)noexcept {
+		constexpr bool intersects_rect(const Rectangle<S>& rhs)const noexcept {
 			return(
 				x < rhs.x + rhs.w &&
 				x + w > rhs.x &&

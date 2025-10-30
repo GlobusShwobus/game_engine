@@ -5,6 +5,7 @@ namespace badEngine{
 
     void script_handle_camera_mouse(SDL_Event& event, Camera2D& camera)noexcept {
 
+        //TODO:: currently when zoomed out it will pan really quick, zoomed in very slow. standardize it
         static bool mouseHeld = false;
         static vec2f lastMouseWorldPos;
 

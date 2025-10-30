@@ -14,6 +14,7 @@
 #include "Color.h"
 #include "Camera.h"
 #include "Scripts.h"
+#include "QuadTree.h"
 
 /*
 MORE COLLISION RESOLUTIONS SECOND
@@ -51,25 +52,26 @@ int main() {
     //TEST CODE
     NumberGenerator rng;
     Camera2D camera(960,540);
-
+    float farea = 10000.0f;
     
     struct SomeObjWithArea {
         rectF rect;
         vec2f vel;
         Color col;
     };
-
-    SequenceM<SomeObjWithArea> myObjs;
-
-    float farea = 10000.0f;
+    SequenceM<SomeObjWithArea> myObjsSeq;
+    StaticQuadTree<SomeObjWithArea> myObjsQuad(rectF(0,0, farea, farea), 0);
 
     for (int i = 0; i < 1000000; i++) {
         
-        myObjs.element_create(
-            rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1,10), rng.random_float(1, 10)),
+        rectF itemBox = rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1, 10), rng.random_float(1, 10));
+        SomeObjWithArea item = SomeObjWithArea(
+            itemBox,
             vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
             );
+        myObjsQuad.insert(item, itemBox);
+        myObjsSeq.element_assign(item);
     }
     
 
@@ -78,6 +80,7 @@ int main() {
     bool mouseHeld = false;
     Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
     Font prettyText(sfont, 32,3);
+    bool seqORquad = false;
     ////#################################################################################
 
     //main loop
@@ -103,27 +106,61 @@ int main() {
                 GAME_RUNNING = false;
                 continue;
             }
+
+            //BS
+            if (EVENT.type == SDL_EVENT_KEY_DOWN) {
+                if (EVENT.key.key == SDLK_A) {
+                    seqORquad = true;
+                }
+                if (EVENT.key.key == SDLK_S) {
+                    seqORquad = false;
+                }
+            }
+            ////////
+
             script_handle_camera_mouse(EVENT, camera);
         }
 
 
         //TEST CODE
-        Stopwatch drawing1MILLIIONrects;
-
         rectF cameraSpace = camera.get_view_rect();
-        for (auto& each : myObjs) {
+        std::size_t DrawObjCount = 0;
 
-            if (!cameraSpace.intersects_rect(each.rect)) {
-                continue;
+        Stopwatch drawing1MILLIIONrects;
+        if (seqORquad == false) {
+         
+
+            for (auto& each : myObjsSeq) {
+
+                if (!cameraSpace.intersects_rect(each.rect)) {
+                    continue;
+                }
+
+                rectF cameraAdjusted = camera.world_to_screen(each.rect);
+                renManager.fill_area_with(cameraAdjusted, each.col);
+                DrawObjCount++;
+            
             }
 
-            rectF cameraAdjusted = camera.world_to_screen(each.rect);
-            renManager.fill_area_with(cameraAdjusted, each.col);
         }
+        else {
+
+            for (const auto& each : myObjsQuad.search(cameraSpace)) {
 
 
-        float drawTime = drawing1MILLIIONrects.dt_float();
-        std::string print = "this took me dis long: " + std::to_string(drawTime);
+                rectF cameraAdjusted = camera.world_to_screen(each.rect);
+                renManager.fill_area_with(cameraAdjusted, each.col);
+                DrawObjCount++;
+
+
+            }
+
+        }
+        float elapsedTime = drawing1MILLIIONrects.dt_float();
+
+        //print out text
+        std::string mode = (seqORquad == false) ? "pepega" : "quadtree";
+        std::string print = "drawing mode: " + mode + " " + std::to_string(DrawObjCount) + "/1000000 -> time: " + std::to_string(elapsedTime);
         prettyText.draw_text(print, renManager.get_renderer_ref(), vec2i(0, 0));
 
         //###############################################################
