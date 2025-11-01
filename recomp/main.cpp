@@ -70,7 +70,7 @@ int main() {
             vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
             );
-        myObjsQuad.insert(item, itemBox);
+        myObjsQuad.add_to_queue(item, std::move(itemBox));//don't take advantage of perfect forwarding for item yet
         myObjsSeq.element_assign(item);
     }
     
@@ -81,6 +81,7 @@ int main() {
     Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
     Font prettyText(sfont, 32,3);
     bool seqORquad = false;
+    myObjsQuad.update_queue();//or else rip bozo
     ////#################################################################################
 
     //main loop
@@ -145,14 +146,14 @@ int main() {
         }
         else {
 
-            for (const auto each : myObjsQuad.search(cameraSpace)) {
-
-
+            for (const auto& each : myObjsQuad.search(cameraSpace)) {
+           
+           
                 rectF cameraAdjusted = camera.world_to_screen(each->rect);
                 renManager.fill_area_with(cameraAdjusted, each->col);
                 DrawObjCount++;
-
-
+           
+           
             }
 
         }

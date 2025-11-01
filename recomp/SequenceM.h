@@ -480,6 +480,7 @@ namespace badEngine {
 			return ptr <=> rhs.ptr;
 		}
 
+		constexpr Iterator() = default;
 		constexpr Iterator(pointer p) :ptr(p) {}
 		constexpr pointer base()const noexcept {
 			return ptr;
@@ -553,6 +554,7 @@ namespace badEngine {
 			return ptr <=> rhs.ptr;
 		}
 
+		constexpr Const_Iterator() = default;
 		constexpr Const_Iterator(pointer p) :ptr(p) {}
 		constexpr Const_Iterator(const Iterator& rp) : ptr(rp.base()) {}
 		constexpr pointer base()const noexcept {
