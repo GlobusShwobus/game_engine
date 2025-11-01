@@ -9,10 +9,16 @@
 namespace badEngine {
 
 	template <typename OBJECT_TYPE>
+		requires IS_RULE_OF_FIVE_CLASS_T<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t FOR_EACH_WINDOW = 4;
 		static constexpr std::size_t MAX_DEPTH = 8;
+
+		struct QuadTreePair {
+			rectF size;
+			OBJECT_TYPE obj;
+		};
 
 		class QuadTreeBody {
 		public:
@@ -39,12 +45,12 @@ namespace badEngine {
 				for (int i = 0; i < FOR_EACH_WINDOW; i++) {
 					if (mBranchStorage[i]) {
 						mBranchStorage[i]->clear();
+						mBranchStorage[i].reset();
 					}
-					mBranchStorage[i].reset();
 				}
 			}
 			
-			void insert(typename SequenceM<OBJECT_TYPE>::iterator objectIter,  rectF&& objectArea) {
+			void insert(QuadTreePair& pair) {
 
 				//first, check structures depth limit, if going deeper is fine, try going deeper
 				if (mDepth + 1 < MAX_DEPTH) {
@@ -52,7 +58,7 @@ namespace badEngine {
 					//check all 4 branches
 					for (int i = 0; i < FOR_EACH_WINDOW; i++) {
 						//check which window the object exists in (this check wholely; in case all 4 checks fail, it must mean we add to this layer as this layer is larger)
-						if (!mBranchPos[i].contains_rect(objectArea))
+						if (!mBranchPos[i].contains_rect(pair.size))
 							continue;
 
 						//check for nullptr and initalize the branch if not yet set
@@ -60,7 +66,7 @@ namespace badEngine {
 							mBranchStorage[i] = std::make_unique<QuadTreeBody>(mBranchPos[i], mDepth + 1);
 
 						//pass the item down the chain
-						mBranchStorage[i]->insert(objectIter, std::move(objectArea));
+						mBranchStorage[i]->insert(pair);
 						//return early as there is now nothing else to do
 						return;
 					}
@@ -68,16 +74,16 @@ namespace badEngine {
 				}
 
 				//in case the depth limit is reached or the objectArea doesn't fit into any sub branches, add it here
-				mObjects.element_create(std::move(objectArea), objectIter);
+				mObjects.element_create(&pair);
 			}
 
-			void collect(const rectF& searchArea, SequenceM<typename SequenceM<OBJECT_TYPE>::iterator>& collecter) {
+			void collect(const rectF& searchArea, SequenceM<OBJECT_TYPE*>& collecter) {
 
 				//first check for items belonging to this layer
-				for (auto& item : mObjects) {
+				for (auto& each : mObjects) {
 
-					if (searchArea.intersects_rect(item.first))
-						collecter.element_create(item.second);
+					if (searchArea.intersects_rect(each->size))
+						collecter.element_create(&each->obj);
 				}
 
 				//second check all branches and get their objects
@@ -96,10 +102,10 @@ namespace badEngine {
 			}
 		private:
 
-			void collect_unconditional(SequenceM<typename SequenceM<OBJECT_TYPE>::iterator>& collecter) {
+			void collect_unconditional(SequenceM<OBJECT_TYPE*>& collecter) {
 				//first add all items from this layer
 				for (auto& each : mObjects) {
-					collecter.element_create(each.second);
+					collecter.element_create(&each->obj);
 				}
 				//secondly add all items from branches
 				for (int i = 0; i < FOR_EACH_WINDOW; i++) {
@@ -122,12 +128,12 @@ namespace badEngine {
 			std::array<std::unique_ptr<QuadTreeBody>, 4> mBranchStorage;
 
 			//STORE ALL OBJECTS BY VALUE, THIS IS THEIR OWNER
-			SequenceM<std::pair<rectF, typename SequenceM<OBJECT_TYPE>::iterator>> mObjects;
+			SequenceM<QuadTreePair*> mObjects;
 		};
 
 	public:
 
-		QuadTree(const rectF& window, std::size_t depth = 0):mRoot(window, depth){}
+		QuadTree(const rectF& window, std::size_t depth = 0):mRoot(window, depth), mTopLevelWindow(window){}
 		// Sets the spatial coverage area of the quadtree
 		// Invalidates tree
 		
@@ -165,19 +171,29 @@ namespace badEngine {
 			requires std::same_as<std::remove_cvref_t<U>, OBJECT_TYPE>
 		void add_to_queue(U&& item, rectF itemsize){
 			// Item is stored in pending
-			mPendingObjects.element_create(std::move(itemsize), std::forward<U>(item));
+			mPendingObjects.element_create(QuadTreePair(std::move(itemsize), std::forward<U>(item)));
 		}
 		void update_queue() {
-			for (auto& each : mPendingObjects) {
-				mAllObjects.element_create(std::move(each.second));
+			// THIS WILL CAUSE POINTER INVALIDATION AS FUCK IF NOT DONE IN TWO STAGES
+			// UNFORTUNATELY, IF mAllObject RESIZES, THE ENTIRE TREE IS KAPUT
 
-				mRoot.insert(mAllObjects.end() - 1, std::move(each.first));
+			//first add pending items to all obj list. it can now invalidate old shit
+			for (auto&& each : mPendingObjects) {
+				mAllObjects.element_create(std::move(each));
 			}
+			//rebuild the tree (yikes but is what it is???)
+			QuadTreeBody newBody(mTopLevelWindow);
+			for (auto& each : mAllObjects) {
+				newBody.insert(each);
+			}
+			//move assign new body into old (since QuadTreeBody does not own any unique memory, basic assignment should tidy everything up itself)
+			mRoot = std::move(newBody);
+			//clear up pending items
 			mPendingObjects.clear();
 		}
 
-		SequenceM<typename SequenceM<OBJECT_TYPE>::iterator> search(const rectF& Area) {
-			SequenceM<typename SequenceM<OBJECT_TYPE>::iterator> list;
+		SequenceM<OBJECT_TYPE*> search(const rectF& Area) {
+			SequenceM<OBJECT_TYPE*> list;
 			list.set_growth_resist_low();
 			mRoot.collect(Area, list);
 			return list;
@@ -187,9 +203,10 @@ namespace badEngine {
 	private:
 
 		QuadTreeBody mRoot;//BAD AS LONG AS NOT YET DYNAMIC
+		rectF mTopLevelWindow;
 
-		SequenceM<OBJECT_TYPE> mAllObjects;
-		SequenceM<std::pair<rectF, OBJECT_TYPE>> mPendingObjects;
+		SequenceM<QuadTreePair> mAllObjects;
+		SequenceM<QuadTreePair> mPendingObjects;
 	};
 
 }

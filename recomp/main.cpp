@@ -149,7 +149,7 @@ int main() {
             for (const auto& each : myObjsQuad.search(cameraSpace)) {
            
            
-                rectF cameraAdjusted = camera.world_to_screen(each->rect);
+                rectF cameraAdjusted = camera.world_to_screen(each->rect);//invalidtaion
                 renManager.fill_area_with(cameraAdjusted, each->col);
                 DrawObjCount++;
            
