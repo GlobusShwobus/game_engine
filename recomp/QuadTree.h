@@ -45,7 +45,7 @@ namespace badEngine {
 				mWindow = newArea;
 			}
 			void clear() {
-				mObjects.clear();
+				mSizeIndexPairs.clear();
 
 				for (int i = 0; i < FOR_EACH_WINDOW; i++) {
 					if (mBranchStorage[i]) {
@@ -74,14 +74,14 @@ namespace badEngine {
 					}
 				}
 				//in case the depth limit is reached or the objectArea doesn't fit into any sub branches, add it here
-				mObjects.element_create(location, globalIndex);
-				std::size_t localIndex = mObjects.size_in_use() - 1;
+				mSizeIndexPairs.element_create(location, globalIndex);
+				std::size_t localIndex = mSizeIndexPairs.size_in_use() - 1;
 				return NodeLocation(this, localIndex);
 			}
 			void collect(const rectF& searchArea, SequenceM<std::size_t>& collecter) {
 
 				//first check for items belonging to this layer
-				for (auto& each : mObjects) {
+				for (auto& each : mSizeIndexPairs) {
 					if (searchArea.intersects_rect(each.first))
 						collecter.element_create(each.second);
 				}
@@ -100,11 +100,21 @@ namespace badEngine {
 					}
 				}
 			}
+			
+			template<typename Func>
+			bool remove(std::size_t index, Func func) {
+				if (mSizeIndexPairs.size_in_use() < index) {
+					return false;
+				}
+				//since global knows local, and local knows global BUT global gets removed at the end, no other information is mutated
+				mSizeIndexPairs.depricate_unordered(mSizeIndexPairs.begin() + index);
+				return true;
+			}
 		private:
 
 			void collect_unconditional(SequenceM<std::size_t>& collecter) {
 				//first add all items from this layer
-				for (auto& each : mObjects) {
+				for (auto& each : mSizeIndexPairs) {
 					collecter.element_create(each.second);
 				}
 				//secondly add all items from branches
@@ -114,7 +124,7 @@ namespace badEngine {
 				}
 			}
 
-		private:
+		public:
 			//LAYER DEPTH
 			std::size_t mDepth;
 
@@ -126,7 +136,7 @@ namespace badEngine {
 			std::array<std::unique_ptr<QuadTreeBody>, 4> mBranchStorage;
 
 			//STORE ALL OBJECTS BY VALUE, THIS IS THEIR OWNER
-			SequenceM<std::pair<rectF, std::size_t>> mObjects;
+			SequenceM<std::pair<rectF, std::size_t>> mSizeIndexPairs;
 		};
 
 	public:
@@ -189,9 +199,17 @@ namespace badEngine {
 			return mAllObjects[index].first;
 		}
 
-		void remove(OBJECT_TYPE* obj) {
+		bool remove(std::size_t index) {
 
+			//invalid index or something
+			if (mAllObjects.size_in_use() < index) {
+				return false;
+			}
 
+			auto& REMOVE_NODE = mAllObjects[index].second;
+			auto& MOVE_NODE = mAllObjects.back().second;
+
+			return true;
 		}
 
 	private:
