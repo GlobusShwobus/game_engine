@@ -3,9 +3,6 @@
 #include <memory>
 #include <array>
 
-#include <vector>
-#include <list>
-
 #include "SequenceM.h"
 //STATIC QUADTREE
 
@@ -20,9 +17,14 @@ namespace badEngine {
 
 		class QuadTreeBody;
 
-		struct NodeLocation {
-			QuadTreeBody* node = nullptr;
-			std::size_t localIndex = 0;
+		struct ParentNode {
+			OBJECT_TYPE mData;
+			QuadTreeBody* mChild = nullptr;
+			std::size_t mChildLocalIndex = 0;
+		};
+		struct ChildNode {
+			rectF mOccupiedArea;
+			std::size_t mParentIndex = 0;
 		};
 
 		class QuadTreeBody {
@@ -45,7 +47,7 @@ namespace badEngine {
 				mWindow = newArea;
 			}
 			void clear() {
-				mSizeIndexPairs.clear();
+				mChildNodes.clear();
 
 				for (int i = 0; i < FOR_EACH_WINDOW; i++) {
 					if (mBranchStorage[i]) {
@@ -54,7 +56,8 @@ namespace badEngine {
 					}
 				}
 			}
-			NodeLocation insert(const rectF& location, std::size_t globalIndex) {
+			
+			void insert(const rectF& occupiedArea, std::size_t parentIndex, std::size_t& childIndex, QuadTreeBody*& child) {
 
 				//first, check structures depth limit, if going deeper is fine, try going deeper
 				if (mDepth + 1 < MAX_DEPTH) {
@@ -62,7 +65,7 @@ namespace badEngine {
 					//check all 4 branches
 					for (int i = 0; i < FOR_EACH_WINDOW; i++) {
 						//check which window the object exists in (this check wholely; in case all 4 checks fail, it must mean we add to this layer as this layer is larger)
-						if (!mBranchPos[i].contains_rect(location))
+						if (!mBranchPos[i].contains_rect(occupiedArea))
 							continue;
 
 						//check for nullptr and initalize the branch if not yet set
@@ -70,20 +73,22 @@ namespace badEngine {
 							mBranchStorage[i] = std::make_unique<QuadTreeBody>(mBranchPos[i], mDepth + 1);
 
 						//pass the item down the chain
-						return mBranchStorage[i]->insert(location, globalIndex);
+						mBranchStorage[i]->insert(occupiedArea, parentIndex, childIndex, child);
+						return;
 					}
 				}
 				//in case the depth limit is reached or the objectArea doesn't fit into any sub branches, add it here
-				mSizeIndexPairs.element_create(location, globalIndex);
-				std::size_t localIndex = mSizeIndexPairs.size_in_use() - 1;
-				return NodeLocation(this, localIndex);
+				mChildNodes.element_create(occupiedArea, parentIndex);
+				//return back the metadata so that parent knows where it's child is
+				childIndex = mChildNodes.size_in_use() - 1;
+				child = this;
 			}
 			void collect(const rectF& searchArea, SequenceM<std::size_t>& collecter) {
 
 				//first check for items belonging to this layer
-				for (auto& each : mSizeIndexPairs) {
-					if (searchArea.intersects_rect(each.first))
-						collecter.element_create(each.second);
+				for (auto& node : mChildNodes) {
+					if (searchArea.intersects_rect(node.mOccupiedArea))
+						collecter.element_create(node.mParentIndex);
 				}
 
 				//second check all branches and get their objects
@@ -100,7 +105,8 @@ namespace badEngine {
 					}
 				}
 			}
-			
+		
+			/*
 			template<typename Func>
 			bool remove(std::size_t index, Func func) {
 				if (mSizeIndexPairs.size_in_use() < index) {
@@ -110,12 +116,13 @@ namespace badEngine {
 				mSizeIndexPairs.depricate_unordered(mSizeIndexPairs.begin() + index);
 				return true;
 			}
+			*/
 		private:
 
 			void collect_unconditional(SequenceM<std::size_t>& collecter) {
 				//first add all items from this layer
-				for (auto& each : mSizeIndexPairs) {
-					collecter.element_create(each.second);
+				for (auto& node : mChildNodes) {
+					collecter.element_create(node.mParentIndex);
 				}
 				//secondly add all items from branches
 				for (int i = 0; i < FOR_EACH_WINDOW; i++) {
@@ -124,7 +131,7 @@ namespace badEngine {
 				}
 			}
 
-		public:
+		private:
 			//LAYER DEPTH
 			std::size_t mDepth;
 
@@ -136,7 +143,7 @@ namespace badEngine {
 			std::array<std::unique_ptr<QuadTreeBody>, 4> mBranchStorage;
 
 			//STORE ALL OBJECTS BY VALUE, THIS IS THEIR OWNER
-			SequenceM<std::pair<rectF, std::size_t>> mSizeIndexPairs;
+			SequenceM<ChildNode> mChildNodes;
 		};
 
 	public:
@@ -175,10 +182,12 @@ namespace badEngine {
 		template<typename U>
 			requires std::same_as<std::remove_cvref_t<U>, OBJECT_TYPE>
 		void insert(U&& item, rectF itemsize) {
-			const std::size_t globalIndex = mAllObjects.size_in_use();
-			auto storedLocation = mRoot.insert(itemsize, globalIndex);
-
-			mAllObjects.element_create(std::forward<U>(item), storedLocation);
+			//forward the data, node data is invalid here
+			mAllObjects.element_create(std::forward<U>(item), nullptr, NULL);
+			//get the index into which data got inserted into
+			const std::size_t globalIndex = mAllObjects.size_in_use() - 1;
+			//pass in the required data down to child, the child will tell the parent back where it exists
+			mRoot.insert(itemsize, globalIndex, mAllObjects[globalIndex].mChildLocalIndex, mAllObjects[globalIndex].mChild);
 		}
 
 		SequenceM<std::size_t> search_index(const rectF& Area) {
@@ -193,13 +202,19 @@ namespace badEngine {
 		}
 
 		OBJECT_TYPE& operator[](std::size_t index) {
-			return mAllObjects[index].first;
+			return mAllObjects[index].mData;
 		}
 		const OBJECT_TYPE& operator[](std::size_t index)const {
-			return mAllObjects[index].first;
+			return mAllObjects[index].mData;
 		}
-
+		/*
 		bool remove(std::size_t index) {
+			struct ass {
+				QuadTreeBody* node = nullptr;
+				std::size_t localIndex = 0;
+			};
+			SequenceM<std::pair<rectF, std::size_t>> local;
+			SequenceM<std::pair<OBJECT_TYPE, ass>> global;
 
 			//invalid index or something
 			if (mAllObjects.size_in_use() < index) {
@@ -207,10 +222,16 @@ namespace badEngine {
 			}
 
 			auto& REMOVE_NODE = mAllObjects[index].second;
+			std::size_t REMOVE_INDEX = index;
+
 			auto& MOVE_NODE = mAllObjects.back().second;
+			std::size_t MOVE_INDEX = mAllObjects.size_in_use() - 1;
+
+			//FIRST REMOVE FROM REMOVE
 
 			return true;
 		}
+		*/
 
 	private:
 
@@ -218,7 +239,7 @@ namespace badEngine {
 
 		//NOW GLOBAL KNOWS WHERE IT IS STORED IN LOCAL, AND LOCAL KNOWS WHERE IT IS STORED IN GLOBAL
 
-		SequenceM<std::pair<OBJECT_TYPE, NodeLocation>> mAllObjects;
+		SequenceM<ParentNode> mAllObjects;
 	};
 
 }
