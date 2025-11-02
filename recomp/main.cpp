@@ -26,9 +26,11 @@ ENTITY+ continue chilis lessons
 SERIALIZE FIRST (Too early, still not there yet)
 */
 
+
 int main() {
+
     using namespace badEngine;
-    
+
     //configs
     Configs windowConfig;
 
@@ -51,37 +53,37 @@ int main() {
 
     //TEST CODE
     NumberGenerator rng;
-    Camera2D camera(960,540);
+    Camera2D camera(960, 540);
     float farea = 10000.0f;
-    
+
     struct SomeObjWithArea {
         rectF rect;
         vec2f vel;
         Color col;
     };
     SequenceM<SomeObjWithArea> myObjsSeq;
-    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0,0, farea, farea));
+    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
 
     for (int i = 0; i < 1000000; i++) {
-        
+
         rectF itemBox = rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
             itemBox,
             vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
-            );
-        myObjsQuad.add_to_queue(item, std::move(itemBox));//don't take advantage of perfect forwarding for item yet
+        );
+        myObjsQuad.insert(item, itemBox);//don't take advantage of perfect forwarding for item yet
         myObjsSeq.element_assign(item);
     }
-    
+
 
     camera.set_scale(1, 1);
 
     bool mouseHeld = false;
     Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
-    Font prettyText(sfont, 32,3);
+    Font prettyText(sfont, 32, 3);
     bool seqORquad = false;
-    myObjsQuad.update_queue();//or else rip bozo
+    //myObjsQuad.update_queue();//or else rip bozo
     ////#################################################################################
 
     //main loop
@@ -96,7 +98,7 @@ int main() {
         if (frameHold < 0.008f) {
             continue;//skip the frame. a bit rigged atm, better to encapuselate in the IF
         }
-       
+
         //CLEAR RENDERING
         renManager.renderer_clear();
 
@@ -129,7 +131,7 @@ int main() {
 
         Stopwatch drawing1MILLIIONrects;
         if (seqORquad == false) {
-         
+
 
             for (auto& each : myObjsSeq) {
 
@@ -140,20 +142,20 @@ int main() {
                 rectF cameraAdjusted = camera.world_to_screen(each.rect);
                 renManager.fill_area_with(cameraAdjusted, each.col);
                 DrawObjCount++;
-            
+
             }
 
         }
         else {
 
-            for (const auto& each : myObjsQuad.search(cameraSpace)) {
-           
-           
+            for (const auto& each : myObjsQuad.search(cameraSpace)) {//ptr copy is better???
+
+
                 rectF cameraAdjusted = camera.world_to_screen(each->rect);//invalidtaion
                 renManager.fill_area_with(cameraAdjusted, each->col);
                 DrawObjCount++;
-           
-           
+
+
             }
 
         }
@@ -167,7 +169,7 @@ int main() {
         //###############################################################
 
         //PRESENT
-        renManager.renderer_present();        
+        renManager.renderer_present();
     }
 
     SDL_Quit();
