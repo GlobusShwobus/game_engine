@@ -25,11 +25,60 @@ ENTITY+ continue chilis lessons
 
 SERIALIZE FIRST (Too early, still not there yet)
 */
+using namespace badEngine;
+struct SomeObjWithArea {
+    rectF rect;
+    vec2f vel;
+    Color col;
+};
+void TEST_REMOVE_INSERT_QUADTREE(QuadTree<SomeObjWithArea>& muhquadtree,
+    NumberGenerator& rng, float areaborder)
+{
+    const std::size_t current_size = muhquadtree.size();
+    if (current_size == 0) {
+        // nothing to remove, just create a few
+        int create_amount = rng.random_int(1, 10);
+        for (int i = 0; i < create_amount; ++i) {
+            rectF itemBox = rectF(rng.random_float(0, areaborder),
+                rng.random_float(0, areaborder),
+                rng.random_float(1, 10),
+                rng.random_float(1, 10));
+            SomeObjWithArea item = SomeObjWithArea(
+                itemBox,
+                vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
+                Color(rng.random_int(1, 255), rng.random_int(1, 255),
+                    rng.random_int(1, 255), 255));
+            muhquadtree.insert(std::move(item), itemBox);
+        }
+        return;
+    }
 
+    // first randomly remove
+    const int random_remove_amount = rng.random_int(0, static_cast<int>(current_size));
 
+    for (int i = 0; i < random_remove_amount && muhquadtree.size() > 0; ++i) {
+        std::size_t remove_index = rng.random_int(0, muhquadtree.size() - 1);
+        muhquadtree.remove(remove_index);
+    }
+
+    // then add back
+    const int random_create_amount = random_remove_amount + rng.random_int(0, random_remove_amount);
+    for (int i = 0; i < random_create_amount; ++i) {
+        rectF itemBox = rectF(rng.random_float(0, areaborder),
+            rng.random_float(0, areaborder),
+            rng.random_float(1, 10),
+            rng.random_float(1, 10));
+        SomeObjWithArea item = SomeObjWithArea(
+            itemBox,
+            vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
+            Color(rng.random_int(1, 255), rng.random_int(1, 255),
+                rng.random_int(1, 255), 255));
+        muhquadtree.insert(std::move(item), itemBox);
+    }
+}
 int main() {
 
-    using namespace badEngine;
+    //using namespace badEngine;
 
     //configs
     Configs windowConfig;
@@ -54,16 +103,10 @@ int main() {
     //TEST CODE
     NumberGenerator rng;
     Camera2D camera(960, 540);
-    float farea = 10000.0f;
-
-    struct SomeObjWithArea {
-        rectF rect;
-        vec2f vel;
-        Color col;
-    };
+    float farea = 600.f;
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
 
-    for (int i = 0; i < 1000000; i++) {
+    for (int i = 0; i < 500; i++) {
 
         rectF itemBox = rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
@@ -124,6 +167,15 @@ int main() {
             DrawObjCount++;
 
 
+        }
+
+
+        static float add_remove_hold = 0;
+        add_remove_hold += dt;
+        if (add_remove_hold >= 2.0f) {//2 second
+            printf("hello world?\n");
+            TEST_REMOVE_INSERT_QUADTREE(myObjsQuad, rng, farea);
+            add_remove_hold = 0;
         }
 
 

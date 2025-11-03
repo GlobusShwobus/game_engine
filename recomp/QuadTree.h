@@ -3,6 +3,7 @@
 #include <memory>
 #include <array>
 
+#include <optional>
 #include "SequenceM.h"
 //STATIC QUADTREE
 
@@ -106,17 +107,43 @@ namespace badEngine {
 				}
 			}
 		
-			/*
-			template<typename Func>
-			bool remove(std::size_t index, Func func) {
-				if (mSizeIndexPairs.size_in_use() < index) {
+			
+			bool remove(std::size_t localIndex, std::size_t parentIndex, std::optional<std::size_t>& newParentOfLocalIndex) {
+				//check if index is valid at all
+				if (mChildNodes.size_in_use() <= localIndex) {
 					return false;
 				}
-				//since global knows local, and local knows global BUT global gets removed at the end, no other information is mutated
-				mSizeIndexPairs.depricate_unordered(mSizeIndexPairs.begin() + index);
+				//check if the observers match
+				if (!(mChildNodes[localIndex].mParentIndex == parentIndex)) {
+					return false;
+				}
+
+				//if the observers match, and we are about to swap the places in local vector between localIndex(removed item)
+				//with the last item, then we must also communicate back who is the new parent of localIndex
+				//we already know local index, but not the parent
+				//there is also the possibility that the removed item is the last item, in which case the container is actually now empty
+				//second possiblity is that the removed item is the last item but the container is not empty afterwards
+				//thus the simplest is telling size_t is nullptr
+
+				//swap places between local and last and remove the new last
+				mChildNodes.depricate_unordered(mChildNodes.begin() + localIndex);
+
+				if (!mChildNodes.empty_in_use() && mChildNodes.size_in_use() > localIndex) {
+					newParentOfLocalIndex = mChildNodes[localIndex].mParentIndex;
+				}
+				else {
+					newParentOfLocalIndex.reset();
+				}
 				return true;
 			}
-			*/
+			void assign_new_parent(std::size_t localIndex, std::size_t newParent) {
+				//check validity first
+				if (localIndex < mChildNodes.size_in_use()) {
+					//change observer
+					mChildNodes[localIndex].mParentIndex = newParent;
+				}
+			}
+			
 		private:
 
 			void collect_unconditional(SequenceM<std::size_t>& collecter) {
@@ -207,31 +234,49 @@ namespace badEngine {
 		const OBJECT_TYPE& operator[](std::size_t index)const {
 			return mAllObjects[index].mData;
 		}
-		/*
-		bool remove(std::size_t index) {
-			struct ass {
-				QuadTreeBody* node = nullptr;
-				std::size_t localIndex = 0;
-			};
-			SequenceM<std::pair<rectF, std::size_t>> local;
-			SequenceM<std::pair<OBJECT_TYPE, ass>> global;
+		
+
+		void remove(std::size_t removeIndex) {
 
 			//invalid index or something
-			if (mAllObjects.size_in_use() < index) {
-				return false;
+			if (removeIndex >= mAllObjects.size_in_use()) {
+				throw std::runtime_error("invalid index");
 			}
 
-			auto& REMOVE_NODE = mAllObjects[index].second;
-			std::size_t REMOVE_INDEX = index;
+			//first step is to get rid of the index (the simple step)
+			auto& REMOVE_NODE = mAllObjects[removeIndex];
 
-			auto& MOVE_NODE = mAllObjects.back().second;
-			std::size_t MOVE_INDEX = mAllObjects.size_in_use() - 1;
+			std::optional<std::size_t> newParentOfLocalIndex;
 
-			//FIRST REMOVE FROM REMOVE
+			if (REMOVE_NODE.mChild->remove(REMOVE_NODE.mChildLocalIndex, removeIndex, newParentOfLocalIndex)) {
+				//if successful then the parent needs to told about what correct child to look at
+				//the body of the child is still correct, the only things that swaped were observers
+				//also there is potential that child was now empty, in which case no parent to be updated and move on to remove the node
+				if (newParentOfLocalIndex.has_value()) {
+					mAllObjects[newParentOfLocalIndex.value()].mChildLocalIndex = REMOVE_NODE.mChildLocalIndex;
+				}
+			}
+			else {
+				throw std::runtime_error("index missmatch between parent and child nodes");
+			}
+			//second step, once dealt with swaping indexes and making sure correct parent and child observe each other
+			//is to get rid of REMOVE_NODE. REMOVE_NODE is now a junk node because we dealt with observer pattern mumbo jump already
+			//the question is if we now swap places of this and last item and then remove the last, do we also need to
+			//take care of the nodes of the last item?
+			//before, the parent had to be notified about changing child
+			//but now the child has to be notifed of changing parent
+			//there is also the possibility of the removed node being the last node, in which case the step can be skiped
 
-			return true;
+			const std::size_t lastIndex = mAllObjects.size_in_use() - 1;
+			if (removeIndex != lastIndex) {
+				auto& CURRENT_LAST_NODE = mAllObjects.back();
+				CURRENT_LAST_NODE.mChild->assign_new_parent(CURRENT_LAST_NODE.mChildLocalIndex, removeIndex);
+			}
+
+			//finally remove the piece of shit
+			mAllObjects.depricate_unordered(mAllObjects.begin() + removeIndex);
 		}
-		*/
+		
 
 	private:
 
@@ -241,5 +286,4 @@ namespace badEngine {
 
 		SequenceM<ParentNode> mAllObjects;
 	};
-
 }
