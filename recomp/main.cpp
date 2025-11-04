@@ -76,6 +76,7 @@ void TEST_REMOVE_INSERT_QUADTREE(QuadTree<SomeObjWithArea>& muhquadtree,
         muhquadtree.insert(std::move(item), itemBox);
     }
 }
+
 int main() {
 
     //using namespace badEngine;
@@ -103,10 +104,11 @@ int main() {
     //TEST CODE
     NumberGenerator rng;
     Camera2D camera(960, 540);
-    float farea = 600.f;
+    float farea = 900.f;
+    float fsearchsize = 50.0f;
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
 
-    for (int i = 0; i < 500; i++) {
+    for (int i = 0; i < 10000; i++) {
 
         rectF itemBox = rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
@@ -123,6 +125,7 @@ int main() {
     bool mouseHeld = false;
     Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
     Font prettyText(sfont, 32, 3);
+    bool plzDeleteArea = false;
     ////#################################################################################
 
     //main loop
@@ -148,12 +151,37 @@ int main() {
                 GAME_RUNNING = false;
                 continue;
             }
+            //BS
+            if (EVENT.key.key == SDLK_A) {
+                fsearchsize += 10.0f;
+            }
+            if (EVENT.key.key ==SDLK_S) {
+                fsearchsize -= 10.0f;
+            }
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                plzDeleteArea = true;
+            }
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+                plzDeleteArea = false;
+            }
+            ///
 
-            script_handle_camera_mouse(EVENT, camera);
+            //script_handle_camera_mouse(EVENT, camera);
         }
-
+        
 
         //TEST CODE
+        fsearchsize = std::clamp(fsearchsize, 10.0f, 500.0f);
+        vec2f mouseScreenPos;
+        SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
+        vec2f screenpos = camera.screen_to_world_point(mouseScreenPos);
+        rectF rectAroundMouse = rectF(
+            screenpos.x- fsearchsize/2,
+            screenpos.y- fsearchsize/2,
+            fsearchsize, fsearchsize
+        );
+
+
         rectF cameraSpace = camera.get_view_rect();
         std::size_t DrawObjCount = 0;
 
@@ -168,16 +196,18 @@ int main() {
 
 
         }
+        rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
+        Color mouseCol = Colors::Magenta;
+        mouseCol.set_alpha(125u);
+        renManager.fill_area_with(camGirlAdjusted, mouseCol);
 
+        if (plzDeleteArea) {
+            auto idList = myObjsQuad.search_index(rectAroundMouse);
 
-        static float add_remove_hold = 0;
-        add_remove_hold += dt;
-        if (add_remove_hold >= 2.0f) {//2 second
-            printf("hello world?\n");
-            TEST_REMOVE_INSERT_QUADTREE(myObjsQuad, rng, farea);
-            add_remove_hold = 0;
+            for (auto& id : idList) {
+                myObjsQuad.remove(id);
+            }
         }
-
 
         float elapsedTime = drawing1MILLIIONrects.dt_float();
 

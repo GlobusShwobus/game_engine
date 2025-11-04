@@ -5,8 +5,9 @@
 
 #include <optional>
 #include "SequenceM.h"
-//STATIC QUADTREE
 
+
+//TODO:: currently if the tree is large but removes items, there is no way to trim down the mem. just add it later
 namespace badEngine {
 
 	template <typename OBJECT_TYPE>
