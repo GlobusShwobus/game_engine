@@ -77,6 +77,7 @@ void TEST_REMOVE_INSERT_QUADTREE(QuadTree<SomeObjWithArea>& muhquadtree,
     }
 }
 
+
 int main() {
 
     //using namespace badEngine;
@@ -104,11 +105,11 @@ int main() {
     //TEST CODE
     NumberGenerator rng;
     Camera2D camera(960, 540);
-    float farea = 900.f;
+    float farea = 500;
     float fsearchsize = 50.0f;
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 2500; i++) {
 
         rectF itemBox = rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
@@ -126,6 +127,7 @@ int main() {
     Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
     Font prettyText(sfont, 32, 3);
     bool plzDeleteArea = false;
+
     ////#################################################################################
 
     //main loop
@@ -155,7 +157,7 @@ int main() {
             if (EVENT.key.key == SDLK_A) {
                 fsearchsize += 10.0f;
             }
-            if (EVENT.key.key ==SDLK_S) {
+            if (EVENT.key.key == SDLK_S) {
                 fsearchsize -= 10.0f;
             }
             if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
@@ -168,7 +170,7 @@ int main() {
 
             //script_handle_camera_mouse(EVENT, camera);
         }
-        
+
 
         //TEST CODE
         fsearchsize = std::clamp(fsearchsize, 10.0f, 500.0f);
@@ -176,8 +178,8 @@ int main() {
         SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
         vec2f screenpos = camera.screen_to_world_point(mouseScreenPos);
         rectF rectAroundMouse = rectF(
-            screenpos.x- fsearchsize/2,
-            screenpos.y- fsearchsize/2,
+            screenpos.x - fsearchsize / 2,
+            screenpos.y - fsearchsize / 2,
             fsearchsize, fsearchsize
         );
 
@@ -186,7 +188,6 @@ int main() {
         std::size_t DrawObjCount = 0;
 
         Stopwatch drawing1MILLIIONrects;
-
         for (const auto& each : myObjsQuad.search_index(cameraSpace)) {
 
 
@@ -202,12 +203,12 @@ int main() {
         renManager.fill_area_with(camGirlAdjusted, mouseCol);
 
         if (plzDeleteArea) {
-            auto idList = myObjsQuad.search_index(rectAroundMouse);
 
-            for (auto& id : idList) {
-                myObjsQuad.remove(id);
-            }
+            auto idList = myObjsQuad.search_index(rectAroundMouse);
+            myObjsQuad.remove_list(idList);
+
         }
+
 
         float elapsedTime = drawing1MILLIIONrects.dt_float();
 

@@ -6,7 +6,6 @@
 #include <optional>
 #include "SequenceM.h"
 
-
 //TODO:: currently if the tree is large but removes items, there is no way to trim down the mem. just add it later
 namespace badEngine {
 
@@ -71,8 +70,9 @@ namespace badEngine {
 							continue;
 
 						//check for nullptr and initalize the branch if not yet set
-						if (!mBranchStorage[i])
+						if (!mBranchStorage[i]) {
 							mBranchStorage[i] = std::make_unique<QuadTreeBody>(mBranchPos[i], mDepth + 1);
+						}
 
 						//pass the item down the chain
 						mBranchStorage[i]->insert(occupiedArea, parentIndex, childIndex, child);
@@ -144,7 +144,10 @@ namespace badEngine {
 					mChildNodes[localIndex].mParentIndex = newParent;
 				}
 			}
-			
+		
+			std::size_t get_parent_index(std::size_t localIndex) {
+				return mChildNodes[localIndex].mParentIndex;
+			}
 		private:
 
 			void collect_unconditional(SequenceM<std::size_t>& collecter) {
@@ -236,9 +239,18 @@ namespace badEngine {
 			return mAllObjects[index].mData;
 		}
 		
+		void remove_list(const SequenceM<std::size_t>& idList) {
+			//if there is a list of items to delete and the actual deletion happens one by one
+			//there is a problem if deleting in the right order because of the ways deletion is handled internally
+			//to avoid such errors the deleted IDs should be sorted from greater to smaller order
+			SequenceM<std::size_t> sortedList = idList;
+			std::sort(sortedList.begin(), sortedList.end(), std::greater<>());
 
+			for (auto& id: sortedList) {
+				remove(id);
+			}
+		}
 		void remove(std::size_t removeIndex) {
-
 			//invalid index or something
 			if (removeIndex >= mAllObjects.size_in_use()) {
 				throw std::runtime_error("invalid index");
@@ -277,7 +289,6 @@ namespace badEngine {
 			//finally remove the piece of shit
 			mAllObjects.depricate_unordered(mAllObjects.begin() + removeIndex);
 		}
-		
 
 	private:
 

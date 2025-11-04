@@ -106,10 +106,10 @@ namespace badEngine {
 			}
 		}
 		SequenceM(const SequenceM<value_type>& rhs) {
-			size_type size = rhs.size();
+			size_type size = rhs.size_in_use();
 			if (size > EMPTY_GUARD) {
 				construct(allocator.alloc_and_construct([&rhs](pointer dest, size_type n) {
-					return uninitialized_copy(rhs.begin(), rhs.end(), dest);
+					return std::uninitialized_copy(rhs.begin(), rhs.end(), dest);
 					},
 					size), size);
 			}
