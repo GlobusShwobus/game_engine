@@ -57,6 +57,12 @@ namespace badEngine {
 		}
 		void set_logical_presentation(SDL_RendererLogicalPresentation mode, uint32_t width, uint32_t height);
 	
+		void enable_blend_mode() {
+			SDL_SetRenderDrawBlendMode(mRenderer.get(), SDL_BLENDMODE_BLEND);
+		}
+		void disable_blend_mode() {
+			SDL_SetRenderDrawBlendMode(mRenderer.get(), SDL_BLENDMODE_NONE);
+		}
 		void set_render_draw_color(Color color) {
 			SDL_SetRenderDrawColor(mRenderer.get(), color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
 		}

@@ -25,62 +25,9 @@ ENTITY+ continue chilis lessons
 
 SERIALIZE FIRST (Too early, still not there yet)
 */
-using namespace badEngine;
-struct SomeObjWithArea {
-    rectF rect;
-    vec2f vel;
-    Color col;
-};
-void TEST_REMOVE_INSERT_QUADTREE(QuadTree<SomeObjWithArea>& muhquadtree,
-    NumberGenerator& rng, float areaborder)
-{
-    const std::size_t current_size = muhquadtree.size();
-    if (current_size == 0) {
-        // nothing to remove, just create a few
-        int create_amount = rng.random_int(1, 10);
-        for (int i = 0; i < create_amount; ++i) {
-            rectF itemBox = rectF(rng.random_float(0, areaborder),
-                rng.random_float(0, areaborder),
-                rng.random_float(1, 10),
-                rng.random_float(1, 10));
-            SomeObjWithArea item = SomeObjWithArea(
-                itemBox,
-                vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
-                Color(rng.random_int(1, 255), rng.random_int(1, 255),
-                    rng.random_int(1, 255), 255));
-            muhquadtree.insert(std::move(item), itemBox);
-        }
-        return;
-    }
-
-    // first randomly remove
-    const int random_remove_amount = rng.random_int(0, static_cast<int>(current_size));
-
-    for (int i = 0; i < random_remove_amount && muhquadtree.size() > 0; ++i) {
-        std::size_t remove_index = rng.random_int(0, muhquadtree.size() - 1);
-        muhquadtree.remove(remove_index);
-    }
-
-    // then add back
-    const int random_create_amount = random_remove_amount + rng.random_int(0, random_remove_amount);
-    for (int i = 0; i < random_create_amount; ++i) {
-        rectF itemBox = rectF(rng.random_float(0, areaborder),
-            rng.random_float(0, areaborder),
-            rng.random_float(1, 10),
-            rng.random_float(1, 10));
-        SomeObjWithArea item = SomeObjWithArea(
-            itemBox,
-            vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
-            Color(rng.random_int(1, 255), rng.random_int(1, 255),
-                rng.random_int(1, 255), 255));
-        muhquadtree.insert(std::move(item), itemBox);
-    }
-}
-
-
 int main() {
 
-    //using namespace badEngine;
+    using namespace badEngine;
 
     //configs
     Configs windowConfig;
@@ -103,11 +50,12 @@ int main() {
     }
 
     //TEST CODE
+
     NumberGenerator rng;
     Camera2D camera(960, 540);
     float farea = 500;
     float fsearchsize = 50.0f;
-    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
+    QuadTree myObjsQuad(rectF(0, 0, farea, farea));
 
     for (int i = 0; i < 2500; i++) {
 
@@ -117,7 +65,8 @@ int main() {
             vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
         );
-        myObjsQuad.insert(std::move(item), std::move(itemBox));
+
+        //myObjsQuad.insert(std::move(item), std::move(itemBox));
     }
 
 
@@ -127,7 +76,7 @@ int main() {
     Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
     Font prettyText(sfont, 32, 3);
     bool plzDeleteArea = false;
-
+    renManager.enable_blend_mode();
     ////#################################################################################
 
     //main loop
@@ -188,15 +137,15 @@ int main() {
         std::size_t DrawObjCount = 0;
 
         Stopwatch drawing1MILLIIONrects;
-        for (const auto& each : myObjsQuad.search_index(cameraSpace)) {
+        //for (const auto& each : myObjsQuad.search_index(cameraSpace)) {
 
 
-            rectF cameraAdjusted = camera.world_to_screen(myObjsQuad[each].rect);//invalidtaion
-            renManager.fill_area_with(cameraAdjusted, myObjsQuad[each].col);
-            DrawObjCount++;
+            //rectF cameraAdjusted = camera.world_to_screen(myObjsQuad[each].rect);//invalidtaion
+            //renManager.fill_area_with(cameraAdjusted, myObjsQuad[each].col);
+           // DrawObjCount++;
 
 
-        }
+//        }
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
         Color mouseCol = Colors::Magenta;
         mouseCol.set_alpha(125u);
@@ -204,10 +153,11 @@ int main() {
 
         if (plzDeleteArea) {
 
-            auto idList = myObjsQuad.search_index(rectAroundMouse);
-            myObjsQuad.remove_list(idList);
+            //auto idList = myObjsQuad.search_index(rectAroundMouse);
+            //myObjsQuad.remove_list(idList);
 
         }
+
 
 
         float elapsedTime = drawing1MILLIIONrects.dt_float();

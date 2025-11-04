@@ -5,10 +5,13 @@
 
 #include <optional>
 #include "SequenceM.h"
+#include <map>
+
+#include "Color.h"
 
 //TODO:: currently if the tree is large but removes items, there is no way to trim down the mem. just add it later
 namespace badEngine {
-
+	/*
 	template <typename OBJECT_TYPE>
 		requires IS_RULE_OF_FIVE_CLASS_T<OBJECT_TYPE>
 	class QuadTree {
@@ -57,7 +60,9 @@ namespace badEngine {
 					}
 				}
 			}
-			
+
+
+
 			void insert(const rectF& occupiedArea, std::size_t parentIndex, std::size_t& childIndex, QuadTreeBody*& child) {
 
 				//first, check structures depth limit, if going deeper is fine, try going deeper
@@ -107,8 +112,7 @@ namespace badEngine {
 					}
 				}
 			}
-		
-			
+
 			bool remove(std::size_t localIndex, std::size_t parentIndex, std::optional<std::size_t>& newParentOfLocalIndex) {
 				//check if index is valid at all
 				if (mChildNodes.size_in_use() <= localIndex) {
@@ -144,10 +148,7 @@ namespace badEngine {
 					mChildNodes[localIndex].mParentIndex = newParent;
 				}
 			}
-		
-			std::size_t get_parent_index(std::size_t localIndex) {
-				return mChildNodes[localIndex].mParentIndex;
-			}
+
 		private:
 
 			void collect_unconditional(SequenceM<std::size_t>& collecter) {
@@ -238,11 +239,12 @@ namespace badEngine {
 		const OBJECT_TYPE& operator[](std::size_t index)const {
 			return mAllObjects[index].mData;
 		}
-		
+
 		void remove_list(const SequenceM<std::size_t>& idList) {
 			//if there is a list of items to delete and the actual deletion happens one by one
-			//there is a problem if deleting in the right order because of the ways deletion is handled internally
-			//to avoid such errors the deleted IDs should be sorted from greater to smaller order
+			//there is a possibility that the index to be deleted becomes out of range at some point
+			//to address this the list MUST be sorted from greater to smaller
+			//alternative to calling this function is sorting the list yourself
 			SequenceM<std::size_t> sortedList = idList;
 			std::sort(sortedList.begin(), sortedList.end(), std::greater<>());
 
@@ -297,5 +299,89 @@ namespace badEngine {
 		//NOW GLOBAL KNOWS WHERE IT IS STORED IN LOCAL, AND LOCAL KNOWS WHERE IT IS STORED IN GLOBAL
 
 		SequenceM<ParentNode> mAllObjects;
+	};
+	*/
+
+	struct SomeObjWithArea {
+		rectF rect;
+		vec2f vel;
+		Color col;
+	};
+
+
+	class QuadTree {
+
+		static constexpr std::size_t FOR_EACH_WINDOW = 4;
+		static constexpr std::size_t MAX_DEPTH = 8;
+
+		struct ManagerNode {
+			std::size_t mWorkerNodeIndex = 0;
+			std::size_t mWorkerLocalIndex = 0;
+		};
+		struct WorkerNode {
+			SomeObjWithArea mWorker;
+			std::size_t mManagerIndex = 0;
+		};
+
+		struct Branch {
+			rectF mWindow;
+			SequenceM<WorkerNode> mWorkerNodes;
+		};
+
+	public:
+
+		QuadTree(const rectF& window) :mTopLevelBoundry(window) {}
+
+		void insert_impl(SomeObjWithArea&& object, const rectF& objectSize, const rectF& level, std::size_t depth) {
+			const float width = level.w / 2.0f;
+			const float height = level.h / 2.0f;
+
+			rectF windowArry[4] = { 
+				rectF(level.x , level.y, width, height),
+				rectF(level.x + width, level.y, width, height),
+				rectF(level.x, level.y + height, width, height),
+				rectF(level.x + width, level.y + height, width, height)
+			};
+
+			if (depth + 1 < MAX_DEPTH) {
+				for (int i = 0; i < FOR_EACH_WINDOW; ++i) {
+					if (!windowArry[i].contains_rect(objectSize)) continue;
+
+					insert_impl(std::move(object), objectSize, windowArry[i], depth + 1);
+					return;
+				}
+			}
+			//if all contains checks fail and/or max depth real insert here
+			std::size_t branchIndex = 0;
+			if (!contains_branch(level, branchIndex)) {
+				mAllBranches.element_create(level, SequenceM<WorkerNode>());
+				branchIndex = mAllBranches.size_in_use() - 1;
+			}
+
+			mAllBranches[branchIndex].mWorkerNodes.element_create(
+				WorkerNode(std::move(object), mAllManagers.size_in_use())
+			);
+			mAllManagers.element_create(branchIndex, mAllBranches[branchIndex].mWorkerNodes.size_in_use() - 1);
+		}
+		void insert(SomeObjWithArea&& object, const rectF& objectSize) {
+			insert_impl(std::move(object), objectSize, mTopLevelBoundry, 0);
+		}
+		bool contains_branch(const rectF& level, std::size_t& branchIndex)const {
+			for (std::size_t i = 0; i < mAllBranches.size_in_use(); ++i) {
+				if (mAllBranches[i].mWindow == level) {
+					branchIndex = i;
+					return true;
+				}
+			}
+			branchIndex = mAllBranches.size_in_use();
+			return false;
+		}
+
+	private:
+		rectF mTopLevelBoundry;
+
+		//DATA CONTAINERS
+		SequenceM<ManagerNode> mAllManagers;
+		SequenceM<Branch> mAllBranches;
 	};
 }

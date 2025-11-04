@@ -32,7 +32,7 @@ namespace badEngine {
 		}
 		template<typename S>
 		constexpr bool operator==(const Rectangle<S>& rhs)const noexcept {
-			return (w == rhs.w && h = rhs.h);
+			return (x == rhs.x && y == rhs.y && w == rhs.w && h = rhs.h);
 		}
 		template<typename S>
 		constexpr bool operator!=(const Rectangle<S>& rhs) const noexcept {
