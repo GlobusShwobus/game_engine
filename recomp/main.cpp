@@ -137,7 +137,7 @@ int main() {
         std::size_t DrawObjCount = 0;
 
         Stopwatch drawing1MILLIIONrects;
-        for (const auto& each : myObjsQuad.search_index(cameraSpace)) {
+        for (const auto& each : myObjsQuad.search_area(cameraSpace)) {
 
 
             rectF cameraAdjusted = camera.world_to_screen(myObjsQuad[each].rect);//invalidtaion

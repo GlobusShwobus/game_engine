@@ -32,7 +32,7 @@ namespace badEngine {
 		}
 		template<typename S>
 		constexpr bool operator==(const Rectangle<S>& rhs)const noexcept {
-			return (x == rhs.x && y == rhs.y && w == rhs.w && h == rhs.h);
+			return x == rhs.x && y == rhs.y && w == rhs.w && h == rhs.h;
 		}
 		template<typename S>
 		constexpr bool operator!=(const Rectangle<S>& rhs) const noexcept {
@@ -47,12 +47,12 @@ namespace badEngine {
 		}
 
 		constexpr bool contains_point(T X, T Y)const noexcept {
-			return (
+			return 
 				X >= x &&
 				Y >= y &&
 				X < x + w &&
 				Y < y + h
-				);
+				;
 		}
 		constexpr bool contains_point(const Vec2M<T>& pos)const noexcept {
 			return contains_point(pos.x, pos.y);
@@ -60,22 +60,22 @@ namespace badEngine {
 
 		template <typename S>
 		bool contains_rect(const Rectangle<S>& contained)const noexcept {
-			return (
+			return 
 				contained.x >= x &&
 				contained.y >= y &&
 				contained.x + contained.w <= x + w &&
 				contained.y + contained.h <= y + h
-				);
+				;
 		}
 
 		template <typename S>
 		constexpr bool intersects_rect(const Rectangle<S>& rhs)const noexcept {
-			return(
+			return
 				x < rhs.x + rhs.w &&
 				x + w > rhs.x &&
 				y < rhs.y + rhs.h &&
 				y + h > rhs.y
-				);
+				;
 		}
 
 	public:
