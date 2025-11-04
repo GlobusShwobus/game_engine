@@ -11,9 +11,15 @@
 
 //TODO:: currently if the tree is large but removes items, there is no way to trim down the mem. just add it later
 namespace badEngine {
-	/*
-	template <typename OBJECT_TYPE>
-		requires IS_RULE_OF_FIVE_CLASS_T<OBJECT_TYPE>
+	
+	struct SomeObjWithArea {
+		rectF rect;
+		vec2f vel;
+		Color col;
+	};
+
+	//template <typename OBJECT_TYPE>
+	//	requires IS_RULE_OF_FIVE_CLASS_T<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t FOR_EACH_WINDOW = 4;
@@ -22,7 +28,7 @@ namespace badEngine {
 		class QuadTreeBody;
 
 		struct ParentNode {
-			OBJECT_TYPE mData;
+			SomeObjWithArea mData;
 			QuadTreeBody* mChild = nullptr;
 			std::size_t mChildLocalIndex = 0;
 		};
@@ -211,11 +217,11 @@ namespace badEngine {
 			return mAllObjects.cend();
 		}
 
-		template<typename U>
-			requires std::same_as<std::remove_cvref_t<U>, OBJECT_TYPE>
-		void insert(U&& item, rectF itemsize) {
+		//template<typename U>
+		//	requires std::same_as<std::remove_cvref_t<U>, OBJECT_TYPE>
+		void insert(SomeObjWithArea&& item, rectF itemsize) {
 			//forward the data, node data is invalid here
-			mAllObjects.element_create(std::forward<U>(item), nullptr, NULL);
+			mAllObjects.element_create(std::forward<SomeObjWithArea>(item), nullptr, NULL);
 			//get the index into which data got inserted into
 			const std::size_t globalIndex = mAllObjects.size_in_use() - 1;
 			//pass in the required data down to child, the child will tell the parent back where it exists
@@ -233,10 +239,10 @@ namespace badEngine {
 			return collectIndex;
 		}
 
-		OBJECT_TYPE& operator[](std::size_t index) {
+		SomeObjWithArea& operator[](std::size_t index) {
 			return mAllObjects[index].mData;
 		}
-		const OBJECT_TYPE& operator[](std::size_t index)const {
+		const SomeObjWithArea& operator[](std::size_t index)const {
 			return mAllObjects[index].mData;
 		}
 
@@ -300,88 +306,5 @@ namespace badEngine {
 
 		SequenceM<ParentNode> mAllObjects;
 	};
-	*/
-
-	struct SomeObjWithArea {
-		rectF rect;
-		vec2f vel;
-		Color col;
-	};
-
-
-	class QuadTree {
-
-		static constexpr std::size_t FOR_EACH_WINDOW = 4;
-		static constexpr std::size_t MAX_DEPTH = 8;
-
-		struct ManagerNode {
-			std::size_t mWorkerNodeIndex = 0;
-			std::size_t mWorkerLocalIndex = 0;
-		};
-		struct WorkerNode {
-			SomeObjWithArea mWorker;
-			std::size_t mManagerIndex = 0;
-		};
-
-		struct Branch {
-			rectF mWindow;
-			SequenceM<WorkerNode> mWorkerNodes;
-		};
-
-	public:
-
-		QuadTree(const rectF& window) :mTopLevelBoundry(window) {}
-
-		void insert_impl(SomeObjWithArea&& object, const rectF& objectSize, const rectF& level, std::size_t depth) {
-			const float width = level.w / 2.0f;
-			const float height = level.h / 2.0f;
-
-			rectF windowArry[4] = { 
-				rectF(level.x , level.y, width, height),
-				rectF(level.x + width, level.y, width, height),
-				rectF(level.x, level.y + height, width, height),
-				rectF(level.x + width, level.y + height, width, height)
-			};
-
-			if (depth + 1 < MAX_DEPTH) {
-				for (int i = 0; i < FOR_EACH_WINDOW; ++i) {
-					if (!windowArry[i].contains_rect(objectSize)) continue;
-
-					insert_impl(std::move(object), objectSize, windowArry[i], depth + 1);
-					return;
-				}
-			}
-			//if all contains checks fail and/or max depth real insert here
-			std::size_t branchIndex = 0;
-			if (!contains_branch(level, branchIndex)) {
-				mAllBranches.element_create(level, SequenceM<WorkerNode>());
-				branchIndex = mAllBranches.size_in_use() - 1;
-			}
-
-			mAllBranches[branchIndex].mWorkerNodes.element_create(
-				WorkerNode(std::move(object), mAllManagers.size_in_use())
-			);
-			mAllManagers.element_create(branchIndex, mAllBranches[branchIndex].mWorkerNodes.size_in_use() - 1);
-		}
-		void insert(SomeObjWithArea&& object, const rectF& objectSize) {
-			insert_impl(std::move(object), objectSize, mTopLevelBoundry, 0);
-		}
-		bool contains_branch(const rectF& level, std::size_t& branchIndex)const {
-			for (std::size_t i = 0; i < mAllBranches.size_in_use(); ++i) {
-				if (mAllBranches[i].mWindow == level) {
-					branchIndex = i;
-					return true;
-				}
-			}
-			branchIndex = mAllBranches.size_in_use();
-			return false;
-		}
-
-	private:
-		rectF mTopLevelBoundry;
-
-		//DATA CONTAINERS
-		SequenceM<ManagerNode> mAllManagers;
-		SequenceM<Branch> mAllBranches;
-	};
+	
 }
