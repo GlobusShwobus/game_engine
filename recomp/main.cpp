@@ -59,7 +59,7 @@ int main() {
 
     for (int i = 0; i < 1000000; i++) {
 
-        rectF itemBox = rectF(rng.random_float(0, farea), rng.random_float(0, farea), rng.random_float(1, 10), rng.random_float(1, 10));
+        rectF itemBox = rectF(rng.random_float(0, farea-10), rng.random_float(0, farea-10), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
             itemBox,
             vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
@@ -76,6 +76,7 @@ int main() {
     Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
     Font prettyText(sfont, 32, 3);
     bool plzDeleteArea = false;
+    bool plzPruneMe = false;
     renManager.enable_blend_mode();
     ////#################################################################################
 
@@ -103,34 +104,37 @@ int main() {
                 continue;
             }
             //BS
-            //if (EVENT.key.key == SDLK_A) {
-            //    fsearchsize += 10.0f;
-            //}
-            //if (EVENT.key.key == SDLK_S) {
-            //    fsearchsize -= 10.0f;
-            //}
-            //if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            //    plzDeleteArea = true;
-            //}
-            //if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            //    plzDeleteArea = false;
-            //}
+            if (EVENT.key.key == SDLK_A) {
+                fsearchsize += 10.0f;
+            }
+            if (EVENT.key.key == SDLK_S) {
+                fsearchsize -= 10.0f;
+            }
+            if (EVENT.key.key == SDLK_P) {
+                plzPruneMe = true;
+            }
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                plzDeleteArea = true;
+            }
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+                plzDeleteArea = false;
+            }
             ///
 
-            script_handle_camera_mouse(EVENT, camera);
+            //script_handle_camera_mouse(EVENT, camera);
         }
 
 
         //TEST CODE
-        //fsearchsize = std::clamp(fsearchsize, 10.0f, 500.0f);
-        //vec2f mouseScreenPos;
-        //SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
-        //vec2f screenpos = camera.screen_to_world_point(mouseScreenPos);
-        //rectF rectAroundMouse = rectF(
-        //    screenpos.x - fsearchsize / 2,
-        //    screenpos.y - fsearchsize / 2,
-        //    fsearchsize, fsearchsize
-        //);
+        fsearchsize = std::clamp(fsearchsize, 10.0f, 500.0f);
+        vec2f mouseScreenPos;
+        SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
+        vec2f screenpos = camera.screen_to_world_point(mouseScreenPos);
+        rectF rectAroundMouse = rectF(
+            screenpos.x - fsearchsize / 2,
+            screenpos.y - fsearchsize / 2,
+            fsearchsize, fsearchsize
+        );
 
 
         rectF cameraSpace = camera.get_view_rect();
@@ -146,24 +150,23 @@ int main() {
 
 
         }
-        //rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
-        //Color mouseCol = Colors::Magenta;
-        //mouseCol.set_alpha(125u);
-        //renManager.fill_area_with(camGirlAdjusted, mouseCol);
-        //
-        //if (plzDeleteArea) {
-        //
-        //    //auto idList = myObjsQuad.search_index(rectAroundMouse);
-        //    //myObjsQuad.remove_list(idList);
-        //
-        //}
-
-
+        rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
+        Color mouseCol = Colors::Magenta;
+        mouseCol.set_alpha(125u);
+        renManager.fill_area_with(camGirlAdjusted, mouseCol);
+        
+        if (plzDeleteArea) {
+            myObjsQuad.remove_area(rectAroundMouse);
+        }
+        if (plzPruneMe) {
+            myObjsQuad.remove_dead_cells();
+            plzPruneMe = false;
+        }
 
         float elapsedTime = drawing1MILLIIONrects.dt_float();
 
         //print out text
-        std::string print = "quadtree: " + std::to_string(DrawObjCount) + "/1000000 -> time: " + std::to_string(elapsedTime);
+        std::string print = "quadtree: " + std::to_string(DrawObjCount) + "/" + std::to_string(myObjsQuad.size())+ "->time: " + std::to_string(elapsedTime);
         prettyText.draw_text(print, renManager.get_renderer_ref(), vec2i(0, 0));
 
         //###############################################################

@@ -30,7 +30,6 @@ namespace badEngine {
 		struct ManagerNode {
 			QuadWindow* mWorkingWindow = nullptr;
 			std::size_t mWorkerIndex = 0;
-			bool isEmpty = true;
 		};
 		struct WorkerNode {
 			SomeObjWithArea mWorker;
@@ -60,7 +59,6 @@ namespace badEngine {
 				mWindow = window;
 				mDepth = depth;
 			}
-
 			void clear() {
 				mWorkers.clear();
 
@@ -71,7 +69,6 @@ namespace badEngine {
 					}
 				}
 			}
-
 
 			ManagerNode insert(SomeObjWithArea&& payload, const rectF& workingArea, std::size_t managerIndex) {
 
@@ -94,7 +91,7 @@ namespace badEngine {
 				//in case the depth limit is reached or the objectArea doesn't fit into any sub branches, add it here
 				mWorkers.element_create(std::move(payload), workingArea, managerIndex);
 				//return back the metadata so that parent knows where it's child is
-				return ManagerNode(this, mWorkers.size_in_use() - 1, false);
+				return ManagerNode(this, mWorkers.size_in_use() - 1);
 			}
 			void collect(const rectF& searchArea, SequenceM<std::size_t>& collector)const noexcept {
 				//first check for items belonging to this layer
@@ -114,6 +111,62 @@ namespace badEngine {
 				}
 			}
 
+
+			bool remove(std::size_t workerIndex, std::size_t managerIndex, std::optional<std::size_t>& newManagerIndex) {
+				//check if index is valid at all
+				if (mWorkers.size_in_use() <= workerIndex) 
+					return false;
+				//check if the observers match (maybe throw is better?)
+				if (!(mWorkers[workerIndex].mManagerIndex == managerIndex))
+					return false;
+			
+				//removing an object is done in an unordered way. object somewhere in the middle gets swaped with the last object and the new last is then cut off
+				//this means that the previously last, but now in a new index worker has the wrong manager and needs to be updated
+				// TWO THINGS TO KEEP IN MIND: 1) if removed item is the last item, then no new manager is to be updated
+				//                             2) if the container is empty afterwards, then also no new manager. no worker no manager
+
+
+				//swap places between local and last and remove the new last
+				mWorkers.depricate_unordered(mWorkers.begin() + workerIndex);
+
+				//check if the conainer after deprication is not empty and if we didn't remove the last item in the last step
+				if (!mWorkers.empty_in_use() && !(mWorkers.size_in_use() == workerIndex)) {
+					newManagerIndex = mWorkers[workerIndex].mManagerIndex;
+				}
+				else {
+					newManagerIndex.reset();
+				}
+				return true;
+			}
+			void assign_new_parent(std::size_t localIndex, std::size_t newManager)noexcept {
+				//check validity first and swap managers
+				if (localIndex < mWorkers.size_in_use()) 
+					mWorkers[localIndex].mManagerIndex = newManager;	
+			}
+			bool is_no_workers_left_remove() noexcept {
+				//first check this (top) layer
+				bool hasWorkers = !mWorkers.empty_in_use();
+
+				//check every subwindow
+				for (auto& subwindow:mSubWindows) {
+
+					if (subwindow.mStorage) {
+
+						//subwindow calls remove_dead_cells recursively going to the bottom of each branch
+						//then as it moves back up removes shit
+						bool keep = subwindow.mStorage->is_no_workers_left_remove();
+
+						if (!keep) //if empty remove 
+							subwindow.mStorage.reset();
+						else //else keep but this means top layer must also keep it, thus hasWorkers must also be set as true
+							hasWorkers = true;
+					}
+
+				}
+				return hasWorkers;
+			}
+			
+
 			SomeObjWithArea& operator[](std::size_t index)noexcept {//you know what, if you can't index right, you deserve termination
 				return mWorkers[index].mWorker;
 			}
@@ -131,19 +184,6 @@ namespace badEngine {
 				for (const auto& subwindow : mSubWindows)
 					if (subwindow.mStorage)
 						subwindow.mStorage->collect_all(collector);
-			}
-
-			void init(const rectF& newArea)noexcept {
-				clear();
-				const float width = newArea.w / 2.0f;
-				const float height = newArea.h / 2.0f;
-
-				mSubWindows[0].mArea = rectF(newArea.x, newArea.y, width, height);
-				mSubWindows[1].mArea = rectF(newArea.x + width, newArea.y, width, height);
-				mSubWindows[2].mArea = rectF(newArea.x, newArea.y + height, width, height);
-				mSubWindows[3].mArea = rectF(newArea.x + width, newArea.y + height, width, height);
-
-				mWindow = newArea;
 			}
 		private:
 			//LAYER DEPTH
@@ -190,6 +230,66 @@ namespace badEngine {
 			return collector;
 		}
 
+		void remove_area(const rectF& area) {
+			//there is an issue with removing multiple items at once and that is indexes being chaotic
+			//to avoid accessing out of bounds memory the removal has to be done from the greatest to lowest order
+
+			//get list
+			auto list = search_area(area);
+			//sort from greatest to lowest
+			std::sort(list.begin(), list.end(), std::greater<>());
+			//remove
+			for (auto& id : list) 
+				remove(id);
+		}
+		void remove(std::size_t removeIndex) {
+			//invalid index or something
+			if (removeIndex >= mManagers.size_in_use())
+				throw std::runtime_error("invalid index");
+			
+
+			//first step is to get rid of the index
+			auto& REMOVE_NODE = mManagers[removeIndex];
+
+			std::optional<std::size_t> newManagerIndex;
+
+			//first remove the object internally from the tree
+			if (REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, removeIndex, newManagerIndex)) {
+				//since internally things got swaped around, this means the previous index of the worker (which now indexes a different object)
+				//is now managed but the newManager (in other words, it's just bookkeeping)
+				if (newManagerIndex.has_value()) 
+					mManagers[newManagerIndex.value()].mWorkerIndex = REMOVE_NODE.mWorkerIndex;
+			}
+			else {
+				throw std::runtime_error("index missmatch between parent and child nodes");
+			}
+
+			//previously, the object somewhere in the tree was removed. this meant a top level manager had to be notifed of the change
+			//in this step we are removing a top level manager object, this means a worker somewhere in the tree needs to be notfied of the change
+
+			//if the removed node is the last node, then the bookkeeping is already done, otherwise do the step
+			if (removeIndex != mManagers.size_in_use() - 1) {
+				auto& CURRENT_LAST_NODE = mManagers.back();
+				CURRENT_LAST_NODE.mWorkingWindow->assign_new_parent(CURRENT_LAST_NODE.mWorkerIndex, removeIndex);
+			}
+
+			//finally remove the piece of shit
+			mManagers.depricate_unordered(mManagers.begin() + removeIndex);
+		}
+		void remove_dead_cells() {
+			if (!mRoot.is_no_workers_left_remove()) {
+				mRoot.clear();//last return of remove_dead_cells is about the top layer, if it's also empty call this (should be cheap anyway)
+			}
+		}
+
+		void re_initalize(const rectF& newArea) {
+			mRoot.clear();
+			mRoot = QuadWindow(newArea, 0);
+		}
+		std::size_t size() const {
+			return mManagers.size_in_use();
+		}
+
 		SomeObjWithArea& operator[](std::size_t index)noexcept {
 			return (*mManagers[index].mWorkingWindow)[mManagers[index].mWorkerIndex];
 		}
@@ -211,9 +311,7 @@ namespace badEngine {
 			mRoot.clear();
 			mAllObjects.clear();
 		}
-		std::size_t size() const {
-			return mAllObjects.size_in_use();
-		}
+
 		bool empty() const {
 			return mAllObjects.empty_in_use();
 		}
@@ -229,94 +327,5 @@ namespace badEngine {
 		}
 		auto cend() {
 			return mAllObjects.cend();
-		}
-
-				void remove_list(const SequenceM<std::size_t>& idList) {
-			//if there is a list of items to delete and the actual deletion happens one by one
-			//there is a possibility that the index to be deleted becomes out of range at some point
-			//to address this the list MUST be sorted from greater to smaller
-			//alternative to calling this function is sorting the list yourself
-			SequenceM<std::size_t> sortedList = idList;
-			std::sort(sortedList.begin(), sortedList.end(), std::greater<>());
-
-			for (auto& id: sortedList) {
-				remove(id);
-			}
-		}
-		void remove(std::size_t removeIndex) {
-			//invalid index or something
-			if (removeIndex >= mAllObjects.size_in_use()) {
-				throw std::runtime_error("invalid index");
-			}
-
-			//first step is to get rid of the index (the simple step)
-			auto& REMOVE_NODE = mAllObjects[removeIndex];
-
-			std::optional<std::size_t> newParentOfLocalIndex;
-
-			if (REMOVE_NODE.mChild->remove(REMOVE_NODE.mChildLocalIndex, removeIndex, newParentOfLocalIndex)) {
-				//if successful then the parent needs to told about what correct child to look at
-				//the body of the child is still correct, the only things that swaped were observers
-				//also there is potential that child was now empty, in which case no parent to be updated and move on to remove the node
-				if (newParentOfLocalIndex.has_value()) {
-					mAllObjects[newParentOfLocalIndex.value()].mChildLocalIndex = REMOVE_NODE.mChildLocalIndex;
-				}
-			}
-			else {
-				throw std::runtime_error("index missmatch between parent and child nodes");
-			}
-			//second step, once dealt with swaping indexes and making sure correct parent and child observe each other
-			//is to get rid of REMOVE_NODE. REMOVE_NODE is now a junk node because we dealt with observer pattern mumbo jump already
-			//the question is if we now swap places of this and last item and then remove the last, do we also need to
-			//take care of the nodes of the last item?
-			//before, the parent had to be notified about changing child
-			//but now the child has to be notifed of changing parent
-			//there is also the possibility of the removed node being the last node, in which case the step can be skiped
-
-			const std::size_t lastIndex = mAllObjects.size_in_use() - 1;
-			if (removeIndex != lastIndex) {
-				auto& CURRENT_LAST_NODE = mAllObjects.back();
-				CURRENT_LAST_NODE.mChild->assign_new_parent(CURRENT_LAST_NODE.mChildLocalIndex, removeIndex);
-			}
-
-			//finally remove the piece of shit
-			mAllObjects.depricate_unordered(mAllObjects.begin() + removeIndex);
-		}
-
-
-					bool remove(std::size_t localIndex, std::size_t parentIndex, std::optional<std::size_t>& newParentOfLocalIndex) {
-				//check if index is valid at all
-				if (mChildNodes.size_in_use() <= localIndex) {
-					return false;
-				}
-				//check if the observers match
-				if (!(mChildNodes[localIndex].mParentIndex == parentIndex)) {
-					return false;
-				}
-
-				//if the observers match, and we are about to swap the places in local vector between localIndex(removed item)
-				//with the last item, then we must also communicate back who is the new parent of localIndex
-				//we already know local index, but not the parent
-				//there is also the possibility that the removed item is the last item, in which case the container is actually now empty
-				//second possiblity is that the removed item is the last item but the container is not empty afterwards
-				//thus the simplest is telling size_t is nullptr
-
-				//swap places between local and last and remove the new last
-				mChildNodes.depricate_unordered(mChildNodes.begin() + localIndex);
-
-				if (!mChildNodes.empty_in_use() && mChildNodes.size_in_use() > localIndex) {
-					newParentOfLocalIndex = mChildNodes[localIndex].mParentIndex;
-				}
-				else {
-					newParentOfLocalIndex.reset();
-				}
-				return true;
-			}
-			void assign_new_parent(std::size_t localIndex, std::size_t newParent) {
-				//check validity first
-				if (localIndex < mChildNodes.size_in_use()) {
-					//change observer
-					mChildNodes[localIndex].mParentIndex = newParent;
-				}
-			}
+		}		
 */
