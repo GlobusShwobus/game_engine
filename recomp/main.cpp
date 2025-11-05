@@ -16,6 +16,7 @@
 #include "Scripts.h"
 #include "QuadTree.h"
 
+#include <iostream>
 /*
 MORE COLLISION RESOLUTIONS SECOND
 QUADTREE THIRD
@@ -53,11 +54,11 @@ int main() {
 
     NumberGenerator rng;
     Camera2D camera(960, 540);
-    float farea = 10000;
+    float farea = 600;
     float fsearchsize = 50.0f;
     QuadTree myObjsQuad(rectF(0, 0, farea, farea));
 
-    for (int i = 0; i < 1000000; i++) {
+    for (int i = 0; i < 5000; i++) {
 
         rectF itemBox = rectF(rng.random_float(0, farea-10), rng.random_float(0, farea-10), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
@@ -77,6 +78,7 @@ int main() {
     Font prettyText(sfont, 32, 3);
     bool plzDeleteArea = false;
     bool plzPruneMe = false;
+    int fuckingEventCounter = 0;
     renManager.enable_blend_mode();
     ////#################################################################################
 
@@ -159,7 +161,14 @@ int main() {
             myObjsQuad.remove_area(rectAroundMouse);
         }
         if (plzPruneMe) {
-            myObjsQuad.remove_dead_cells();
+            if (fuckingEventCounter == 0) {
+                std::size_t branchesBefore = myObjsQuad.branch_count();
+                myObjsQuad.remove_dead_cells();
+                std::size_t branchesAfter = myObjsQuad.branch_count();
+
+                std::cout << "branches before: " << branchesBefore << '\n' << "branches after: " << branchesAfter;
+                fuckingEventCounter++;
+            }
             plzPruneMe = false;
         }
 

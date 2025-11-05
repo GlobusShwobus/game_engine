@@ -1,15 +1,13 @@
 #pragma once
 #include "Rectangle.h"
+#include "SequenceM.h"
+
 #include <memory>
 #include <array>
-
 #include <optional>
-#include "SequenceM.h"
-#include <map>
 
-#include "Color.h"
+#include "Color.h"//temp
 
-//TODO:: currently if the tree is large but removes items, there is no way to trim down the mem. just add it later
 namespace badEngine {
 
 	struct SomeObjWithArea {
@@ -48,6 +46,7 @@ namespace badEngine {
 		public:
 
 			QuadWindow(const rectF& window, std::size_t depth) {
+				clear();
 				const float width = window.w / 2.0f;
 				const float height = window.h / 2.0f;
 
@@ -152,7 +151,7 @@ namespace badEngine {
 
 					if (subwindow.mStorage) {
 
-						//subwindow calls remove_dead_cells recursively going to the bottom of each branch
+						//subwindow calls is_no_workers_left_remove recursively going to the bottom of each branch
 						//then as it moves back up removes shit
 						bool keep = subwindow.mStorage->is_no_workers_left_remove();
 
@@ -165,8 +164,16 @@ namespace badEngine {
 				}
 				return hasWorkers;
 			}
-			
 
+			void count_branches(std::size_t& counter)const noexcept {
+				for (const auto& subwindow : mSubWindows) {
+					if (subwindow.mStorage) {
+						counter++;
+						subwindow.mStorage->count_branches(counter);
+					}
+				}
+			}
+		
 			SomeObjWithArea& operator[](std::size_t index)noexcept {//you know what, if you can't index right, you deserve termination
 				return mWorkers[index].mWorker;
 			}
@@ -283,11 +290,15 @@ namespace badEngine {
 		}
 
 		void re_initalize(const rectF& newArea) {
-			mRoot.clear();
 			mRoot = QuadWindow(newArea, 0);
 		}
 		std::size_t size() const {
 			return mManagers.size_in_use();
+		}
+		std::size_t branch_count()const noexcept {
+			std::size_t counter = 0;
+			mRoot.count_branches(counter);
+			return counter;
 		}
 
 		SomeObjWithArea& operator[](std::size_t index)noexcept {
