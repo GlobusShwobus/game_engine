@@ -290,7 +290,9 @@ namespace badEngine {
 		}
 
 		void re_initalize(const rectF& newArea) {
+			mManagers.clear();
 			mRoot = QuadWindow(newArea, 0);
+			topLevelWindow = newArea;
 		}
 		std::size_t size() const {
 			return mManagers.size_in_use();
