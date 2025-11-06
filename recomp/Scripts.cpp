@@ -13,7 +13,7 @@ namespace badEngine{
         SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
         vec2f mouseWorldPos = camera.screen_to_world_point(mouseScreenPos);
 
-        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button == SDL_BUTTON_RIGHT) {//may be bugged atm whatever
             mouseHeld = true;
             lastMouseWorldPos = mouseWorldPos;//this event only sets it ONCE, not every frame, that's why delta is not 0
         }

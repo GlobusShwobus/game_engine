@@ -51,12 +51,16 @@ int main() {
     }
 
     //TEST CODE
-
+    struct SomeObjWithArea {
+        rectF rect;
+        vec2f vel;
+        Color col;
+    };
     NumberGenerator rng;
     Camera2D camera(960, 540);
     float farea = 600;
     float fsearchsize = 50.0f;
-    QuadTree myObjsQuad(rectF(0, 0, farea, farea));
+    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
 
     for (int i = 0; i < 5000; i++) {
 
@@ -115,7 +119,7 @@ int main() {
             if (EVENT.key.key == SDLK_P) {
                 plzPruneMe = true;
             }
-            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN && EVENT.button.button == SDL_BUTTON_LEFT) {
                 plzDeleteArea = true;
             }
             if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
@@ -123,7 +127,7 @@ int main() {
             }
             ///
 
-            //script_handle_camera_mouse(EVENT, camera);
+            script_handle_camera_mouse(EVENT, camera);
         }
 
 

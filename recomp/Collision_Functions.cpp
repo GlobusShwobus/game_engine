@@ -64,7 +64,7 @@ namespace badEngine {
 		);
 	}
 	SequenceM<SweptAABB_collision_exe::SweptResult> SweptAABB_collision_exe::get_colliders(SequenceM<TransformF>& objects) {
-		const int entityCount = objects.size_in_use();
+		const int entityCount = objects.size();
 
 		SequenceM<SweptResult> collisions;
 
@@ -74,7 +74,7 @@ namespace badEngine {
 				SweptResult pair(&objects[i], &objects[j], 1.0f, vec2f(0, 0));
 
 				if (sweptAABB_dynamic_vs_dynamic(pair))
-					collisions.element_create(pair);
+					collisions.emplace_back(pair);
 
 			}
 		}

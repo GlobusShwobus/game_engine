@@ -21,7 +21,7 @@ namespace badEngine {
 			throw std::runtime_error("Mismatch between widths or heights");
 
 		for (uint16_t i = 0; i < frameCount; i++)
-			mFrames.element_create(readBegin.x + (i * frameSize.x), readBegin.y);
+			mFrames.emplace_back(readBegin.x + (i * frameSize.x), readBegin.y);
 	}
 
 	void Animation::update(float dt)noexcept {
