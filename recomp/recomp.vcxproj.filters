@@ -88,6 +88,9 @@
     <ClInclude Include="Scripts.h">
       <Filter>Scripts</Filter>
     </ClInclude>
+    <ClInclude Include="TESTING_INHERITANCE.h">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

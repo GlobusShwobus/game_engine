@@ -160,6 +160,7 @@
     <ClInclude Include="Serialization.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Stopwatch.h" />
+    <ClInclude Include="TESTING_INHERITANCE.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vec2M.h" />
     <ClInclude Include="RenderManager.h" />
