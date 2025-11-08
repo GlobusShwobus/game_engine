@@ -143,13 +143,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Animation.h" />
     <ClInclude Include="badUtility.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Collision_Functions.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Entity_Factory.h" />
-    <ClInclude Include="Font.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Configs.h" />
     <ClInclude Include="NumberGenerator.h" />
@@ -158,21 +156,18 @@
     <ClInclude Include="Scripts.h" />
     <ClInclude Include="SequenceM.h" />
     <ClInclude Include="Serialization.h" />
-    <ClInclude Include="Sprite.h" />
     <ClInclude Include="Stopwatch.h" />
-    <ClInclude Include="TESTING_INHERITANCE.h" />
+    <ClInclude Include="Drawable.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vec2M.h" />
     <ClInclude Include="RenderManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Animation.cpp" />
     <ClCompile Include="Collision_Functions.cpp" />
-    <ClCompile Include="Font.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderManager.cpp" />
     <ClCompile Include="Scripts.cpp" />
-    <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="entity_config.json" />

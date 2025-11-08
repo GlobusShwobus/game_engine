@@ -37,15 +37,6 @@
     <ClInclude Include="RenderManager.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
-    <ClInclude Include="Sprite.h">
-      <Filter>RENDERING_STUFF</Filter>
-    </ClInclude>
-    <ClInclude Include="Animation.h">
-      <Filter>RENDERING_STUFF</Filter>
-    </ClInclude>
-    <ClInclude Include="Font.h">
-      <Filter>RENDERING_STUFF</Filter>
-    </ClInclude>
     <ClInclude Include="badUtility.h">
       <Filter>GENERIC_UTILITY</Filter>
     </ClInclude>
@@ -88,7 +79,10 @@
     <ClInclude Include="Scripts.h">
       <Filter>Scripts</Filter>
     </ClInclude>
-    <ClInclude Include="TESTING_INHERITANCE.h">
+    <ClInclude Include="Drawable.h">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
   </ItemGroup>
@@ -101,15 +95,6 @@
     </ClCompile>
     <ClCompile Include="Collision_Functions.cpp">
       <Filter>MATHY_GEOMETRY</Filter>
-    </ClCompile>
-    <ClCompile Include="Sprite.cpp">
-      <Filter>RENDERING_STUFF</Filter>
-    </ClCompile>
-    <ClCompile Include="Animation.cpp">
-      <Filter>RENDERING_STUFF</Filter>
-    </ClCompile>
-    <ClCompile Include="Font.cpp">
-      <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
     <ClCompile Include="Scripts.cpp">
       <Filter>Scripts</Filter>

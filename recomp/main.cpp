@@ -3,9 +3,7 @@
 #include "Configs.h"
 #include <thread>
 
-#include "Sprite.h"
-#include "Animation.h"
-#include "Font.h"
+#include "Drawable.h"
 #include "Collision_Functions.h"
 
 #include "SequenceM.h"
@@ -78,8 +76,9 @@ int main() {
     camera.set_scale(1, 1);
 
     bool mouseHeld = false;
-    Sprite sfont("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
-    Font prettyText(sfont, 32, 3);
+    std::shared_ptr<Texture> fontTexture = std::make_shared<Texture>("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
+    std::unique_ptr<Font> font = std::make_unique<Font>(fontTexture, 32, 3);
+
     bool plzDeleteArea = false;
     bool plzPruneMe = false;
     int fuckingEventCounter = 0;
@@ -180,7 +179,8 @@ int main() {
 
         //print out text
         std::string print = "quadtree: " + std::to_string(DrawObjCount) + "/" + std::to_string(myObjsQuad.size())+ "->time: " + std::to_string(elapsedTime);
-        prettyText.draw_text(print, renManager.get_renderer_ref(), vec2i(0, 0));
+        font->set_text(print);
+        font->draw(renManager.get_renderer_ref(), vec2i(0, 0));
 
         //###############################################################
 
