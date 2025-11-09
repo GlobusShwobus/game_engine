@@ -78,6 +78,22 @@ namespace badEngine {
 				;
 		}
 
+		constexpr void set_pos(const Vec2M<T>& pos)noexcept {
+			x = pos.x;
+			y = pos.y;
+		}
+		constexpr void set_size(const Vec2M<T>& size)noexcept {
+			w = size.x;
+			h = size.y;
+		}
+
+		constexpr Vec2M<T> get_pos()const noexcept {
+			return Vec2M<T>(x, y);
+		}
+		constexpr Vec2M<T> get_size()const noexcept {
+			return Vec2M<T>(w, h);
+		}
+
 	public:
 		T x = 0;
 		T y = 0;
