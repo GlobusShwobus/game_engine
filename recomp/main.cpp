@@ -180,7 +180,7 @@ int main() {
         //print out text
         std::string print = "quadtree: " + std::to_string(DrawObjCount) + "/" + std::to_string(myObjsQuad.size())+ "->time: " + std::to_string(elapsedTime);
         font->set_text(print);
-        font->draw(renManager.get_renderer_ref(), vec2i(0, 0));
+        font->draw(renManager.get_renderer_ref(), rectF(0, 0, 32,32));
 
         //###############################################################
 

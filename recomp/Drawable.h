@@ -1,81 +1,72 @@
 #pragma once
 
-#include "Texture.h"
+#include <memory>
+#include <string_view>
+#include "SDL3/SDL_render.h"
+#include <SDL3_image/SDL_image.h>
 #include "SequenceM.h"
 #include "Rectangle.h"
 #include <assert.h>
 
 namespace badEngine {
+	
+	class Texture {
 
-	class Sprite {
+		static constexpr auto SDLTextureDeleter = [](SDL_Texture* t) { if (t)SDL_DestroyTexture(t); };
+
+		SDL_FRect convert_rect(const rectF& rect)const noexcept {
+			return SDL_FRect(rect.x, rect.y, rect.w, rect.h);
+		}
 
 	public:
 
-		Sprite(Texture* texture)
-		:mTexture(std::shared_ptr<Texture>(texture))
-		{
-			assert(mTexture != nullptr, "Sprite texture nullptr");
-			mControlBlock = rectF(0, 0, mTexture->width(), mTexture->height());
-		}
-		Sprite(std::shared_ptr<Texture> texture)
-		:mTexture(std::move(texture))
-		{
-			assert(mTexture != nullptr, "Sprite texture nullptr");
-			mControlBlock = rectF(0, 0, mTexture->width(), mTexture->height());
+		explicit Texture(SDL_Texture* texture)
+			: mTexture(texture, SDLTextureDeleter),
+			mControlBlock(0,0, mTexture->w, mTexture->h) {}
+
+		Texture(SDL_Surface& surface, SDL_Renderer* rendererRef)
+			:mTexture(SDL_CreateTextureFromSurface(rendererRef, &surface), SDLTextureDeleter),
+			mControlBlock(0,0, mTexture->w, mTexture->h) {}
+
+		Texture(std::string_view path, SDL_Renderer* rendererRef)
+			: mTexture(IMG_LoadTexture(rendererRef, path.data()), SDLTextureDeleter), 
+			mControlBlock(0, 0, mTexture->w, mTexture->h) {}
+
+		rectF get_texture_rect()const noexcept {
+			return mControlBlock;
 		}
 
-		virtual ~Sprite() = default;
-		virtual void draw(SDL_Renderer* renderer, const vec2f& pos) = 0;
+		void draw(SDL_Renderer* renderer, const rectF& source, const rectF& dest) {
+			if (mControlBlock.contains_rect(source)) {
+				SDL_FRect sdlSrc = convert_rect(source);
+				SDL_FRect sdlDest = convert_rect(dest);
 
-	protected:
+				int screenW, screenH;
+				SDL_GetRenderOutputSize(renderer, &screenW, &screenH);
 
-		bool is_within_control_block(const rectF& rect)const noexcept {
-			return mControlBlock.contains_rect(rect);
+				//if obj is fully off screen skip any further rendering
+				if (sdlDest.x + sdlDest.w <= 0 || sdlDest.y + sdlDest.h <= 0 || sdlDest.x >= screenW || sdlDest.y >= screenH)
+					return;
+				SDL_RenderTexture(renderer, mTexture.get(), &sdlSrc, &sdlDest);
+			}
 		}
-
-		SDL_Texture* get_texture()const {
-			return mTexture->get();
-		}
-
-		void set_source_size(const vec2f& size)noexcept {
-			assert(size.x <= mTexture->width() && size.y <= mTexture->height());
-			mSourceSize = size;
-		}
-		const vec2f& get_source_size()const noexcept {
-			return mSourceSize;
-		}
-		void set_dest_size(const vec2f& size)noexcept {
-			mDestSize = size;
-		}
-		const vec2f& get_dest_size()const noexcept {
-			return mDestSize;
-		}
-
-
 	private:
-		rectF mControlBlock = { 0,0,0,0 };
-		std::shared_ptr<Texture> mTexture;
-		vec2f mSourceSize;
-		vec2f mDestSize;
+		std::unique_ptr<SDL_Texture, decltype(SDLTextureDeleter)> mTexture;
+		const rectF mControlBlock;
 	};
 
-	class Animation: public Sprite {
+
+	class Animation {
 
 	public:
 
 		Animation(Texture* texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
-			:Sprite(texture), mFrameCount(fCount)
-		{
-			record_frames(start, fWidth, fHeight, fCount);
-		}
-		Animation(std::shared_ptr<Texture> texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
-			:Sprite(std::move(texture)), mFrameCount(fCount)
-		{
-			record_frames(start, fWidth, fHeight, fCount);
-		}
-		void record_frames(const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount) {
+			:Animation(std::shared_ptr<Texture>(texture), start, fWidth, fHeight, fCount) {}
 
-			assert(start.x >= 0 && start.y >= 0, "Out of bounds texture access");
+		Animation(std::shared_ptr<Texture> texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
+			:mTexture(std::move(texture)), mFrameCount(fCount), mFrameWidth(fWidth), mFrameHeight(fHeight)
+		{
+			assert(start.x >= 0 && start.y >= 0 && "Out of bounds texture access");
 
 			const rectF controlBlock = rectF(
 				start.x,
@@ -83,16 +74,12 @@ namespace badEngine {
 				start.x + (fWidth * fCount),
 				start.y + (fHeight * fCount)
 			);
-
-			assert(is_within_control_block(controlBlock), "texture does not support film of such size");
+			const rectF textureRect = mTexture->get_texture_rect();
+			//check if the entire demand is within the control block
+			assert(textureRect.contains_rect(controlBlock) && "demanded size too large for this texture");
 
 			for (uint16_t i = 0; i < fCount; ++i)
 				mFrames.emplace_back(start.x + (i * fWidth), start.y);
-
-			set_source_size(vec2f(fWidth, fHeight));
-			set_dest_size(vec2f(fWidth, fHeight));
-
-			mFrameCount = fCount;
 		}
 		void update(float dt)noexcept {
 			mCurrentFrameTime += dt;
@@ -106,31 +93,29 @@ namespace badEngine {
 			if (mCurrentFrame >= mFrameCount)
 				mCurrentFrame = 0;
 		}
-		void set_frame_hold_time(float time) {
-			assert(time >= 0, "negative time");
+		void set_frame_hold_time(float time)noexcept {
+			assert(time >= 0 && "negative time");
 			mHoldTime = time;
 		}
-		void draw(SDL_Renderer* renderer, const vec2f& pos) override {
-			const auto& sSize = get_source_size();
-			const auto& dSize = get_dest_size();
+		void draw(SDL_Renderer* renderer, const rectF& dest) {//getting dest as rect is actually great idea because of camera or other factors, gyat damn
+
 			const auto& curFramePos = mFrames[mCurrentFrame];
 			
-			SDL_FRect source = SDL_FRect(curFramePos.x, curFramePos.y, sSize.x, sSize.y);
-			SDL_FRect dest = SDL_FRect(pos.x, pos.y, dSize.x, dSize.y);
+			rectF source(
+				curFramePos.x,
+				curFramePos.y,
+				mFrameWidth,
+				mFrameHeight
+			);
 
-			int screenW, screenH;
-			SDL_GetRenderOutputSize(renderer, &screenW, &screenH);
-
-			//if obj is fully off screen skip any further rendering
-			if (dest.x + dest.w <= 0 || dest.y + dest.h <= 0 || dest.x >= screenW || dest.y >= screenH)
-				return;
-
-			//SDL handles cliping to window
-			SDL_RenderTexture(renderer, get_texture(), &source, &dest);
+			mTexture->draw(renderer, source, dest);
 		}
 	private:
 		SequenceM<vec2i> mFrames;
+		std::shared_ptr<Texture> mTexture;
 
+		uint16_t mFrameWidth = 0;
+		uint16_t mFrameHeight = 0;
 		uint16_t mFrameCount = 0;
 		uint16_t mCurrentFrame = 0;
 
@@ -138,55 +123,35 @@ namespace badEngine {
 		float mCurrentFrameTime = 0.0f;
 	};
 
-
-	class Font :public Sprite {
-		void init(uint32_t columnsCount, uint32_t rowsCount) {
-			mGylphWidth = get_texture()->w / mColumnsCount;
-			mGylphHeight = get_texture()->h / mRowsCount;
-
-			assert((mGylphWidth * mColumnsCount) == get_texture()->w, "texture image likely off size or invalid counts");
-			assert((mGylphHeight * mRowsCount) == get_texture()->h, "texture image likely off size or invalid counts");
-		
-			set_source_size(vec2f(mGylphWidth, mGylphHeight));
-			set_dest_size(vec2f(mGylphWidth, mGylphHeight));
-		}
+	class Font {
 	public:
 
-		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount)
-			:Sprite(texture), mColumnsCount(columnsCount), mRowsCount(rowsCount)
-		{
-			init(columnsCount, rowsCount);
-		}
+		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount) :Font(std::shared_ptr<Texture>(texture), columnsCount, rowsCount) {}
 
 		Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount)
-			:Sprite(std::move(texture)), mColumnsCount(columnsCount), mRowsCount(rowsCount)
+			:mTexture(std::move(texture)),
+			mColumnsCount(columnsCount),
+			mRowsCount(rowsCount),
+			mGylphWidth(mTexture->get_texture_rect().w / mColumnsCount),
+			mGylphHeight(mTexture->get_texture_rect().h / mRowsCount)
 		{
-			init(columnsCount, rowsCount);
+			assert((mGylphWidth * mColumnsCount) == mTexture->get_texture_rect().w && "texture image likely off size or invalid counts");
+			assert((mGylphHeight * mRowsCount) == mTexture->get_texture_rect().h && "texture image likely off size or invalid counts");
 		}
 
-		void draw(SDL_Renderer* renderer, const vec2f& pos)override {
+		void draw(SDL_Renderer* renderer, const rectF& dest) {
 			
-			const auto& sSize = get_source_size();
-			const auto& dSize = get_dest_size();
-			
-			for (const auto& each : textPos) {
+			for (const auto& each : letterPos) {
 
-				SDL_FRect source = SDL_FRect(each.first.x, each.first.y, sSize.x, sSize.y);
-				SDL_FRect dest = SDL_FRect(each.second.x + pos.x, each.second.y + pos.y, dSize.x, dSize.y);
+				rectF sdlSrc = rectF(each.first.x, each.first.y, mGylphWidth, mGylphHeight);
+				
+				rectF sdlDest = rectF(each.second.x + dest.x, each.second.y + dest.y, dest.w, dest.h);
 
-				int screenW, screenH;
-				SDL_GetRenderOutputSize(renderer, &screenW, &screenH);
-
-				//if obj is fully off screen skip any further rendering
-				if (dest.x + dest.w <= 0 || dest.y + dest.h <= 0 || dest.x >= screenW || dest.y >= screenH)
-					continue;
-
-				//SDL handles cliping to window
-				SDL_RenderTexture(renderer, get_texture(), &source, &dest);
+				mTexture->draw(renderer, sdlSrc, sdlDest);
 			}
 		}
 		void set_text(std::string_view string) {
-			textPos.clear();
+			letterPos.clear();
 			vec2i dest(0, 0);
 			for (char c : string) {
 				
@@ -204,22 +169,24 @@ namespace badEngine {
 					const int yGylph = gylphIndex / mColumnsCount;//ASCII math
 					const int xGylph = gylphIndex % mColumnsCount;//ASCII math
 
-					textPos.emplace_back(vec2f(xGylph * mGylphWidth, yGylph * mGylphHeight), dest);
+					letterPos.emplace_back(vec2f(xGylph * mGylphWidth, yGylph * mGylphHeight), dest);
 				}
 				dest.x += mGylphWidth;
 			}
 		}
 		void clear_text()noexcept {
-			textPos.clear();
+			letterPos.clear();
 		}
 
 	private:
-		SequenceM<std::pair<vec2f, vec2f>> textPos;
+		SequenceM<std::pair<vec2f, vec2f>> letterPos;
+		std::shared_ptr<Texture> mTexture;
+
 		const uint32_t mColumnsCount = 0;
 		const uint32_t mRowsCount = 0;
 
-		uint32_t mGylphWidth = 0;
-		uint32_t mGylphHeight = 0;
+		const uint32_t mGylphWidth = 0;
+		const uint32_t mGylphHeight = 0;
 
 		static constexpr char first_ASCII_character = ' ';
 		static constexpr char last_ASCII_character = '~';
