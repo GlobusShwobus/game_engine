@@ -157,7 +157,7 @@
     <ClInclude Include="SequenceM.h" />
     <ClInclude Include="Serialization.h" />
     <ClInclude Include="Stopwatch.h" />
-    <ClInclude Include="Drawable.h" />
+    <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vec2M.h" />
@@ -168,6 +168,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderManager.cpp" />
     <ClCompile Include="Scripts.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="entity_config.json" />

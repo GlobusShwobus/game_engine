@@ -3,7 +3,7 @@
 #include "Configs.h"
 #include <thread>
 
-#include "Drawable.h"
+#include "Sprite.h"
 #include "Collision_Functions.h"
 
 #include "SequenceM.h"

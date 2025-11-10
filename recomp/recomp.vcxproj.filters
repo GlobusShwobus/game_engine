@@ -79,7 +79,7 @@
     <ClInclude Include="Scripts.h">
       <Filter>Scripts</Filter>
     </ClInclude>
-    <ClInclude Include="Drawable.h">
+    <ClInclude Include="Sprite.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
@@ -98,6 +98,12 @@
     </ClCompile>
     <ClCompile Include="Scripts.cpp">
       <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>RENDERING_STUFF</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
