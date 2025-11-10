@@ -93,6 +93,9 @@ namespace badEngine {
 		const rectF& get_dest()const noexcept {
 			return mDest;
 		}
+		const rectF& get_bounds()const noexcept {
+			return mTexture->get_control_block();
+		}
 
 		inline void set_dest_pos(const vec2f& pos)noexcept {
 			mDest.set_pos(pos);
@@ -174,83 +177,54 @@ namespace badEngine {
 		float mCurrentFrameTime = 0.0f;
 	};
 
+	class Font : public Sprite {
 
-	class Font:public Sprite {
 		static constexpr char first_ASCII_character = ' ';
 		static constexpr char last_ASCII_character = '~';
+
+		struct LetterPositions {
+			vec2f mSourcePos;
+			vec2f mDestPos;
+		};
 
 	public:
 
 		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount)
-			:Font(std::shared_ptr<Texture>(texture), columnsCount, rowsCount) {}
+			:Font(std::shared_ptr<Texture>(texture), columnsCount, rowsCount) {
+		}
 
 		Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount)
 			:Sprite(std::move(texture)),
 			mColumnsCount(columnsCount),
-			mRowsCount(rowsCount),
+			mRowsCount(rowsCount)
 		{
-			assert((mGylphWidth * mColumnsCount) == mTexture->get_texture_rect().w && "texture image likely off size or invalid counts");
-			assert((mGylphHeight * mRowsCount) == mTexture->get_texture_rect().h && "texture image likely off size or invalid counts");
+			rectF textureBounds = get_bounds();
+
+			const int GylphWidth = int(textureBounds.w / columnsCount);
+			const int GylphHeight = int(textureBounds.h / rowsCount);
+			//becasue int vs float
+			assert(GylphWidth * columnsCount == textureBounds.w && "texture image likely off size or invalid counts");
+			assert(GylphHeight * rowsCount == textureBounds.h && "texture image likely off size or invalid counts");
+			set_source_size(vec2f(GylphWidth, GylphHeight));
+			set_dest_size(vec2f(GylphWidth, GylphHeight));
 		}
-
-	private:
-		SequenceM<std::pair<vec2f, vec2f>> letterPos;
-
-		const uint32_t mColumnsCount = 0;
-		const uint32_t mRowsCount = 0;
-
-		//const uint32_t mGylphWidth = 0;
-		//const uint32_t mGylphHeight = 0;
-
-	};
-
-	class Font {
-	public:
-
-		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount) :Font(std::shared_ptr<Texture>(texture), columnsCount, rowsCount) {}
-
-		Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount)
-			:mTexture(std::move(texture)),
-			mColumnsCount(columnsCount),
-			mRowsCount(rowsCount),
-			mGylphWidth(mTexture->get_texture_rect().w / mColumnsCount),
-			mGylphHeight(mTexture->get_texture_rect().h / mRowsCount)
-		{
-			assert((mGylphWidth * mColumnsCount) == mTexture->get_texture_rect().w && "texture image likely off size or invalid counts");
-			assert((mGylphHeight * mRowsCount) == mTexture->get_texture_rect().h && "texture image likely off size or invalid counts");
-		}
-
 		void draw(SDL_Renderer* renderer, const vec2f& pos) {
-			
-			for (const auto& each : letterPos) {
-
-				rectF sdlSrc = rectF(
-					each.first.x,
-					each.first.y,
-					mGylphWidth, 
-					mGylphHeight
-				);
-				
-				rectF sdlDest = rectF(
-					each.second.x + pos.x,
-					each.second.y + pos.y,
-					mGylphWidth,
-					mGylphHeight
-				);
-
-				mTexture->draw(renderer, sdlSrc, sdlDest);
+			for (const auto& letter : mLetterPos) {
+				set_source_pos(letter.mSourcePos);
+				set_dest_pos(letter.mDestPos);
+				Sprite::draw(renderer);
 			}
 		}
 		void set_text(std::string_view string) {
-			letterPos.clear();
-			vec2i dest(0, 0);
+			clear_text();
+			vec2i arrangement(0, 0);
+			vec2f gylphSize = get_source().get_size();
+
 			for (char c : string) {
-				
-				//std::pair<vec2f, vec2f> textPos;
 
 				if (c == '\n') {
 					//if new line start in the same position on x axis but below offset by 1 amount of height
-					dest = vec2i(0, dest.y += mGylphHeight);
+					arrangement = vec2i(0, arrangement.y += gylphSize.y);
 					continue;
 				}
 				// if char is the empty space key (c == first_ASCII_character), then skip this part as in anycase
@@ -260,27 +234,23 @@ namespace badEngine {
 					const int yGylph = gylphIndex / mColumnsCount;//ASCII math
 					const int xGylph = gylphIndex % mColumnsCount;//ASCII math
 
-					letterPos.emplace_back(vec2f(xGylph * mGylphWidth, yGylph * mGylphHeight), dest);
+					mLetterPos.emplace_back(
+						vec2f(xGylph * gylphSize.x, yGylph * gylphSize.y),
+						arrangement
+					);
 				}
-				dest.x += mGylphWidth;
+				arrangement.x += gylphSize.x;
 			}
 		}
 		void clear_text()noexcept {
-			letterPos.clear();
+			mLetterPos.clear();
 		}
 
 	private:
-		SequenceM<std::pair<vec2f, vec2f>> letterPos;
-		std::shared_ptr<Texture> mTexture;
+		SequenceM<LetterPositions> mLetterPos;
 
 		const uint32_t mColumnsCount = 0;
 		const uint32_t mRowsCount = 0;
-
-		const uint32_t mGylphWidth = 0;
-		const uint32_t mGylphHeight = 0;
-
-		static constexpr char first_ASCII_character = ' ';
-		static constexpr char last_ASCII_character = '~';
 	};
 
 }
