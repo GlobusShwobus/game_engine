@@ -56,11 +56,11 @@ int main() {
     };
     NumberGenerator rng;
     Camera2D camera(960, 540);
-    float farea = 600;
+    float farea = 10000;
     float fsearchsize = 50.0f;
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
 
-    for (int i = 0; i < 5000; i++) {
+    for (int i = 0; i < 1000000; i++) {
 
         rectF itemBox = rectF(rng.random_float(0, farea-10), rng.random_float(0, farea-10), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(

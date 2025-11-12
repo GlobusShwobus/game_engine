@@ -7,7 +7,9 @@
 #include <optional>
 
 namespace badEngine {
-
+	//struct OBJECT_TYPE {
+	//	int dindunuffing = 0;
+	//};
 	template <typename OBJECT_TYPE>
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
@@ -17,11 +19,11 @@ namespace badEngine {
 		class QuadWindow;
 
 		struct ManagerNode {
+			OBJECT_TYPE mPayload;
 			QuadWindow* mWorkingWindow = nullptr;
 			std::size_t mWorkerIndex = 0;
 		};
 		struct WorkerNode {
-			OBJECT_TYPE mWorker;
 			rectF mWorkerArea;
 			std::size_t mManagerIndex = 0;
 		};
@@ -79,9 +81,9 @@ namespace badEngine {
 					}
 				}
 				//in case the depth limit is reached or the objectArea doesn't fit into any sub branches, add it here
-				mWorkers.emplace_back(std::move(payload), workingArea, managerIndex);
+				mWorkers.emplace_back(workingArea, managerIndex);
 				//return back the metadata so that parent knows where it's child is
-				return ManagerNode(this, mWorkers.size() - 1);
+				return ManagerNode(std::move(payload), this, mWorkers.size() - 1);
 			}
 			void collect(const rectF& searchArea, SequenceM<std::size_t>& collector)const noexcept {
 				//first check for items belonging to this layer
@@ -165,12 +167,12 @@ namespace badEngine {
 				}
 			}
 
-			OBJECT_TYPE& operator[](std::size_t index)noexcept {//you know what, if you can't index right, you deserve termination
-				return mWorkers[index].mWorker;
-			}
-			const OBJECT_TYPE& operator[](std::size_t& index)const noexcept {
-				return mWorkers[index].mWorker;
-			}
+			//OBJECT_TYPE& operator[](std::size_t index)noexcept {//you know what, if you can't index right, you deserve termination
+			//	return mWorkers[index].mWorker;
+			//}
+			//const OBJECT_TYPE& operator[](std::size_t& index)const noexcept {
+			//	return mWorkers[index].mWorker;
+			//}
 
 		private:
 
@@ -221,7 +223,7 @@ namespace badEngine {
 
 			//collect index, set growth to minimum resist to splurge mem
 			SequenceM<std::size_t> collector;
-			collector.set_growth_resist_low();
+			collector.set_growth_resist_negative();
 			//actually collect recursively
 			mRoot.collect(area, collector);
 
@@ -280,6 +282,14 @@ namespace badEngine {
 			}
 		}
 
+		void relocate(std::size_t itemIndex, const rectF& itemSize) {
+			//rework required: manager should hold the payload, worker the size
+			
+			//1. if index is valid
+			//2. remove it from the current quad tree
+			//3. insert it in a new place
+		}
+
 		void re_initalize(const rectF& newArea) {
 			mManagers.clear();
 			mRoot = QuadWindow(newArea, 0);
@@ -294,11 +304,17 @@ namespace badEngine {
 			return counter;
 		}
 
+		//OBJECT_TYPE& operator[](std::size_t index)noexcept {
+		//	return (*mManagers[index].mWorkingWindow)[mManagers[index].mWorkerIndex];
+		//}
+		//const OBJECT_TYPE& operator[](std::size_t index) const noexcept {
+		//	return (*mManagers[index].mWorkingWindow)[mManagers[index].mWorkerIndex];
+		//}
 		OBJECT_TYPE& operator[](std::size_t index)noexcept {
-			return (*mManagers[index].mWorkingWindow)[mManagers[index].mWorkerIndex];
+			return mManagers[index].mPayload;
 		}
 		const OBJECT_TYPE& operator[](std::size_t index) const noexcept {
-			return (*mManagers[index].mWorkingWindow)[mManagers[index].mWorkerIndex];
+			return mManagers[index].mPayload;
 		}
 
 	private:
