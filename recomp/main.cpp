@@ -146,20 +146,17 @@ int main() {
 
         Stopwatch drawing1MILLIIONrects;
         for (const auto& each : myObjsQuad.search_area(cameraSpace)) {
-       
-            auto& thing = myObjsQuad[each];
-       
-            rectF newPos = rectF(thing.rect.x + thing.vel.x, thing.rect.y + thing.vel.y, thing.rect.w, thing.rect.h);
-       
-            myObjsQuad.relocate(each, newPos);
-            thing.rect.set_pos(vec2f(newPos.x, newPos.y));
-        }
-        for (const auto& each : myObjsQuad.search_area(cameraSpace)) {
+            //first draw
             auto& thing = myObjsQuad[each];
             rectF cameraAdjusted = camera.world_to_screen(thing.rect);//invalidtaion
             renManager.fill_area_with(cameraAdjusted, thing.col);
             DrawObjCount++;
+            //then move for the next frame
 
+            rectF newPos = rectF(thing.rect.x + thing.vel.x, thing.rect.y + thing.vel.y, thing.rect.w, thing.rect.h);
+       
+            myObjsQuad.relocate(each, newPos);
+            thing.rect.set_pos(vec2f(newPos.x, newPos.y));
         }
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
         Color mouseCol = Colors::Magenta;
