@@ -65,7 +65,7 @@ int main() {
         rectF itemBox = rectF(rng.random_float(0, farea-10), rng.random_float(0, farea-10), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
             itemBox,
-            vec2f(rng.random_float(1, 10), rng.random_float(1, 10)),
+            vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
         );
 
@@ -81,7 +81,6 @@ int main() {
 
     bool plzDeleteArea = false;
     bool plzPruneMe = false;
-    int fuckingEventCounter = 0;
     renManager.enable_blend_mode();
     ////#################################################################################
 
@@ -147,12 +146,19 @@ int main() {
 
         Stopwatch drawing1MILLIIONrects;
         for (const auto& each : myObjsQuad.search_area(cameraSpace)) {
-
-
-            rectF cameraAdjusted = camera.world_to_screen(myObjsQuad[each].rect);//invalidtaion
-            renManager.fill_area_with(cameraAdjusted, myObjsQuad[each].col);
+       
+            auto& thing = myObjsQuad[each];
+       
+            rectF newPos = rectF(thing.rect.x + thing.vel.x, thing.rect.y + thing.vel.y, thing.rect.w, thing.rect.h);
+       
+            myObjsQuad.relocate(each, newPos);
+            thing.rect.set_pos(vec2f(newPos.x, newPos.y));
+        }
+        for (const auto& each : myObjsQuad.search_area(cameraSpace)) {
+            auto& thing = myObjsQuad[each];
+            rectF cameraAdjusted = camera.world_to_screen(thing.rect);//invalidtaion
+            renManager.fill_area_with(cameraAdjusted, thing.col);
             DrawObjCount++;
-
 
         }
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
@@ -164,14 +170,13 @@ int main() {
             myObjsQuad.remove_area(rectAroundMouse);
         }
         if (plzPruneMe) {
-            if (fuckingEventCounter == 0) {
-                std::size_t branchesBefore = myObjsQuad.branch_count();
-                myObjsQuad.remove_dead_cells();
-                std::size_t branchesAfter = myObjsQuad.branch_count();
 
-                std::cout << "branches before: " << branchesBefore << '\n' << "branches after: " << branchesAfter;
-                fuckingEventCounter++;
-            }
+            std::size_t branchesBefore = myObjsQuad.branch_count();
+            myObjsQuad.remove_dead_cells();
+            std::size_t branchesAfter = myObjsQuad.branch_count();
+
+            std::cout << "branches before: " << branchesBefore << '\n' << "branches after: " << branchesAfter;
+
             plzPruneMe = false;
         }
 

@@ -7,9 +7,7 @@
 #include <optional>
 
 namespace badEngine {
-	//struct OBJECT_TYPE {
-	//	int dindunuffing = 0;
-	//};
+
 	template <typename OBJECT_TYPE>
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
@@ -19,7 +17,6 @@ namespace badEngine {
 		class QuadWindow;
 
 		struct ManagerNode {
-			OBJECT_TYPE mPayload;
 			QuadWindow* mWorkingWindow = nullptr;
 			std::size_t mWorkerIndex = 0;
 		};
@@ -62,7 +59,7 @@ namespace badEngine {
 				}
 			}
 
-			ManagerNode insert(OBJECT_TYPE&& payload, const rectF& workingArea, std::size_t managerIndex) {
+			ManagerNode insert(const rectF& workingArea, std::size_t managerIndex) {
 
 				//first, check structures depth limit, if going deeper is fine, try going deeper
 				if (mDepth + 1 < MAX_DEPTH) {
@@ -77,13 +74,13 @@ namespace badEngine {
 							subwindow.mStorage = std::make_unique<QuadWindow>(subwindow.mArea, mDepth + 1);
 
 						//pass the item down the chain
-						return subwindow.mStorage->insert(std::move(payload), workingArea, managerIndex);
+						return subwindow.mStorage->insert(workingArea, managerIndex);
 					}
 				}
 				//in case the depth limit is reached or the objectArea doesn't fit into any sub branches, add it here
 				mWorkers.emplace_back(workingArea, managerIndex);
 				//return back the metadata so that parent knows where it's child is
-				return ManagerNode(std::move(payload), this, mWorkers.size() - 1);
+				return ManagerNode(this, mWorkers.size() - 1);
 			}
 			void collect(const rectF& searchArea, SequenceM<std::size_t>& collector)const noexcept {
 				//first check for items belonging to this layer
@@ -130,7 +127,7 @@ namespace badEngine {
 				}
 				return true;
 			}
-			void assign_new_parent(std::size_t localIndex, std::size_t newManager)noexcept {
+			void assign_new_manager(std::size_t localIndex, std::size_t newManager)noexcept {
 				//check validity first and swap managers
 				if (localIndex < mWorkers.size())
 					mWorkers[localIndex].mManagerIndex = newManager;
@@ -167,12 +164,17 @@ namespace badEngine {
 				}
 			}
 
-			//OBJECT_TYPE& operator[](std::size_t index)noexcept {//you know what, if you can't index right, you deserve termination
-			//	return mWorkers[index].mWorker;
-			//}
-			//const OBJECT_TYPE& operator[](std::size_t& index)const noexcept {
-			//	return mWorkers[index].mWorker;
-			//}
+			bool assign_new_working_area(std::size_t workerIndex, const rectF& newArea) {
+				//index check
+				if (mWorkers.size() <= workerIndex)
+					return false;
+				//check if new area is withing this window
+				if(!mWindow.contains_rect(newArea))
+					return false;
+				//assign
+				mWorkers[workerIndex].mWorkerArea = newArea;
+				return true;
+			}
 
 		private:
 
@@ -185,6 +187,7 @@ namespace badEngine {
 					if (subwindow.mStorage)
 						subwindow.mStorage->collect_all(collector);
 			}
+
 		private:
 			//LAYER DEPTH
 			std::size_t mDepth = 0;
@@ -195,7 +198,7 @@ namespace badEngine {
 			//POINTERS TO OTHER WINDOWNS NESTED INSIDE
 			std::array<SubWindow, 4> mSubWindows;
 
-			//STORE PAYLOAD
+			//STORE INFO
 			SequenceM<WorkerNode> mWorkers;
 		};
 
@@ -205,15 +208,17 @@ namespace badEngine {
 
 		template<typename U>
 			requires std::same_as<std::remove_cvref_t<U>, OBJECT_TYPE>
-		void insert(U&& item, rectF itemsize) {
+		bool insert(U&& item, rectF itemsize) {
 
 			if (!is_within_scope(itemsize))
-				return;
+				return false;
 			//forward the data, node data is invalid here
 			const std::size_t currentLastIndex = mManagers.size();
 			mManagers.emplace_back(
-				mRoot.insert(std::forward<U>(item), itemsize, currentLastIndex)
+				std::forward<U>(item),
+				mRoot.insert(itemsize, currentLastIndex)
 			);
+			return true;
 		}
 		bool is_within_scope(const rectF& rect)const noexcept {
 			return topLevelWindow.contains_rect(rect);
@@ -249,7 +254,7 @@ namespace badEngine {
 
 
 			//first step is to get rid of the index
-			auto& REMOVE_NODE = mManagers[removeIndex];
+			auto& REMOVE_NODE = mManagers[removeIndex].second;
 
 			std::optional<std::size_t> newManagerIndex;
 
@@ -258,7 +263,7 @@ namespace badEngine {
 				//since internally things got swaped around, this means the previous index of the worker (which now indexes a different object)
 				//is now managed but the newManager (in other words, it's just bookkeeping)
 				if (newManagerIndex.has_value())
-					mManagers[newManagerIndex.value()].mWorkerIndex = REMOVE_NODE.mWorkerIndex;
+					mManagers[newManagerIndex.value()].second.mWorkerIndex = REMOVE_NODE.mWorkerIndex;
 			}
 			else {
 				throw std::runtime_error("index missmatch between parent and child nodes");
@@ -270,7 +275,7 @@ namespace badEngine {
 			//if the removed node is the last node, then the bookkeeping is already done, otherwise do the step
 			if (removeIndex != mManagers.size() - 1) {
 				auto& CURRENT_LAST_NODE = mManagers.back();
-				CURRENT_LAST_NODE.mWorkingWindow->assign_new_parent(CURRENT_LAST_NODE.mWorkerIndex, removeIndex);
+				CURRENT_LAST_NODE.second.mWorkingWindow->assign_new_manager(CURRENT_LAST_NODE.second.mWorkerIndex, removeIndex);
 			}
 
 			//finally remove the piece of shit
@@ -283,11 +288,32 @@ namespace badEngine {
 		}
 
 		void relocate(std::size_t itemIndex, const rectF& itemSize) {
-			//rework required: manager should hold the payload, worker the size
+
+			//index check
+			if (itemIndex >= mManagers.size())
+				throw std::runtime_error("invalid index");
 			
-			//1. if index is valid
-			//2. remove it from the current quad tree
-			//3. insert it in a new place
+			auto& RELOCATE_PAYLOAD = mManagers[itemIndex].second;
+			
+			//check if relocation is nessessary at all or just update the box
+			if (RELOCATE_PAYLOAD.mWorkingWindow->assign_new_working_area(RELOCATE_PAYLOAD.mWorkerIndex, itemSize))
+				return;
+	
+			//do need to relocate
+			std::optional<std::size_t> newManagerIndex;
+			
+			//handle removing the worker internally
+			if (RELOCATE_PAYLOAD.mWorkingWindow->remove(RELOCATE_PAYLOAD.mWorkerIndex, itemIndex, newManagerIndex)) {
+				//since internally things got swaped around, this means the previous index of the worker (which now indexes a different object)
+				//is now managed but the newManager (in other words, it's just bookkeeping)
+				if (newManagerIndex.has_value())
+					mManagers[newManagerIndex.value()].second.mWorkerIndex = RELOCATE_PAYLOAD.mWorkerIndex;
+			}
+			else {
+				throw std::runtime_error("index missmatch between parent and child nodes");
+			}
+			//reinsert it whereever
+			RELOCATE_PAYLOAD = mRoot.insert(itemSize, itemIndex);
 		}
 
 		void re_initalize(const rectF& newArea) {
@@ -304,22 +330,16 @@ namespace badEngine {
 			return counter;
 		}
 
-		//OBJECT_TYPE& operator[](std::size_t index)noexcept {
-		//	return (*mManagers[index].mWorkingWindow)[mManagers[index].mWorkerIndex];
-		//}
-		//const OBJECT_TYPE& operator[](std::size_t index) const noexcept {
-		//	return (*mManagers[index].mWorkingWindow)[mManagers[index].mWorkerIndex];
-		//}
 		OBJECT_TYPE& operator[](std::size_t index)noexcept {
-			return mManagers[index].mPayload;
+			return mManagers[index].first;
 		}
 		const OBJECT_TYPE& operator[](std::size_t index) const noexcept {
-			return mManagers[index].mPayload;
+			return mManagers[index].first;
 		}
 
 	private:
 		QuadWindow mRoot;
-		SequenceM<ManagerNode> mManagers;
+		SequenceM<std::pair<OBJECT_TYPE, ManagerNode>> mManagers;
 		rectF topLevelWindow;
 	};
 }
