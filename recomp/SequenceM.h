@@ -243,6 +243,10 @@ namespace badEngine {
 		constexpr void deconstruct_objects(pointer begin, pointer end) {
 			std::destroy(begin, end);
 		}
+		constexpr void destroy_if_nontrivial(pointer ptr) noexcept {
+			if constexpr (!std::is_trivially_destructible_v<value_type>)
+				std::destroy_at(ptr);
+		}
 
 		//internal ptr usage
 		pointer pBegin_mem()noexcept { return mArray; }
@@ -306,7 +310,9 @@ namespace badEngine {
 	public:
 		//constructors
 		constexpr SequenceM()noexcept = default;
-		SequenceM(size_type count) {
+		SequenceM(size_type count)
+			requires std::default_initializable<value_type>
+		{
 			if (count > EMPTY_GUARD) {
 				pointer constructedMemory = alloc_and_construct([](pointer dest, size_type n) {
 					return std::uninitialized_value_construct_n(dest, n);
@@ -315,7 +321,9 @@ namespace badEngine {
 				initalize(constructedMemory, count);
 			}
 		}
-		SequenceM(size_type count, const_reference value) {
+		SequenceM(size_type count, const_reference value)
+			requires std::copyable<value_type>	
+		{
 			if (count > EMPTY_GUARD) {
 				pointer constructedMemory = alloc_and_construct([&value](pointer dest, size_type n) {
 					return std::uninitialized_fill_n(dest, n, value);
@@ -324,7 +332,9 @@ namespace badEngine {
 				initalize(constructedMemory, count);
 			}
 		}
-		SequenceM(std::initializer_list<value_type> init) {
+		SequenceM(std::initializer_list<value_type> init)
+			requires std::copyable<value_type>//initializer_list members are const, can't move
+		{
 			const size_type size = init.size();
 			if (size > EMPTY_GUARD) {
 				pointer constructedMemory = alloc_and_construct([init](pointer dest, size_type n) {
@@ -334,7 +344,9 @@ namespace badEngine {
 				initalize(constructedMemory, size);
 			}
 		}
-		SequenceM(const SequenceM& rhs) {
+		SequenceM(const SequenceM& rhs)
+			requires std::copyable<value_type>
+		{
 			size_type size = rhs.size();
 			if (size > EMPTY_GUARD) {
 				pointer constructedMemory = alloc_and_construct([&rhs](pointer dest, size_type n) {
@@ -358,7 +370,7 @@ namespace badEngine {
 		}
 		SequenceM& operator=(std::initializer_list<value_type> ilist) {
 			//using swap idiom
-			SequenceM temp = ilist;
+			SequenceM temp(ilist);
 			temp.swap(*this);
 			return *this;
 		}
@@ -390,7 +402,9 @@ namespace badEngine {
 			}
 		}
 		//copies elements
-		void push_back(const value_type& value)noexcept {
+		void push_back(const value_type& value)
+			requires std::copyable<value_type>
+		{
 			//if at capacity, reallocate with extra memory
 			if (mConstructedSize == mCapacity)
 				reallocate(growthFactor(mCapacity));
@@ -411,22 +425,21 @@ namespace badEngine {
 		}
 		//creates elements and or accepts moving as well
 		template<typename... Args>
-		void emplace_back(Args&&... args)noexcept requires std::constructible_from<value_type, Args&&...> {
+		void emplace_back(Args&&... args)
+			requires std::constructible_from<value_type, Args&&...>
+		{
 			//if at capacity, reallocate with extra memory
 			if (mConstructedSize == mCapacity)
 				reallocate(growthFactor(mCapacity));
 			//current end point
 			pointer slot = pEnd_usable();
-			//if there is a constructed but depricated slot, move assign into it
-			if (has_constructed_slots()) {
-				*slot = value_type(std::forward<Args>(args)...);
-			}
-			//if there aren't any slots remaining, need official constructor
-			else {
-				std::construct_at(slot, std::forward<Args>(args)...);
-				//if we constructed a new thing, incr constructed counter
+			//if there is a constructed but depricated slot must destroy it first
+			if (has_constructed_slots())
+				destroy_if_nontrivial(slot);
+			else //otherwise need to increment mConstructedSize bookkeeping
 				++mConstructedSize;
-			}
+			//construct the element
+			std::construct_at(slot, std::forward<Args>(args)...);
 			//in any case after adding incr usable size
 			++mUsableSize;
 		}
@@ -436,7 +449,9 @@ namespace badEngine {
 				--mUsableSize;
 		}
 		//basically erase
-		void remove_preserved_order(iterator pos) {
+		void remove_preserved_order(iterator pos)
+			requires std::is_nothrow_move_assignable_v<value_type>
+		{
 			pointer target = pos.base();
 			pointer begin = pBegin_mem();
 			pointer end = pEnd_usable();
@@ -449,7 +464,9 @@ namespace badEngine {
 			--mUsableSize;
 		}
 		//basically erase
-		void remove_preserved_order(iterator first, iterator last) {
+		void remove_preserved_order(iterator first, iterator last) 
+			requires std::is_nothrow_move_assignable_v<value_type>
+		{
 			pointer targetBegin = first.base();
 			pointer targetEnd = last.base();
 			//if range is 0 then there is nothing to remove (MAY BE FLAWED LOGIC)
@@ -470,7 +487,9 @@ namespace badEngine {
 			mUsableSize -= (targetEnd - targetBegin);
 		}
 		//swaps last element with pos element, meaning it does not preserve order
-		void remove_unpreserved_order(iterator pos) {
+		void remove_unpreserved_order(iterator pos)
+			requires std::is_nothrow_move_assignable_v<value_type>
+		{
 			pointer target = pos.base();
 			pointer begin = pBegin_mem();
 			pointer end = pEnd_usable();

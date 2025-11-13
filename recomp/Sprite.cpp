@@ -1,22 +1,17 @@
 #include "Sprite.h"
 
 namespace badEngine {
-	Sprite::Sprite(Texture* texture) :Sprite(std::shared_ptr<Texture>(texture)) {}
+
 	Sprite::Sprite(std::shared_ptr<Texture> texture) :mTexture(std::move(texture)) {}
 
-	void Sprite::draw(SDL_Renderer* renderer, std::string* err)noexcept {
-		if (!mTexture->draw(renderer, mSource, mDest))
-			if (err)
-				*err = SDL_GetError();
+	void Sprite::draw(SDL_Renderer* renderer)noexcept {
+		mTexture->draw(renderer, mSource, mDest);
 	}
 	bool Sprite::is_within_bounds(const rectF& rect)const noexcept {
 		return mTexture->get_control_block().contains_rect(rect);
 	}
 	//####################################################################################
 
-	Animation::Animation(Texture* texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
-		:Animation(std::shared_ptr<Texture>(texture), start, fWidth, fHeight, fCount) {
-	}
 	Animation::Animation(std::shared_ptr<Texture> texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
 		:Sprite(std::move(texture)), mFrameCount(fCount)
 	{
@@ -55,10 +50,6 @@ namespace badEngine {
 		}
 	}
 	//#########################################################################################
-
-	Font::Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount)
-		:Font(std::shared_ptr<Texture>(texture), columnsCount, rowsCount) {
-	}
 
 	Font::Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount)
 		:Sprite(std::move(texture)),

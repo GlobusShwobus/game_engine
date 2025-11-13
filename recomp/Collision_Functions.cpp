@@ -64,12 +64,12 @@ namespace badEngine {
 		);
 	}
 	SequenceM<SweptAABB_collision_exe::SweptResult> SweptAABB_collision_exe::get_colliders(SequenceM<TransformF>& objects) {
-		const int entityCount = objects.size();
+		const std::size_t entityCount = objects.size();
 
 		SequenceM<SweptResult> collisions;
 
-		for (int i = 0; i < entityCount; ++i) {
-			for (int j = i + 1; j < entityCount; ++j) {//j=i+1 becasue A vs B is same as B vs A
+		for (std::size_t i = 0; i < entityCount; ++i) {
+			for (std::size_t j = i + 1; j < entityCount; ++j) {//j=i+1 becasue A vs B is same as B vs A
 
 				SweptResult pair(&objects[i], &objects[j], 1.0f, vec2f(0, 0));
 

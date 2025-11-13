@@ -17,10 +17,10 @@ namespace badEngine {
 		constexpr Rectangle(U x, U y, const Vec2M<S>& dimensions) noexcept : x(x),y(y), w(dimensions.x), h(dimensions.y) {}
 
 		template <typename S, typename U>
-		constexpr Rectangle(const Vec2M<S>& pos, const Vec2M<U>& dimensions)noexcept :x(pos.x), y(pos.y), w(dimensions.x), y(dimensions.y) {}
+		constexpr Rectangle(const Vec2M<S>& pos, const Vec2M<U>& dimensions)noexcept :x(pos.x), y(pos.y), w(dimensions.x), h(dimensions.y) {}
 
 		template<typename S>
-		constexpr Rectangle(const Rectangle<S>& rhs)noexcept :x(rhs.x), y(rhs.y), w(rhs.w), y(rhs.y) {}
+		constexpr Rectangle(const Rectangle<S>& rhs)noexcept :x(rhs.x), y(rhs.y), w(rhs.w), h(rhs.y) {}
 
 		template<typename S>
 		constexpr Rectangle& operator=(const Rectangle<S>& rhs)noexcept {

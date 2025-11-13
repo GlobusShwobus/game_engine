@@ -11,10 +11,13 @@ namespace badEngine {
 	
 	protected:
 
-		Sprite(Texture* texture);
+		template <typename... Args>
+			requires std::constructible_from<Texture, Args&&...>
+		explicit Sprite(Args&&... args) :mTexture(std::make_shared<Texture>(std::forward<Args>(args)...)) {}
+
 		Sprite(std::shared_ptr<Texture> texture);
 
-		void draw(SDL_Renderer* renderer, std::string* err = nullptr)noexcept;
+		void draw(SDL_Renderer* renderer)noexcept;
 		//source managment should be restricted to inheritence because the assumption is
 		//designing future derived classes the user knows to check bounds using is_within_bounds themselves at setup
 
@@ -37,7 +40,7 @@ namespace badEngine {
 		inline const rectF& get_dest()const noexcept {
 			return mDest;
 		}
-		inline const rectF& get_bounds()const noexcept {
+		inline const rectF get_bounds()const noexcept {
 			return mTexture->get_control_block();
 		}
 
@@ -57,7 +60,12 @@ namespace badEngine {
 	class Animation :public Sprite {
 
 	public:
-		Animation(Texture* texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
+
+		template<typename... Args>
+			requires std::constructible_from<Texture, Args&&...>
+		Animation(const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount, Args&&... args)//gigantic dicks, WHYYYY MICROSOFT???
+			:Animation(std::make_shared<Texture>(std::forward<Args>(args)...), fWidth, fHeight, fCount) {}
+
 		Animation(std::shared_ptr<Texture> texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
 
 		void draw(SDL_Renderer* renderer, const vec2f& pos)noexcept;
@@ -98,7 +106,10 @@ namespace badEngine {
 
 	public:
 
-		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount);
+		template<typename... Args>
+			requires std::constructible_from<Texture, Args&&...>
+		explicit Font(uint32_t columnsCount, uint32_t rowsCount, Args&&... args) //this sucks massive dicks, gcc lets use args first
+			:Font(std::make_shared<Texture>(std::forward<Args>(args)...), columnsCount, rowsCount) {}
 
 		Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount);
 		void draw(SDL_Renderer* renderer, const vec2f& pos);

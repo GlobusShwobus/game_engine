@@ -56,11 +56,11 @@ int main() {
     };
     NumberGenerator rng;
     Camera2D camera(960, 540);
-    float farea = 10000;
+    float farea = 600;
     float fsearchsize = 50.0f;
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
 
-    for (int i = 0; i < 1000000; i++) {
+    for (int i = 0; i < 5000; i++) {
 
         rectF itemBox = rectF(rng.random_float(0, farea-10), rng.random_float(0, farea-10), rng.random_float(1, 10), rng.random_float(1, 10));
         SomeObjWithArea item = SomeObjWithArea(
@@ -72,16 +72,15 @@ int main() {
         myObjsQuad.insert(std::move(item), itemBox);
     }
 
-
     camera.set_scale(1, 1);
 
     bool mouseHeld = false;
-    std::shared_ptr<Texture> fontTexture = std::make_shared<Texture>("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
-    std::unique_ptr<Font> font = std::make_unique<Font>(fontTexture, 32, 3);
+    std::unique_ptr<Font> font = std::make_unique<Font>(32, 3, "C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
 
     bool plzDeleteArea = false;
     bool plzPruneMe = false;
     renManager.enable_blend_mode();
+
     ////#################################################################################
 
     //main loop
@@ -152,9 +151,9 @@ int main() {
             renManager.fill_area_with(cameraAdjusted, thing.col);
             DrawObjCount++;
             //then move for the next frame
-
+          
             rectF newPos = rectF(thing.rect.x + thing.vel.x, thing.rect.y + thing.vel.y, thing.rect.w, thing.rect.h);
-       
+          
             myObjsQuad.relocate(each, newPos);
             thing.rect.set_pos(vec2f(newPos.x, newPos.y));
         }

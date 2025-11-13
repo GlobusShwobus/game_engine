@@ -23,10 +23,9 @@ namespace badEngine {
 
 	template <typename T>
 	concept IS_SEQUENCE_COMPATIBLE =
-		std::default_initializable<T> &&
-		std::copyable<T> &&//implies movable as well
 		std::destructible<T> &&
-		!std::is_const_v<T>;//also no const storage
+		std::is_nothrow_move_constructible_v<T> &&
+		!std::is_const_v<T>;
 
 	template <typename T> requires IS_LESS_THAN_COMPARABLE<T>
 	constexpr auto mValue_max(const T& x, const T& y)noexcept {

@@ -12,7 +12,7 @@ namespace badEngine {
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
-		static constexpr std::size_t MAX_DEPTH = 8;
+		static constexpr std::size_t MAX_DEPTH = 6;
 
 		class QuadWindow;
 
@@ -336,6 +336,20 @@ namespace badEngine {
 		const OBJECT_TYPE& operator[](std::size_t index) const noexcept {
 			return mManagers[index].first;
 		}
+
+		auto begin() {
+			return mManagers.begin();
+		}
+		const auto cbegin()const {
+			return mManagers.cbegin();
+		}
+		auto end() {
+			return mManagers.end();
+		}
+		const auto cend()const {
+			return mManagers.cend();
+		}
+
 
 	private:
 		QuadWindow mRoot;
