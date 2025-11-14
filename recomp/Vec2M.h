@@ -13,14 +13,14 @@ namespace badEngine {
 		//CONSTRUCTORS
 		constexpr Vec2M()noexcept = default;
 		constexpr Vec2M(T X, T Y)noexcept :x(X), y(Y) {}
-
+		//CONVERSION CONSTRUCTOR
 		template <typename S>
-		constexpr Vec2M(const Vec2M<S>& rhs)noexcept :x(rhs.x), y(rhs.y) {}
-
+		constexpr Vec2M(const Vec2M<S>& rhs)noexcept :x(T(rhs.x)), y(T(rhs.y)) {}
+		//CONVERSION ASSIGNMENT
 		template <typename S>
 		constexpr Vec2M& operator=(const Vec2M<S>& rhs)noexcept {
-			x = rhs.x;
-			y = rhs.y;
+			x = T(rhs.x);
+			y = T(rhs.y);
 			return *this;
 		}
 
@@ -53,15 +53,17 @@ namespace badEngine {
 		}
 
 		template<typename S>
-		constexpr Vec2M operator*(const S scalar)const noexcept {
-			return Vec2M(x * scalar, y * scalar);
+			requires IS_MATHMATICAL_T<S>
+		constexpr Vec2M<float> operator*(const S scalar)const noexcept {
+			return Vec2M<float>(float(x * scalar), float(y * scalar));
 		}
 		template<typename S>
-		constexpr Vec2M operator*(const Vec2M<S>& scalar)const noexcept {
-			return Vec2M(x * scalar.x, y * scalar.y);
+		constexpr Vec2M<float> operator*(const Vec2M<S>& scalar)const noexcept {
+			return Vec2M<float>(float(x * scalar.x), float(y * scalar.y));
 		}
 
 		template<typename S>
+			requires IS_MATHMATICAL_T<S>
 		constexpr Vec2M& operator*=(const S scalar)noexcept {
 			x *= scalar;
 			y *= scalar;
@@ -75,15 +77,17 @@ namespace badEngine {
 		}
 
 		template<typename S>
-		constexpr Vec2M operator/(const S scalar)const noexcept {
-			return Vec2M(x / scalar, y / scalar);
+			requires IS_MATHMATICAL_T<S>
+		constexpr Vec2M<float> operator/(const S scalar)const noexcept {
+			return Vec2M<float>(float(x / scalar), float(y / scalar));
 		}
 		template<typename S>
-		constexpr Vec2M operator/(const Vec2M<S>& scalar)const noexcept {
-			return Vec2M(x / scalar.x, y / scalar.y);
+		constexpr Vec2M<float> operator/(const Vec2M<S>& scalar)const noexcept {
+			return Vec2M<float>(float(x / scalar.x), float(y / scalar.y));
 		}
 
 		template<typename S>
+			requires IS_MATHMATICAL_T<S>
 		constexpr Vec2M& operator/=(const S scalar)noexcept {
 			x /= scalar;
 			y /= scalar;
@@ -121,14 +125,16 @@ namespace badEngine {
 	using vec2ld = Vec2M<long double>;
 
 
-	template<typename T, typename U> requires IS_MATHMATICAL_T<T>
-	Vec2M<U> operator*(T scalar, const Vec2M<U>& v)noexcept {
-		return Vec2M<U>(v.x * scalar, v.y * scalar);
+	template<typename T, typename U>
+		requires IS_MATHMATICAL_T<T>
+	Vec2M<float> operator*(T scalar, const Vec2M<U>& v)noexcept {
+		return Vec2M<float>(float(v.x * scalar), float(v.y * scalar));
 	}
 
-	template<typename T, typename U> requires IS_MATHMATICAL_T<T>
-	Vec2M<U> operator/(T scalar, const Vec2M<U>& v)noexcept {
-		return Vec2M<U>(v.x / scalar, v.y / scalar);
+	template<typename T, typename U> 
+		requires IS_MATHMATICAL_T<T>
+	Vec2M<float> operator/(T scalar, const Vec2M<U>& v)noexcept {
+		return Vec2M<float>(float(v.x / scalar), float(v.y / scalar));
 	}
 
 
@@ -154,11 +160,6 @@ namespace badEngine {
 	template <typename T>
 	constexpr vec2d reciprocal_vector(const Vec2M<T>& v)noexcept {
 		return vec2d(1.0f / v.x, 1.0f / v.y);
-	}
-
-	template <typename T>
-	constexpr auto opposite_vector(const Vec2M<T>& v)noexcept {
-		return -v;
 	}
 
 	template <typename T>

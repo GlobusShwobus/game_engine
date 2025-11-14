@@ -11,10 +11,6 @@ namespace badEngine {
 	
 	protected:
 
-		template <typename... Args>
-			requires std::constructible_from<Texture, Args&&...>
-		explicit Sprite(Args&&... args) :mTexture(std::make_shared<Texture>(std::forward<Args>(args)...)) {}
-
 		Sprite(std::shared_ptr<Texture> texture);
 
 		void draw(SDL_Renderer* renderer)noexcept;
@@ -63,7 +59,7 @@ namespace badEngine {
 
 		template<typename... Args>
 			requires std::constructible_from<Texture, Args&&...>
-		Animation(const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount, Args&&... args)//gigantic dicks, WHYYYY MICROSOFT???
+		Animation(const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount, Args&&... args)//gigantic dicks
 			:Animation(std::make_shared<Texture>(std::forward<Args>(args)...), fWidth, fHeight, fCount) {}
 
 		Animation(std::shared_ptr<Texture> texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
@@ -108,7 +104,7 @@ namespace badEngine {
 
 		template<typename... Args>
 			requires std::constructible_from<Texture, Args&&...>
-		explicit Font(uint32_t columnsCount, uint32_t rowsCount, Args&&... args) //this sucks massive dicks, gcc lets use args first
+		Font(uint32_t columnsCount, uint32_t rowsCount, Args&&... args)
 			:Font(std::make_shared<Texture>(std::forward<Args>(args)...), columnsCount, rowsCount) {}
 
 		Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount);

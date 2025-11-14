@@ -74,10 +74,10 @@ namespace badEngine {
 
 
 		
-		SDL_Renderer* get_renderer_ref()noexcept {
+		SDL_Renderer* const get_renderer()noexcept {
 			return mRenderer.get();
 		}
-		SDL_Window* get_window_ref()noexcept {
+		SDL_Window* const get_window()noexcept {
 			return mWindow.get();
 		}
 		

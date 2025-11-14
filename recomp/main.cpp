@@ -75,7 +75,7 @@ int main() {
     camera.set_scale(1, 1);
 
     bool mouseHeld = false;
-    std::unique_ptr<Font> font = std::make_unique<Font>(32, 3, "C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer_ref());
+    std::unique_ptr<Font> font = std::make_unique<Font>(32, 3, "C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer());
 
     bool plzDeleteArea = false;
     bool plzPruneMe = false;
@@ -181,7 +181,7 @@ int main() {
         //print out text
         std::string print = "quadtree: " + std::to_string(DrawObjCount) + "/" + std::to_string(myObjsQuad.size())+ "->time: " + std::to_string(elapsedTime);
         font->set_text(print);
-        font->draw(renManager.get_renderer_ref(), vec2f(0, 0));
+        font->draw(renManager.get_renderer(), vec2f(0, 0));
 
         //###############################################################
 

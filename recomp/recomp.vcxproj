@@ -155,7 +155,6 @@
     <ClInclude Include="Rectangle.h" />
     <ClInclude Include="Scripts.h" />
     <ClInclude Include="SequenceM.h" />
-    <ClInclude Include="Serialization.h" />
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
