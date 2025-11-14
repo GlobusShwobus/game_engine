@@ -55,11 +55,11 @@ namespace badEngine {
 		template<typename S>
 			requires IS_MATHMATICAL_T<S>
 		constexpr Vec2M<float> operator*(const S scalar)const noexcept {
-			return Vec2M<float>(float(x * scalar), float(y * scalar));
+			return Vec2M<float>(float(x) * scalar, float(y) * scalar);
 		}
 		template<typename S>
 		constexpr Vec2M<float> operator*(const Vec2M<S>& scalar)const noexcept {
-			return Vec2M<float>(float(x * scalar.x), float(y * scalar.y));
+			return Vec2M<float>(float(x) * scalar.x, float(y) * scalar.y);
 		}
 
 		template<typename S>
@@ -79,11 +79,11 @@ namespace badEngine {
 		template<typename S>
 			requires IS_MATHMATICAL_T<S>
 		constexpr Vec2M<float> operator/(const S scalar)const noexcept {
-			return Vec2M<float>(float(x / scalar), float(y / scalar));
+			return Vec2M<float>(float(x) / scalar, float(y) / scalar);
 		}
 		template<typename S>
 		constexpr Vec2M<float> operator/(const Vec2M<S>& scalar)const noexcept {
-			return Vec2M<float>(float(x / scalar.x), float(y / scalar.y));
+			return Vec2M<float>(float(x) / scalar.x, float(y) / scalar.y);
 		}
 
 		template<typename S>
@@ -128,13 +128,13 @@ namespace badEngine {
 	template<typename T, typename U>
 		requires IS_MATHMATICAL_T<T>
 	Vec2M<float> operator*(T scalar, const Vec2M<U>& v)noexcept {
-		return Vec2M<float>(float(v.x * scalar), float(v.y * scalar));
+		return Vec2M<float>(float(v.x) * scalar, float(v.y) * scalar);
 	}
 
 	template<typename T, typename U> 
 		requires IS_MATHMATICAL_T<T>
 	Vec2M<float> operator/(T scalar, const Vec2M<U>& v)noexcept {
-		return Vec2M<float>(float(v.x / scalar), float(v.y / scalar));
+		return Vec2M<float>(float(v.x) / scalar, float(v.y) / scalar);
 	}
 
 

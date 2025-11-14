@@ -7,65 +7,56 @@ namespace badEngine {
 	template<typename T> requires IS_MATHMATICAL_VECTOR_T<T>
 	class Rectangle {
 	public:
+		//CONSTRUCTORS
 		constexpr Rectangle()noexcept = default;
-		constexpr Rectangle(T x, T y, T w, T h) noexcept :x(x),y(y),w(w),h(h) {}
+		constexpr Rectangle(T x, T y, T w, T h) noexcept :x(x), y(y), w(w), h(h) {}
 
-		template <typename S, typename U> requires IS_MATHMATICAL_VECTOR_T<U>
-		constexpr Rectangle(const Vec2M<S>& pos, U w, U h) noexcept : x(pos.x), y(pos.y), w(w), h(h) {}
+		template <typename S>
+		constexpr Rectangle(const Vec2M<S>& pos, const Vec2M<S>& size) noexcept : x(T(pos.x)), y(T(pos.y)), w(T(size.x)), h(T(size.y)) {}
 
-		template <typename S, typename U> requires IS_MATHMATICAL_VECTOR_T<U>
-		constexpr Rectangle(U x, U y, const Vec2M<S>& dimensions) noexcept : x(x),y(y), w(dimensions.x), h(dimensions.y) {}
-
-		template <typename S, typename U>
-		constexpr Rectangle(const Vec2M<S>& pos, const Vec2M<U>& dimensions)noexcept :x(pos.x), y(pos.y), w(dimensions.x), h(dimensions.y) {}
-
+		//CONVERSION CONSTRUCTOR
 		template<typename S>
-		constexpr Rectangle(const Rectangle<S>& rhs)noexcept :x(rhs.x), y(rhs.y), w(rhs.w), h(rhs.y) {}
-
+		constexpr Rectangle(const Rectangle<S>& rhs)noexcept :x(T(rhs.x)), y(T(rhs.y)), w(T(rhs.w)), h(T(rhs.h)) {}
+		//CONVERSION ASSIGNMENT
 		template<typename S>
 		constexpr Rectangle& operator=(const Rectangle<S>& rhs)noexcept {
-			x = rhs.x;
-			y = rhs.y;
-			w = rhs.w;
-			h = rhs.h;
+			x = T(rhs.x);
+			y = T(rhs.y);
+			w = T(rhs.w);
+			h = T(rhs.h);
 			return *this;
 		}
+
+
 		template<typename S>
-		constexpr bool operator==(const Rectangle<S>& rhs)const noexcept {
-			return x == rhs.x && y == rhs.y && w == rhs.w && h == rhs.h;
-		}
-		template<typename S>
-		constexpr bool operator!=(const Rectangle<S>& rhs) const noexcept {
-			return!(*this == rhs);
+		constexpr bool is_same_size(const Rectangle<S>& rhs)const noexcept {
+			return w == rhs.w && h == rhs.h;
 		}
 
-		constexpr Vec2M<T> get_center_point()const noexcept {
-			return Vec2M<T>(x + (w * 0.5f), y + (h * 0.5f));
-		}
-		Vec2M<T> get_half_size()const noexcept {
-			return Vec2M<T>(w * 0.5f, h * 0.5f);
-		}
 
-		constexpr bool contains_point(T X, T Y)const noexcept {
-			return 
-				X >= x &&
-				Y >= y &&
-				X < x + w &&
-				Y < y + h
-				;
+		constexpr vec2f get_center_point()const noexcept {
+			return get_pos() + get_half_size();
 		}
-		constexpr bool contains_point(const Vec2M<T>& pos)const noexcept {
-			return contains_point(pos.x, pos.y);
+		constexpr vec2f get_half_size()const noexcept {
+			return vec2f(w * 0.5f, h * 0.5f);
 		}
 
 		template <typename S>
-		bool contains_rect(const Rectangle<S>& contained)const noexcept {
+		constexpr bool contains_point(const Vec2M<S>& pos)const noexcept {
+			return
+				pos.x >= x &&
+				pos.y >= y &&
+				pos.x < x + w &&
+				pos.y < y + h;
+		}
+
+		template <typename S>
+		constexpr bool contains_rect(const Rectangle<S>& rect)const noexcept {
 			return 
-				contained.x >= x &&
-				contained.y >= y &&
-				contained.x + contained.w <= x + w &&
-				contained.y + contained.h <= y + h
-				;
+				rect.x >= x &&
+				rect.y >= y &&
+				rect.x + rect.w < x + w &&
+				rect.y + rect.h < y + h;
 		}
 
 		template <typename S>
@@ -74,8 +65,7 @@ namespace badEngine {
 				x < rhs.x + rhs.w &&
 				x + w > rhs.x &&
 				y < rhs.y + rhs.h &&
-				y + h > rhs.y
-				;
+				y + h > rhs.y;
 		}
 
 		constexpr void set_pos(const Vec2M<T>& pos)noexcept {
