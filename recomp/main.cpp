@@ -4,7 +4,6 @@
 #include <thread>
 
 #include "Sprite.h"
-#include "Collision_Functions.h"
 
 #include "SequenceM.h"
 #include "NumberGenerator.h"

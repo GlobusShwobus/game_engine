@@ -36,6 +36,36 @@ namespace badEngine{
                 camera.zoom_towards(0.9f, mouseScreenPos);
             }
         }
+    }
 
+    SequenceM<SweptResult> script_sweptAABB_get_colliders(SequenceM<TransformF>& objects) {
+        //for loops
+        const std::size_t entityCount = objects.size();
+        //return type
+        SequenceM<SweptResult> colliders;
+        //reserve fat amount up front
+        colliders.reserve(entityCount);
+        //for every object
+        for (std::size_t i = 0; i < entityCount; ++i) {
+            //iterate over itself but only do A vs B and skip B vs A (j = i + 1)
+            for (std::size_t j = i + 1; j < entityCount; ++j) {
+                //do swept check, the function returns a bool and if true, we know it is a collision
+                SweptResult result;
+                if (objects[i].sweptAABB_dynamic(objects[j], result.collisionTime, result.collisionNormal)) {
+                    result.pA = &objects[i];
+                    result.pB = &objects[j];
+                    colliders.emplace_back(std::move(result));
+                }
+
+            }
+        }
+        //trim down the mem (tho maybe notworth the extra reallocation, at least it is guaranteed to only be 2 allocations)
+        colliders.shrink_to_fit();
+        //sort the order of priority
+        std::sort(colliders.begin(), colliders.end(), [](const auto& a, const auto& b) {
+            return a.collisionTime < b.collisionTime;
+            });
+
+        return colliders;
     }
 }

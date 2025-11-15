@@ -48,11 +48,59 @@ if (dt < limit) {
 */
 //#################################################################################
 
+#include <algorithm>
+
 #include "Camera.h"
 #include "SDL3/SDL_events.h"
+
+#include "Transform.h"
+#include "SequenceM.h"
 
 namespace badEngine {
 
     void script_handle_camera_mouse(SDL_Event& event, Camera2D& camera)noexcept;
+    
+   
+    struct SweptResult {
+        TransformF* pA = nullptr;
+        TransformF* pB = nullptr;
+        float collisionTime = 1.0f;
+        vec2i collisionNormal;
+    };
+
+    SequenceM<SweptResult> script_sweptAABB_get_colliders(SequenceM<TransformF>& objects);
+
+    template<typename Policy>
+    concept SweptCollisionResolvePolicy = std::invocable<Policy, TransformF&, float, const vec2i&>;
+    
+    template<SweptCollisionResolvePolicy Policy>
+    void script_do_sweptAABB_routine(SequenceM<TransformF>& objects, Policy policy) {
+        // get the colliders
+        auto collisions = script_sweptAABB_get_colliders(objects);
+
+        //do the checks
+        for (auto& colliders : collisions) {
+            //shortcuts
+            const float collisionTime = colliders.collisionTime;
+            auto& objA = *colliders.pA;
+            auto& objB = *colliders.pB;
+
+            //set current velocity
+            objA.mCurrVelocity *= collisionTime;
+            objB.mCurrVelocity *= collisionTime;
+
+            //move the box by the previous expression
+            objA.update_position();
+            objB.update_position();
+
+            //set the current velocity to 0, because the maximum amount was moved this frame
+            objA.mCurrVelocity = vec2f(0.0f, 0.0f);
+            objB.mCurrVelocity = vec2f(0.0f, 0.0f);
+
+            //set the behavior for the next frame (maybe better with a state behavior in the future???)
+            policy(objA, collisionTime, colliders.collisionNormal);
+            policy(objB, collisionTime, colliders.collisionNormal);
+        }
+    }
 
 }

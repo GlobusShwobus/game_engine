@@ -152,10 +152,6 @@ namespace badEngine {
 	inline float length_vector(const Vec2M<T>& v)noexcept {
 		return std::sqrt(static_cast<float>((v.x * v.x) + (v.y * v.y)));
 	}
-	template <typename T>
-	inline float distance_between(const Vec2M<T>& a, const Vec2M<T>& b) noexcept {
-		return length_vector(b - a);
-	}
 
 	template <typename T>
 	constexpr vec2d reciprocal_vector(const Vec2M<T>& v)noexcept {

@@ -33,14 +33,6 @@ namespace badEngine {
 			return w == rhs.w && h == rhs.h;
 		}
 
-
-		constexpr vec2f get_center_point()const noexcept {
-			return get_pos() + get_half_size();
-		}
-		constexpr vec2f get_half_size()const noexcept {
-			return vec2f(w * 0.5f, h * 0.5f);
-		}
-
 		template <typename S>
 		constexpr bool contains_point(const Vec2M<S>& pos)const noexcept {
 			return
@@ -68,9 +60,20 @@ namespace badEngine {
 				y + h > rhs.y;
 		}
 
+		constexpr vec2f get_center_point()const noexcept {
+			return get_pos() + get_half_size();
+		}
+		constexpr vec2f get_half_size()const noexcept {
+			return vec2f(w * 0.5f, h * 0.5f);
+		}
+
 		constexpr void set_pos(const Vec2M<T>& pos)noexcept {
 			x = pos.x;
 			y = pos.y;
+		}
+		constexpr void increment_pos(const Vec2M<T>& incr)noexcept {
+			x += incr.x;
+			y += incr.y;
 		}
 		constexpr void set_size(const Vec2M<T>& size)noexcept {
 			w = size.x;
@@ -82,6 +85,14 @@ namespace badEngine {
 		}
 		constexpr Vec2M<T> get_size()const noexcept {
 			return Vec2M<T>(w, h);
+		}
+		constexpr Rectangle<T> get_expanded(const Vec2M<T>& vector)const noexcept {
+			return Rectangle<T>(
+				(vector.x > 0) ? x : x + vector.x,
+				(vector.y > 0) ? y : y + vector.y,
+				w + std::abs(vector.x),
+				h + std::abs(vector.y)
+			);
 		}
 
 	public:
