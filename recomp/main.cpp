@@ -48,25 +48,20 @@ int main() {
     }
 
     //TEST CODE
-    struct SomeObjWithArea {
-        rectF rect;
-        vec2f vel;
-        Color col;
-    };
     NumberGenerator rng;
     Camera2D camera(960, 540);
     float farea = 600;
     float fsearchsize = 50.0f;
-    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, farea, farea));
+    QuadTree<TransformF> myObjsQuad(rectF(0, 0, farea, farea));
 
-    for (int i = 0; i < 5000; i++) {
+    for (int i = 0; i < 500; i++) {
 
         rectF itemBox = rectF(rng.random_float(0, farea-10), rng.random_float(0, farea-10), rng.random_float(1, 10), rng.random_float(1, 10));
-        SomeObjWithArea item = SomeObjWithArea(
+        TransformF item = TransformF(
             itemBox,
-            vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
-            Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
+            vec2f(rng.random_float(-1.0f, 1.0f), rng.random_float(-1.0f, 1.0f))
         );
+        item.col = Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255);
 
         myObjsQuad.insert(std::move(item), itemBox);
     }
@@ -94,6 +89,7 @@ int main() {
         if (frameHold < 0.008f) {
             continue;//skip the frame. a bit rigged atm, better to encapuselate in the IF
         }
+        frameHold = 0;//fucking oops...
 
         //CLEAR RENDERING
         renManager.renderer_clear();
@@ -143,18 +139,27 @@ int main() {
         std::size_t DrawObjCount = 0;
 
         Stopwatch drawing1MILLIIONrects;
-        for (const auto& each : myObjsQuad.search_area(cameraSpace)) {
+        const auto& COLLISION_AND_RELOCATE = myObjsQuad.search_area(cameraSpace);
+        SequenceM<TransformF*> myThingies;
+        myThingies.reserve(COLLISION_AND_RELOCATE.size());
+        //first collision
+        for (const auto& index : COLLISION_AND_RELOCATE) {
+            myThingies.emplace_back(&myObjsQuad[index]);
+        }
+        script_do_sweptAABB_routine(myThingies);
+
+        //then relocate
+        for (const auto& index : COLLISION_AND_RELOCATE) {
+            myObjsQuad.relocate(index, myObjsQuad[index].mBox);
+        }
+        //then draw
+        const auto& DRAW = myObjsQuad.search_area(cameraSpace);
+        for (const auto& index : DRAW) {
             //first draw
-            auto& thing = myObjsQuad[each];
-            rectF cameraAdjusted = camera.world_to_screen(thing.rect);//invalidtaion
+            auto& thing = myObjsQuad[index];
+            rectF cameraAdjusted = camera.world_to_screen(thing.mBox);//invalidtaion
             renManager.fill_area_with(cameraAdjusted, thing.col);
             DrawObjCount++;
-            //then move for the next frame
-          
-            rectF newPos = rectF(thing.rect.x + thing.vel.x, thing.rect.y + thing.vel.y, thing.rect.w, thing.rect.h);
-          
-            myObjsQuad.relocate(each, newPos);
-            thing.rect.set_pos(vec2f(newPos.x, newPos.y));
         }
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
         Color mouseCol = Colors::Magenta;

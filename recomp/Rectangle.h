@@ -86,14 +86,6 @@ namespace badEngine {
 		constexpr Vec2M<T> get_size()const noexcept {
 			return Vec2M<T>(w, h);
 		}
-		constexpr Rectangle<T> get_expanded(const Vec2M<T>& vector)const noexcept {
-			return Rectangle<T>(
-				(vector.x > 0) ? x : x + vector.x,
-				(vector.y > 0) ? y : y + vector.y,
-				w + std::abs(vector.x),
-				h + std::abs(vector.y)
-			);
-		}
 
 	public:
 		T x = 0;

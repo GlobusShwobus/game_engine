@@ -38,34 +38,65 @@ namespace badEngine{
         }
     }
 
-    SequenceM<SweptResult> script_sweptAABB_get_colliders(SequenceM<TransformF>& objects) {
-        //for loops
-        const std::size_t entityCount = objects.size();
-        //return type
-        SequenceM<SweptResult> colliders;
-        //reserve fat amount up front
-        colliders.reserve(entityCount);
-        //for every object
-        for (std::size_t i = 0; i < entityCount; ++i) {
+    void script_do_sweptAABB_routine(SequenceM<TransformF*>& objects) {
+        //first update velocity from previous frame
+        for (auto& each : objects)
+            each->reset_velocity();
+
+        //second do first round of checks
+        struct Colliders {
+            TransformF* A = nullptr;
+            TransformF* B = nullptr;
+            float time = 1.0f;
+        };
+        const std::size_t objCount = objects.size();
+      
+        SequenceM<Colliders> firstRoundColliders;
+        for (std::size_t i = 0; i < objCount; ++i) {
             //iterate over itself but only do A vs B and skip B vs A (j = i + 1)
-            for (std::size_t j = i + 1; j < entityCount; ++j) {
-                //do swept check, the function returns a bool and if true, we know it is a collision
-                SweptResult result;
-                if (objects[i].sweptAABB_dynamic(objects[j], result.collisionTime, result.collisionNormal)) {
-                    result.pA = &objects[i];
-                    result.pB = &objects[j];
-                    colliders.emplace_back(std::move(result));
+            for (std::size_t j = i + 1; j < objCount; ++j) {
+                float time = 1.0f;
+                if (objects[i]->sweptAABB_dynamic(*objects[j], time)) {
+                    firstRoundColliders.emplace_back(objects[i], objects[j], time);
                 }
 
             }
         }
-        //trim down the mem (tho maybe notworth the extra reallocation, at least it is guaranteed to only be 2 allocations)
-        colliders.shrink_to_fit();
-        //sort the order of priority
-        std::sort(colliders.begin(), colliders.end(), [](const auto& a, const auto& b) {
-            return a.collisionTime < b.collisionTime;
+        //sort the order of priority for collision
+        std::sort(firstRoundColliders.begin(), firstRoundColliders.end(), [](Colliders& a, Colliders& b) {
+            return a.time < b.time;
             });
+        //third resolve the colliders first
+        const std::size_t collidersCount = firstRoundColliders.size();
 
-        return colliders;
+        for (auto& c : firstRoundColliders) {
+            float time = 1.0f;
+            vec2i normal;
+
+            if (c.A->sweptAABB_dynamic(*c.B, time, &normal)) {
+                c.A->mCurrVelocity *= time;
+                c.B->mCurrVelocity *= time;
+
+                c.A->update_position();
+                c.B->update_position();
+
+                c.A->mCurrVelocity = vec2f(0.0f, 0.0f);
+                c.B->mCurrVelocity = vec2f(0.0f, 0.0f);
+                
+                //TEMP TEST CODE
+                if (normal.x != 0) {
+                    c.A->mVelocity.x *= -1.0f;
+                    c.B->mVelocity.x *= -1.0f;
+                }
+                if (normal.y != 0) {
+                    c.A->mVelocity.y *= -1.0f;
+                    c.B->mVelocity.y *= -1.0f;
+                }
+            }
+        }
+
+        //finally move all objects
+        for (auto& each : objects)
+            each->update_position();
     }
 }
