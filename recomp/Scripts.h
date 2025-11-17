@@ -36,6 +36,6 @@ namespace badEngine {
 
     void script_handle_camera_mouse(SDL_Event& event, Camera2D& camera)noexcept;
     
-    void script_do_sweptAABB_routine(SequenceM<TransformF*>& objects);
 
+    void script_do_continuous_collision_routine(SequenceM<TransformF*>& objects);
 }

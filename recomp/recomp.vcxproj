@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClInclude Include="badUtility.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Collision.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Entity_Factory.h" />
     <ClInclude Include="FrameTimer.h" />
@@ -162,6 +163,7 @@
     <ClInclude Include="RenderManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderManager.cpp" />
     <ClCompile Include="Scripts.cpp" />

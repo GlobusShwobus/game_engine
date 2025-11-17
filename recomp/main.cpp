@@ -15,8 +15,7 @@
 
 #include <iostream>
 /*
-MORE COLLISION RESOLUTIONS SECOND
-QUADTREE THIRD
+MAKE SPATIAL TREE???
 MAKE ENGINE CLASS TO MAKE HOW CHILI AND JAVIDX DO THE GAME THING
 ENTITY+ continue chilis lessons
 ?????
@@ -47,36 +46,6 @@ int main() {
         return -1;
     }
 
-    //TEST CODE
-    NumberGenerator rng;
-    Camera2D camera(960, 540);
-    float farea = 600;
-    float fsearchsize = 50.0f;
-    QuadTree<TransformF> myObjsQuad(rectF(0, 0, farea, farea));
-
-    for (int i = 0; i < 500; i++) {
-
-        rectF itemBox = rectF(rng.random_float(0, farea-10), rng.random_float(0, farea-10), rng.random_float(1, 10), rng.random_float(1, 10));
-        TransformF item = TransformF(
-            itemBox,
-            vec2f(rng.random_float(-1.0f, 1.0f), rng.random_float(-1.0f, 1.0f))
-        );
-        item.col = Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255);
-
-        myObjsQuad.insert(std::move(item), itemBox);
-    }
-
-    camera.set_scale(1, 1);
-
-    bool mouseHeld = false;
-    std::unique_ptr<Font> font = std::make_unique<Font>(32, 3, "C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer());
-
-    bool plzDeleteArea = false;
-    bool plzPruneMe = false;
-    renManager.enable_blend_mode();
-
-    ////#################################################################################
-
     //main loop
     Stopwatch UPDATE_DELTA_TIMER;
     bool GAME_RUNNING = true;
@@ -101,90 +70,10 @@ int main() {
                 GAME_RUNNING = false;
                 continue;
             }
-            //BS
-            if (EVENT.key.key == SDLK_A) {
-                fsearchsize += 10.0f;
-            }
-            if (EVENT.key.key == SDLK_S) {
-                fsearchsize -= 10.0f;
-            }
-            if (EVENT.key.key == SDLK_P) {
-                plzPruneMe = true;
-            }
-            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN && EVENT.button.button == SDL_BUTTON_LEFT) {
-                plzDeleteArea = true;
-            }
-            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-                plzDeleteArea = false;
-            }
-            ///
-
-            script_handle_camera_mouse(EVENT, camera);
         }
 
 
-        //TEST CODE
-        fsearchsize = std::clamp(fsearchsize, 10.0f, 500.0f);
-        vec2f mouseScreenPos;
-        SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
-        vec2f screenpos = camera.screen_to_world_point(mouseScreenPos);
-        rectF rectAroundMouse = rectF(
-            screenpos.x - fsearchsize / 2,
-            screenpos.y - fsearchsize / 2,
-            fsearchsize, fsearchsize
-        );
-
-
-        rectF cameraSpace = camera.get_view_rect();
-        std::size_t DrawObjCount = 0;
-
-        Stopwatch drawing1MILLIIONrects;
-        //first draw
-        const auto& ON_SCREEN_OBJS = myObjsQuad.search_area(cameraSpace);
-        SequenceM<TransformF*> COLLISION_COLLECTION;
-        COLLISION_COLLECTION.reserve(ON_SCREEN_OBJS.size());
-
-        for (const auto& index : ON_SCREEN_OBJS) {
-            rectF cameraAdjusted = camera.world_to_screen(myObjsQuad[index].mBox);//invalidtaion
-            renManager.fill_area_with(cameraAdjusted, myObjsQuad[index].col);
-            COLLISION_COLLECTION.emplace_back(&myObjsQuad[index]);
-            DrawObjCount++;
-        }
-
-        script_do_sweptAABB_routine(COLLISION_COLLECTION);
-
-        //then relocate
-        for (const auto& index : ON_SCREEN_OBJS) {
-            myObjsQuad.relocate(index, myObjsQuad[index].mBox);
-        }
-        rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
-        Color mouseCol = Colors::Magenta;
-        mouseCol.set_alpha(125u);
-        renManager.fill_area_with(camGirlAdjusted, mouseCol);
         
-        if (plzDeleteArea) {
-            myObjsQuad.remove_area(rectAroundMouse);
-        }
-        if (plzPruneMe) {
-
-            std::size_t branchesBefore = myObjsQuad.branch_count();
-            myObjsQuad.remove_dead_cells();
-            std::size_t branchesAfter = myObjsQuad.branch_count();
-
-            std::cout << "branches before: " << branchesBefore << '\n' << "branches after: " << branchesAfter;
-
-            plzPruneMe = false;
-        }
-
-        float elapsedTime = drawing1MILLIIONrects.dt_float();
-
-        //print out text
-        std::string print = "quadtree: " + std::to_string(DrawObjCount) + "/" + std::to_string(myObjsQuad.size())+ "->time: " + std::to_string(elapsedTime);
-        font->set_text(print);
-        font->draw(renManager.get_renderer(), vec2f(0, 0));
-
-        //###############################################################
-
         //PRESENT
         renManager.renderer_present();
     }

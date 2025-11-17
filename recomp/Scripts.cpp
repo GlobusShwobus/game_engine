@@ -1,5 +1,6 @@
 #include "Scripts.h"
 #include "SDL3/SDL_mouse.h"
+#include "Collision.h"
 
 namespace badEngine{
 
@@ -38,11 +39,7 @@ namespace badEngine{
         }
     }
 
-    void script_do_sweptAABB_routine(SequenceM<TransformF*>& objects) {
-        //first update velocity from previous frame
-        for (auto& each : objects)
-            each->reset_velocity();
-
+    void script_do_continuous_collision_routine(SequenceM<TransformF*>& objects) {
         //second do first round of checks
         struct Colliders {
             TransformF* A = nullptr;
@@ -56,7 +53,7 @@ namespace badEngine{
             //iterate over itself but only do A vs B and skip B vs A (j = i + 1)
             for (std::size_t j = i + 1; j < objCount; ++j) {
                 float time = 1.0f;
-                if (objects[i]->sweptAABB_dynamic(*objects[j], time)) {
+                if (sweptAABB_dynamic(*objects[i], *objects[j], time)) {
                     firstRoundColliders.emplace_back(objects[i], objects[j], time);
                 }
 
@@ -73,7 +70,7 @@ namespace badEngine{
             float time = 1.0f;
             vec2i normal;
 
-            if (c.A->sweptAABB_dynamic(*c.B, time, &normal)) {
+            if (sweptAABB_dynamic(*c.A,*c.B, time, &normal)) {
                 c.A->mCurrVelocity *= time;
                 c.B->mCurrVelocity *= time;
 
@@ -83,20 +80,8 @@ namespace badEngine{
                 c.A->mCurrVelocity.nullify();
                 c.B->mCurrVelocity.nullify();
                
-                //TEMP TEST CODE
-                if (normal.x != 0) {
-                    c.A->mVelocity.x *= -1.0f;
-                    c.B->mVelocity.x *= -1.0f;
-                }
-                if (normal.y != 0) {
-                    c.A->mVelocity.y *= -1.0f;
-                    c.B->mVelocity.y *= -1.0f;
-                }
+                //SOME RESOLUTION HERE TOO???
             }
         }
-
-        //finally move all objects
-        for (auto& each : objects)
-            each->update_position();
     }
 }
