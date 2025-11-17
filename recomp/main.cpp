@@ -139,27 +139,23 @@ int main() {
         std::size_t DrawObjCount = 0;
 
         Stopwatch drawing1MILLIIONrects;
-        const auto& COLLISION_AND_RELOCATE = myObjsQuad.search_area(cameraSpace);
-        SequenceM<TransformF*> myThingies;
-        myThingies.reserve(COLLISION_AND_RELOCATE.size());
-        //first collision
-        for (const auto& index : COLLISION_AND_RELOCATE) {
-            myThingies.emplace_back(&myObjsQuad[index]);
+        //first draw
+        const auto& ON_SCREEN_OBJS = myObjsQuad.search_area(cameraSpace);
+        SequenceM<TransformF*> COLLISION_COLLECTION;
+        COLLISION_COLLECTION.reserve(ON_SCREEN_OBJS.size());
+
+        for (const auto& index : ON_SCREEN_OBJS) {
+            rectF cameraAdjusted = camera.world_to_screen(myObjsQuad[index].mBox);//invalidtaion
+            renManager.fill_area_with(cameraAdjusted, myObjsQuad[index].col);
+            COLLISION_COLLECTION.emplace_back(&myObjsQuad[index]);
+            DrawObjCount++;
         }
-        script_do_sweptAABB_routine(myThingies);
+
+        script_do_sweptAABB_routine(COLLISION_COLLECTION);
 
         //then relocate
-        for (const auto& index : COLLISION_AND_RELOCATE) {
+        for (const auto& index : ON_SCREEN_OBJS) {
             myObjsQuad.relocate(index, myObjsQuad[index].mBox);
-        }
-        //then draw
-        const auto& DRAW = myObjsQuad.search_area(cameraSpace);
-        for (const auto& index : DRAW) {
-            //first draw
-            auto& thing = myObjsQuad[index];
-            rectF cameraAdjusted = camera.world_to_screen(thing.mBox);//invalidtaion
-            renManager.fill_area_with(cameraAdjusted, thing.col);
-            DrawObjCount++;
         }
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
         Color mouseCol = Colors::Magenta;

@@ -80,9 +80,9 @@ namespace badEngine{
                 c.A->update_position();
                 c.B->update_position();
 
-                c.A->mCurrVelocity = vec2f(0.0f, 0.0f);
-                c.B->mCurrVelocity = vec2f(0.0f, 0.0f);
-                
+                c.A->mCurrVelocity.nullify();
+                c.B->mCurrVelocity.nullify();
+               
                 //TEMP TEST CODE
                 if (normal.x != 0) {
                     c.A->mVelocity.x *= -1.0f;

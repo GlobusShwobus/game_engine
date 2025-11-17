@@ -110,6 +110,11 @@ namespace badEngine {
 			return !(*this == rhs);
 		}
 
+		constexpr void nullify()noexcept {
+			x = 0;
+			y = 0;
+		}
+
 	public:
 
 		T x = 0;
