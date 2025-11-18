@@ -157,7 +157,6 @@ namespace badEngine {
 	inline float length_vector(const Vec2M<T>& v)noexcept {
 		return std::sqrt(static_cast<float>((v.x * v.x) + (v.y * v.y)));
 	}
-
 	template <typename T>
 	constexpr vec2d reciprocal_vector(const Vec2M<T>& v)noexcept {
 		return vec2d(1.0f / v.x, 1.0f / v.y);

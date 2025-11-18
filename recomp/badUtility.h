@@ -35,4 +35,13 @@ namespace badEngine {
 	constexpr auto mValue_min(const T& x, const T& y)noexcept {
 		return (x < y) ? x : y;
 	}
+
+	template<typename T>requires IS_MATHMATICAL_VECTOR_T<T>
+	constexpr bool isMinus(T x)noexcept {
+		return x < 0;
+	}
+	template<typename T>requires IS_MATHMATICAL_VECTOR_T<T>
+	constexpr bool isPlus(T x)noexcept {
+		return x > 0;
+	}
 }
