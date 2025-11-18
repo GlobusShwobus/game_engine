@@ -34,33 +34,7 @@ namespace badEngine {
 	//######################################################################################################################
 
 	
-	bool AABB_intersect_get_overlap(const rectF& A, const rectF& B, vec2f& overlap)noexcept {
-		
-		const vec2f centerPointDistance = A.get_center_point() - B.get_center_point();
-
-		overlap = A.get_half_size() + B.get_half_size() - abs_vector(centerPointDistance);
-
-		if (overlap.x <= 0 || overlap.y <= 0)
-			return false;
-		
-		return true;
-	}
-	bool AABB_intersect_get_displace(const rectF& A, const rectF& B, const rectF& Avel, vec2f& displace)noexcept {
-
-
-		if (!AABB_intersect_get_overlap(A, B, displace))
-			return false;
-
-		if (displace.x < displace.y) {
-			displace.y = 0;
-			displace.x = (isPlus(Avel.x)) ? -displace.x : displace.x;
-		}
-		else {
-			displace.x = 0;
-			displace.y = (isPlus(Avel.y)) ? -displace.y : displace.y;
-		}
-	
-		return true;
-	}
+	bool AABB_intersect_get_overlap(const rectF& A, const rectF& B, vec2f& overlap)noexcept;
+	bool AABB_intersect_get_displace(const rectF& A, const rectF& B, const rectF& Avel, vec2f& displace)noexcept;
 
 }

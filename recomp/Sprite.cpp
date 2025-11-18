@@ -8,7 +8,7 @@ namespace badEngine {
 		mTexture->draw(renderer, mSource, mDest);
 	}
 	bool Sprite::is_within_bounds(const rectF& rect)const noexcept {
-		return mTexture->get_control_block().contains_rect(rect);
+		return mTexture->get_control_block().contains(rect);
 	}
 	//####################################################################################
 

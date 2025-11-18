@@ -7,11 +7,11 @@
 #include <optional>
 
 namespace badEngine {
-	struct OBJECT_TYPE {
-		int meme = 0;
-	};
-	//template <typename OBJECT_TYPE>
-	//	requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
+	//struct OBJECT_TYPE {
+		//int meme = 0;
+	//};
+	template <typename OBJECT_TYPE>
+		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t MAX_DEPTH = 8;
@@ -411,26 +411,3 @@ namespace badEngine {
 		rectF topLevelWindow;
 	};
 }
-
-
-/*
-
-void collectPotentialCollisions(const WorkerNode& parentWorker,
-								SequenceM<std::pair<std::size_t,std::size_t>>& collisions) const
-{
-	// 1. Check against all local workers
-	for (const auto& w : mWorkers) {
-		if (w.mArea.intersects(parentWorker.mArea)) {
-			collisions.push_back({parentWorker.managerIndex, w.managerIndex});
-		}
-	}
-
-	// 2. Recurse into subwindows if the area intersects
-	for (auto& sub : mSubWindows) {
-		if (sub.mStorage && sub.mArea.intersects(parentWorker.mArea)) {
-			sub.mStorage->collectPotentialCollisions(parentWorker, collisions);
-		}
-	}
-}
-
-*/
