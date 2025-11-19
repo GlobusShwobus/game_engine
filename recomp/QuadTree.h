@@ -194,16 +194,9 @@ namespace badEngine {
 				for (auto& sub : mSubWindows) {
 					if (!sub.mStorage) continue;
 
-					for (const auto& worker : mWorkers) {
-						
+					for (const auto& worker : mWorkers) 
 						sub.mStorage->check_worker_intersects(worker, collisions);
 						
-						//if (worker.mWorkerArea.contains(sub.mArea)) 
-						//	sub.mStorage->collect_every_collision_on_contains(worker.mManagerIndex, collisions);
-						//else 
-						//	sub.mStorage->check_worker_intersects(worker, collisions);
-						//
-					}
 					//recurse
 					sub.mStorage->collect_collisions(collisions);
 				}
@@ -214,12 +207,12 @@ namespace badEngine {
 			void check_worker_intersects(const WorkerNode& parentWorker,
 				SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept
 			{
-				if (!parentWorker.mWorkerArea.intersects(mWindow)) {
-					return; // Early exit if no possible intersection
+				const auto& parentArea = parentWorker.mWorkerArea;
+				if (!parentArea.intersects(mWindow)) {
+					return;//early return if no intersect
 				}
 
 				//first test against all locals
-				const auto& parentArea = parentWorker.mWorkerArea;
 				for (const auto& worker : mWorkers)
 					if (worker.mWorkerArea.intersects(parentArea))
 						collisions.emplace_back(parentWorker.mManagerIndex, worker.mManagerIndex);
@@ -228,27 +221,10 @@ namespace badEngine {
 				for (auto& sub : mSubWindows) {
 					if (!sub.mStorage) continue;
 
-	
 					sub.mStorage->check_worker_intersects(parentWorker, collisions);
-					
-					//if (parentArea.contains(sub.mArea))
-					//	sub.mStorage->collect_every_collision_on_contains(parentWorker.mManagerIndex, collisions);
-					//else
-					//	sub.mStorage->check_worker_intersects(parentWorker, collisions);
 				}
 			}
-			void collect_every_collision_on_contains(std::size_t managerIndex,
-				SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept
-			{
-				//all in this node
-				for (const auto& worker : mWorkers)
-					collisions.emplace_back(managerIndex, worker.mManagerIndex);
 
-				//all in sub nodes
-				for (const auto& sub : mSubWindows)
-					if (sub.mStorage)
-						sub.mStorage->collect_every_collision_on_contains(managerIndex, collisions);
-			}
 			void collect_area_all(SequenceM<std::size_t>& collector)const noexcept {
 				//first add all items from this layer
 				for (const auto& worker : mWorkers)
