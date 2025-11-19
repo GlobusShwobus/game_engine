@@ -199,7 +199,7 @@ namespace badEngine {
 
 					//REMEMBER TO TEST OUT CONTAINS PART, IF IT IS SLOWER THAN JUST CHECKING INTERSECTS, OMIT IT
 					for (const auto& worker : mWorkers) {
-
+						//sub.mStorage->collect_potential_collisions(worker, collisions);
 						if (worker.mWorkerArea.contains(sub.mArea)) 
 							sub.mStorage->collect_all_collisions_with(worker.mManagerIndex, collisions);
 						else if(worker.mWorkerArea.intersects(sub.mArea))
@@ -221,7 +221,7 @@ namespace badEngine {
 				//then also checks against sub windows
 				for (auto& sub : mSubWindows) {
 					if (!sub.mStorage) continue;
-
+					//sub.mStorage->collect_potential_collisions(parentWorker, collisions);
 					if (parentWorker.mWorkerArea.contains(sub.mArea)) 
 						sub.mStorage->collect_all_collisions_with(parentWorker.mManagerIndex, collisions);
 					else 

@@ -62,8 +62,8 @@ int main() {
 
     for (int i = 0; i < 5000; i++) {
         //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
-        float boxWidth = rng.random_float(1, 75);
-        float boxHeight = rng.random_float(1, 75);
+        float boxWidth = rng.random_float(1, 10);
+        float boxHeight = rng.random_float(1, 10);
 
         rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
         SomeObjWithArea item = SomeObjWithArea(
@@ -164,19 +164,7 @@ int main() {
             myObjsQuad.relocate(each, newPos);
             object.rect = newPos;
         }
-        //do collision
-        std::size_t size = myObjsQuad.size();
-        SequenceM<std::pair<std::size_t, std::size_t>> colliders;
-        for (std::size_t i = 0; i < size; i++) {
-            for (std::size_t j = i + 1; j < size; j++) {
-                if (myObjsQuad[i].rect.intersects(myObjsQuad[j].rect)) {
-                    colliders.emplace_back(i, j);
-                }
-            }
-        
-        }
-
-        //auto colliders = myObjsQuad.search_collisions();
+        auto colliders = myObjsQuad.search_collisions();
 
         float elapsedTime = timer.dt_float();
 
