@@ -101,15 +101,6 @@ namespace badEngine {
 						subwindow.mStorage->collect_area(searchArea, collector);
 				}
 			}
-			void collect_area_all(SequenceM<std::size_t>& collector)const noexcept {
-				//first add all items from this layer
-				for (const auto& worker : mWorkers)
-					collector.emplace_back(worker.mManagerIndex);
-				//secondly add all items from branches
-				for (const auto& subwindow : mSubWindows)
-					if (subwindow.mStorage)
-						subwindow.mStorage->collect_area_all(collector);
-			}
 
 			bool remove(std::size_t workerIndex, std::size_t managerIndex, std::optional<std::size_t>& newManagerIndex) {
 				//check if index is valid at all
@@ -186,61 +177,82 @@ namespace badEngine {
 				return true;
 			}
 	
-			void collect_collisions(SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const {
+			void collect_collisions(SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept {
 				//check all local workers for intersection
-				for (size_t i = 0; i < mWorkers.size(); ++i)
-					for (size_t j = i + 1; j < mWorkers.size(); ++j)
-						if (mWorkers[i].mWorkerArea.intersects(mWorkers[j].mWorkerArea))
-							collisions.emplace_back(mWorkers[i].mManagerIndex, mWorkers[j].mManagerIndex);
-						
+				const std::size_t workerCount = mWorkers.size();
+				for (size_t i = 0; i < workerCount; ++i) {
+					const auto& workerI = mWorkers[i];
+					const auto& areaI = workerI.mWorkerArea;
+
+					for (size_t j = i + 1; j < workerCount; ++j) {
+						const auto& workerJ = mWorkers[j];
+						if (areaI.intersects(workerJ.mWorkerArea))
+							collisions.emplace_back(workerI.mManagerIndex, workerJ.mManagerIndex);
+					}
+				}
 				//check sub windows
 				for (auto& sub : mSubWindows) {
 					if (!sub.mStorage) continue;
 
-					//REMEMBER TO TEST OUT CONTAINS PART, IF IT IS SLOWER THAN JUST CHECKING INTERSECTS, OMIT IT
 					for (const auto& worker : mWorkers) {
-						//sub.mStorage->collect_potential_collisions(worker, collisions);
+
 						if (worker.mWorkerArea.contains(sub.mArea)) 
-							sub.mStorage->collect_all_collisions_with(worker.mManagerIndex, collisions);
-						else if(worker.mWorkerArea.intersects(sub.mArea))
-							sub.mStorage->collect_potential_collisions(worker, collisions);
+							sub.mStorage->collect_every_collision_on_contains(worker.mManagerIndex, collisions);
+						else if (worker.mWorkerArea.intersects(sub.mArea)) 
+							sub.mStorage->check_worker_intersects(worker, collisions);
 
 					}
-					// Then recurse
+					//recurse
 					sub.mStorage->collect_collisions(collisions);
 				}
 			}
-			void collect_potential_collisions(const WorkerNode& parentWorker,
-				SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const
+
+
+		private:
+			void check_worker_intersects(const WorkerNode& parentWorker,
+				SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept
 			{
+				//if (!parentWorker.mWorkerArea.intersects(mWindow)) {
+				//	return; // Early exit if no possible intersection
+				//}
+
 				//first test against all locals
-				for (const auto& worker : mWorkers) 
-					if (worker.mWorkerArea.intersects(parentWorker.mWorkerArea))
-						collisions.emplace_back( parentWorker.mManagerIndex, worker.mManagerIndex);
-					
+				const auto& parentArea = parentWorker.mWorkerArea;
+				for (const auto& worker : mWorkers)
+					if (worker.mWorkerArea.intersects(parentArea))
+						collisions.emplace_back(parentWorker.mManagerIndex, worker.mManagerIndex);
+
 				//then also checks against sub windows
 				for (auto& sub : mSubWindows) {
 					if (!sub.mStorage) continue;
-					//sub.mStorage->collect_potential_collisions(parentWorker, collisions);
-					if (parentWorker.mWorkerArea.contains(sub.mArea)) 
-						sub.mStorage->collect_all_collisions_with(parentWorker.mManagerIndex, collisions);
-					else 
-						sub.mStorage->collect_potential_collisions(parentWorker, collisions);
+
+					if (parentArea.contains(sub.mArea))
+						sub.mStorage->collect_every_collision_on_contains(parentWorker.mManagerIndex, collisions);
+					else if (parentArea.intersects(sub.mArea))
+						sub.mStorage->check_worker_intersects(parentWorker, collisions);
 				}
 			}
-			void collect_all_collisions_with(std::size_t managerIndex,
-				SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const
+			void collect_every_collision_on_contains(std::size_t managerIndex,
+				SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept
 			{
 				//all in this node
-				for (const auto& worker : mWorkers) 
+				for (const auto& worker : mWorkers)
 					collisions.emplace_back(managerIndex, worker.mManagerIndex);
-				
+
 				//all in sub nodes
 				for (const auto& sub : mSubWindows)
 					if (sub.mStorage)
-						sub.mStorage->collect_all_collisions_with(managerIndex, collisions);
+						sub.mStorage->collect_every_collision_on_contains(managerIndex, collisions);
 			}
-
+			void collect_area_all(SequenceM<std::size_t>& collector)const noexcept {
+				//first add all items from this layer
+				for (const auto& worker : mWorkers)
+					collector.emplace_back(worker.mManagerIndex);
+				//secondly add all items from branches
+				for (const auto& subwindow : mSubWindows)
+					if (subwindow.mStorage)
+						subwindow.mStorage->collect_area_all(collector);
+			}
 
 		private:
 			//LAYER DEPTH
@@ -262,15 +274,15 @@ namespace badEngine {
 
 		template<typename U>
 			requires std::same_as<std::remove_cvref_t<U>, OBJECT_TYPE>
-		bool insert(U&& item, rectF itemsize) {
+		bool insert(U&& item, rectF itemSize) {
 
-			if (!is_within_scope(itemsize))
+			if (!is_within_scope(itemSize))
 				return false;
 			//forward the data, node data is invalid here
 			const std::size_t currentLastIndex = mManagers.size();
 			mManagers.emplace_back(
 				std::forward<U>(item),
-				mRoot.insert(itemsize, currentLastIndex)
+				mRoot.insert(itemSize, currentLastIndex)
 			);
 			return true;
 		}
