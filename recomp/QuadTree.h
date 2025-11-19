@@ -7,11 +7,11 @@
 #include <optional>
 
 namespace badEngine {
-	//struct OBJECT_TYPE {
-		//int meme = 0;
-	//};
-	template <typename OBJECT_TYPE>
-		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
+	struct OBJECT_TYPE {
+		int meme = 0;
+	};
+	//template <typename OBJECT_TYPE>
+		//requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t MAX_DEPTH = 8;
