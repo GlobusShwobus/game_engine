@@ -5,7 +5,13 @@
 #include <memory>
 #include <array>
 #include <optional>
-//REMEMBER TO INCLUDE SEARCH COLLISIONS ONLY FOR AREA, TO DO THAT INCLUDE A DEFAULT PARAMETER WITH SEARCH SIZE
+//TODO:: INCLUDE SEARCH COLLISIONS ONLY FOR AREA, TO DO THAT INCLUDE A DEFAULT PARAMETER WITH SEARCH SIZE
+// 
+//TODO:: try to remake, keeping the interface, to work internally with a link list type situation
+//	maybe create a pseudo weak link type helper struct instead of std, the goal is to use the tree structure of quadtree (too good)
+//	but hopefully lessen the burden of insertion, relocation and removal (probably meaningless for collision though) 
+//  SequenceM<WeakLink> where WeakLink has three(?) pointers, previous, itself and ahead, all pointing towards items on the stem.
+//	this way removing/inserting from SequenceM<WeakLink> requires minimal bookkeeping, but idk. we'll see
 namespace badEngine {
 	//struct OBJECT_TYPE {
 		//int meme = 0;
@@ -14,7 +20,7 @@ namespace badEngine {
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
-		static constexpr std::size_t MAX_DEPTH = 8;
+		static constexpr std::size_t MAX_DEPTH = 4;
 
 		class QuadWindow;
 

@@ -62,8 +62,8 @@ int main() {
 
     for (int i = 0; i < 5000; i++) {
         //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
-        float boxWidth = rng.random_float(1, 75);
-        float boxHeight = rng.random_float(1, 75);
+        float boxWidth = rng.random_float(1, 10);
+        float boxHeight = rng.random_float(1, 10);
 
         rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
         SomeObjWithArea item = SomeObjWithArea(
