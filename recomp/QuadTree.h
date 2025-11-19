@@ -5,13 +5,13 @@
 #include <memory>
 #include <array>
 #include <optional>
-
+//REMEMBER TO INCLUDE SEARCH COLLISIONS ONLY FOR AREA, TO DO THAT INCLUDE A DEFAULT PARAMETER WITH SEARCH SIZE
 namespace badEngine {
-	struct OBJECT_TYPE {
-		int meme = 0;
-	};
-	//template <typename OBJECT_TYPE>
-		//requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
+	//struct OBJECT_TYPE {
+		//int meme = 0;
+	//};
+	template <typename OBJECT_TYPE>
+		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t MAX_DEPTH = 8;
@@ -68,10 +68,10 @@ namespace badEngine {
 
 					//check all 4 branches
 					for (auto& subwindow : mSubWindows) {
-						//check which window the object exists in (this check wholely; in case all 4 checks fail, it must mean we add to this layer as this layer is larger)
+						//check which window the object exists in (this check whole; in case all 4 checks fail, it must mean we add to this layer as this layer is larger)
 						if (!subwindow.mArea.contains(workingArea)) continue;
 
-						//check for nullptr and initalize the branch if not yet set
+						//check for nullptr and init the branch if not yet set
 						if (!subwindow.mStorage)
 							subwindow.mStorage = std::make_unique<QuadWindow>(subwindow.mArea, mDepth + 1);
 
@@ -119,7 +119,7 @@ namespace badEngine {
 				if (!(mWorkers[workerIndex].mManagerIndex == managerIndex))
 					return false;
 
-				//removing an object is done in an unordered way. object somewhere in the middle gets swaped with the last object and the new last is then cut off
+				//removing an object is done in an unordered way. object somewhere in the middle gets swapped with the last object and the new last is then cut off
 				//this means that the previously last, but now in a new index worker has the wrong manager and needs to be updated
 				// TWO THINGS TO KEEP IN MIND: 1) if removed item is the last item, then no new manager is to be updated
 				//                             2) if the container is empty afterwards, then also no new manager. no worker no manager
@@ -128,7 +128,7 @@ namespace badEngine {
 				//swap places between local and last and remove the new last
 				mWorkers.remove_unpreserved_order(mWorkers.begin() + workerIndex);
 
-				//check if the conainer after deprication is not empty and if we didn't remove the last item in the last step
+				//check if the container after removing is not empty and if we didn't remove the last item in the last step
 				if (!mWorkers.empty() && !(mWorkers.size() == workerIndex)) {
 					newManagerIndex = mWorkers[workerIndex].mManagerIndex;
 				}
@@ -288,6 +288,16 @@ namespace badEngine {
 
 			return collector;
 		}
+		SequenceM<std::pair<std::size_t, std::size_t>> search_collisions()const noexcept {
+
+			//collect index, set growth to minimum resist to splurge mem
+			SequenceM<std::pair<std::size_t, std::size_t>> collector;
+			collector.set_growth_resist_low();
+			//actually collect recursively
+			mRoot.collect_collisions(collector);
+
+			return collector;
+		}
 
 		void remove_area(const rectF& area) {
 			//there is an issue with removing multiple items at once and that is indexes being chaotic
@@ -314,17 +324,17 @@ namespace badEngine {
 
 			//first remove the object internally from the tree
 			if (REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, removeIndex, newManagerIndex)) {
-				//since internally things got swaped around, this means the previous index of the worker (which now indexes a different object)
+				//since internally things got swapped around, this means the previous index of the worker (which now indexes a different object)
 				//is now managed but the newManager (in other words, it's just bookkeeping)
 				if (newManagerIndex.has_value())
 					mManagers[newManagerIndex.value()].second.mWorkerIndex = REMOVE_NODE.mWorkerIndex;
 			}
 			else {
-				throw std::runtime_error("index missmatch between parent and child nodes");
+				throw std::runtime_error("index miss-match between parent and child nodes");
 			}
 
-			//previously, the object somewhere in the tree was removed. this meant a top level manager had to be notifed of the change
-			//in this step we are removing a top level manager object, this means a worker somewhere in the tree needs to be notfied of the change
+			//previously, the object somewhere in the tree was removed. this meant a top level manager had to be notified of the change
+			//in this step we are removing a top level manager object, this means a worker somewhere in the tree needs to be notified of the change
 
 			//if the removed node is the last node, then the bookkeeping is already done, otherwise do the step
 			if (removeIndex != mManagers.size() - 1) {
@@ -349,7 +359,7 @@ namespace badEngine {
 			
 			auto& RELOCATE_PAYLOAD = mManagers[itemIndex].second;
 			
-			//check if relocation is nessessary at all or just update the box
+			//check if relocation is necessary at all or just update the box
 			if (RELOCATE_PAYLOAD.mWorkingWindow->assign_new_working_area(RELOCATE_PAYLOAD.mWorkerIndex, itemSize))
 				return;
 	
@@ -358,19 +368,19 @@ namespace badEngine {
 			
 			//handle removing the worker internally
 			if (RELOCATE_PAYLOAD.mWorkingWindow->remove(RELOCATE_PAYLOAD.mWorkerIndex, itemIndex, newManagerIndex)) {
-				//since internally things got swaped around, this means the previous index of the worker (which now indexes a different object)
+				//since internally things got swapped around, this means the previous index of the worker (which now indexes a different object)
 				//is now managed but the newManager (in other words, it's just bookkeeping)
 				if (newManagerIndex.has_value())
 					mManagers[newManagerIndex.value()].second.mWorkerIndex = RELOCATE_PAYLOAD.mWorkerIndex;
 			}
 			else {
-				throw std::runtime_error("index missmatch between parent and child nodes");
+				throw std::runtime_error("index miss-match between parent and child nodes");
 			}
-			//reinsert it whereever
+			//reinsert it where ever
 			RELOCATE_PAYLOAD = mRoot.insert(itemSize, itemIndex);
 		}
 
-		void re_initalize(const rectF& newArea) {
+		void re_initialize(const rectF& newArea) {
 			mManagers.clear();
 			mRoot = QuadWindow(newArea, 0);
 			topLevelWindow = newArea;

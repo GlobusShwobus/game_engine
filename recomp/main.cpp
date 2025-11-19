@@ -39,7 +39,7 @@ int main() {
         printf(excpt.what());
         return -1;
     }
-    //initalize SDL system, can throw
+    //init SDL system, can throw
     RenderManager renManager;
     try {
         renManager.init(windowConfig.get());
@@ -48,6 +48,46 @@ int main() {
         printf(excpt.what());
         return -1;
     }
+    ////// TEST CODE
+    struct SomeObjWithArea {
+        rectF rect;
+        vec2f vel;
+        Color col;
+    };
+    NumberGenerator rng;
+    float windowWidth = 960;
+    float windowHeight = 540;
+    const rectI window(0, 0, windowWidth, windowHeight);
+    QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
+
+    for (int i = 0; i < 5000; i++) {
+        //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
+        float boxWidth = rng.random_float(1, 75);
+        float boxHeight = rng.random_float(1, 75);
+
+        rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
+        SomeObjWithArea item = SomeObjWithArea(
+            box,
+            vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
+            Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
+        );
+
+        myObjsQuad.insert(std::move(item), box);
+    }
+
+
+    Camera2D camera(960, 540);
+    camera.set_scale(1, 1);
+
+    float mouseBoxSize = 50.0f;
+    bool mouseHeld = false;
+
+    std::unique_ptr<Font> font = std::make_unique<Font>(32, 3, "C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer());
+
+    bool plzDeleteArea = false;
+    bool plzPruneMe = false;
+    renManager.enable_blend_mode();
+    //////#######################################################
 
     //main loop
     Stopwatch UPDATE_DELTA_TIMER;
@@ -59,7 +99,7 @@ int main() {
         float dt = UPDATE_DELTA_TIMER.dt_float();
         frameHold += dt;
         if (frameHold < 0.008f) {
-            continue;//skip the frame. a bit rigged atm, better to encapuselate in the IF
+            continue;//skip the frame. a bit rigged atm, better to encapsulate in the IF
         }
         frameHold = 0;//fucking oops...
 
@@ -73,9 +113,85 @@ int main() {
                 GAME_RUNNING = false;
                 continue;
             }
+
+            ////// TEST CODE
+            if (EVENT.key.key == SDLK_A) {
+                mouseBoxSize += 10.0f;
+            }
+            if (EVENT.key.key == SDLK_S) {
+                mouseBoxSize -= 10.0f;
+            }
+            if (EVENT.key.key == SDLK_P) {
+                plzPruneMe = true;
+            }
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN && EVENT.button.button == SDL_BUTTON_LEFT) {
+                plzDeleteArea = true;
+            }
+            if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+                plzDeleteArea = false;
+            }
+            script_handle_camera_mouse(EVENT, camera);
+            ////////######################################################
         }
 
+        //////TEST CODE
+        vec2f mouseScreenPos;
+        SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
+        vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
+        rectF rectAroundMouse = rectF(
+            screenPos.x - mouseBoxSize / 2,
+            screenPos.y - mouseBoxSize / 2,
+            mouseBoxSize, mouseBoxSize
+        );
 
+        rectF cameraSpace = camera.get_view_rect();
+        std::size_t objectsCount = 0;
+        Stopwatch timer;
+        //draw
+        auto foundObjects = myObjsQuad.search_area(cameraSpace);
+        for (const auto& each : foundObjects) {
+            //first draw
+            auto& object = myObjsQuad[each];
+            rectF cameraAdjusted = camera.world_to_screen(object.rect);
+            renManager.fill_area_with(cameraAdjusted, object.col);
+            objectsCount++;
+        }
+        //apply move
+        for (auto& each : foundObjects) {
+            auto& object = myObjsQuad[each];
+            rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
+        
+            myObjsQuad.relocate(each, newPos);
+            object.rect = newPos;
+        }
+        //do collision
+        std::size_t size = myObjsQuad.size();
+        SequenceM<std::pair<std::size_t, std::size_t>> colliders;
+        for (std::size_t i = 0; i < size; i++) {
+            for (std::size_t j = i + 1; j < size; j++) {
+                if (myObjsQuad[i].rect.intersects(myObjsQuad[j].rect)) {
+                    colliders.emplace_back(i, j);
+                }
+            }
+        
+        }
+
+        //auto colliders = myObjsQuad.search_collisions();
+
+        float elapsedTime = timer.dt_float();
+
+        //draw mouse
+        rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
+        Color mouseCol = Colors::Magenta;
+        mouseCol.set_alpha(125u);
+        renManager.fill_area_with(camGirlAdjusted, mouseCol);
+
+
+        //draw text
+        std::string print = "quadtree: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "->time: " + std::to_string(elapsedTime);
+        font->set_text(print);
+        font->draw(renManager.get_renderer(), vec2f(0, 0));
+        //////########################################################
         
         //PRESENT
         renManager.renderer_present();
