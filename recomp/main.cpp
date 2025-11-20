@@ -59,19 +59,19 @@ int main() {
     float windowHeight = 540;
     const rectI window(0, 0, windowWidth, windowHeight);
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
-
+    
     for (int i = 0; i < 5000; i++) {
         //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
         float boxWidth = rng.random_float(1, 10);
         float boxHeight = rng.random_float(1, 10);
-
+    
         rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
         SomeObjWithArea item = SomeObjWithArea(
             box,
             vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
         );
-
+    
         myObjsQuad.insert(std::move(item), box);
     }
 
@@ -143,7 +143,7 @@ int main() {
             screenPos.y - mouseBoxSize / 2,
             mouseBoxSize, mouseBoxSize
         );
-
+       
         rectF cameraSpace = camera.get_view_rect();
         std::size_t objectsCount = 0;
         Stopwatch timer;
@@ -165,16 +165,16 @@ int main() {
             object.rect = newPos;
         }
         auto colliders = myObjsQuad.search_collisions();
-
+       
         float elapsedTime = timer.dt_float();
-
+       
         //draw mouse
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
         Color mouseCol = Colors::Magenta;
         mouseCol.set_alpha(125u);
         renManager.fill_area_with(camGirlAdjusted, mouseCol);
-
-
+       
+       
         //draw text
         std::string print = "quadtree: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "->time: " + std::to_string(elapsedTime);
         font->set_text(print);

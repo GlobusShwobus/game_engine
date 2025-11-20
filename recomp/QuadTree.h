@@ -6,16 +6,9 @@
 #include <array>
 #include <optional>
 //TODO:: INCLUDE SEARCH COLLISIONS ONLY FOR AREA, TO DO THAT INCLUDE A DEFAULT PARAMETER WITH SEARCH SIZE
-// 
-//TODO:: try to remake, keeping the interface, to work internally with a link list type situation
-//	maybe create a pseudo weak link type helper struct instead of std, the goal is to use the tree structure of quadtree (too good)
-//	but hopefully lessen the burden of insertion, relocation and removal (probably meaningless for collision though) 
-//  SequenceM<WeakLink> where WeakLink has three(?) pointers, previous, itself and ahead, all pointing towards items on the stem.
-//	this way removing/inserting from SequenceM<WeakLink> requires minimal bookkeeping, but idk. we'll see
+
 namespace badEngine {
-	//struct OBJECT_TYPE {
-		//int meme = 0;
-	//};
+
 	template <typename OBJECT_TYPE>
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
@@ -176,13 +169,13 @@ namespace badEngine {
 				if (mWorkers.size() <= workerIndex)
 					return false;
 				//check if new area is withing this window
-				if(!mWindow.contains(newArea))
+				if (!mWindow.contains(newArea))
 					return false;
 				//assign
 				mWorkers[workerIndex].mWorkerArea = newArea;
 				return true;
 			}
-	
+
 			void collect_collisions(SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept {
 				//check all local workers for intersection
 				const std::size_t workerCount = mWorkers.size();
@@ -200,9 +193,9 @@ namespace badEngine {
 				for (auto& sub : mSubWindows) {
 					if (!sub.mStorage) continue;
 
-					for (const auto& worker : mWorkers) 
+					for (const auto& worker : mWorkers)
 						sub.mStorage->check_worker_intersects(worker, collisions);
-						
+
 					//recurse
 					sub.mStorage->collect_collisions(collisions);
 				}
@@ -355,16 +348,16 @@ namespace badEngine {
 			//index check
 			if (itemIndex >= mManagers.size())
 				throw std::runtime_error("invalid index");
-			
+
 			auto& RELOCATE_PAYLOAD = mManagers[itemIndex].second;
-			
+
 			//check if relocation is necessary at all or just update the box
 			if (RELOCATE_PAYLOAD.mWorkingWindow->assign_new_working_area(RELOCATE_PAYLOAD.mWorkerIndex, itemSize))
 				return;
-	
+
 			//do need to relocate
 			std::optional<std::size_t> newManagerIndex;
-			
+
 			//handle removing the worker internally
 			if (RELOCATE_PAYLOAD.mWorkingWindow->remove(RELOCATE_PAYLOAD.mWorkerIndex, itemIndex, newManagerIndex)) {
 				//since internally things got swapped around, this means the previous index of the worker (which now indexes a different object)
