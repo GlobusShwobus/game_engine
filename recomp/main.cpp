@@ -49,7 +49,7 @@ int main() {
         return -1;
     }
     ////// TEST CODE
-    std::ofstream logData("log_index_quad.txt", std::ios::app);
+    std::ofstream logData("C:/Users/ADMIN/Desktop/quad_index.txt", std::ios::app);
     struct SomeObjWithArea {
         rectF rect;
         vec2f vel;
