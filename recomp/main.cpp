@@ -49,6 +49,7 @@ int main() {
         return -1;
     }
     ////// TEST CODE
+    std::ofstream logData("log_index_quad.txt", std::ios::app);
     struct SomeObjWithArea {
         rectF rect;
         vec2f vel;
@@ -58,8 +59,10 @@ int main() {
     float windowWidth = 960;
     float windowHeight = 540;
     const rectI window(0, 0, windowWidth, windowHeight);
+
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
-    
+
+    Stopwatch insertionTimer;
     for (int i = 0; i < 5000; i++) {
         //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
         float boxWidth = rng.random_float(1, 10);
@@ -74,7 +77,8 @@ int main() {
     
         myObjsQuad.insert(std::move(item), box);
     }
-
+    float timeInsertion = insertionTimer.dt_float();
+    logData << "insert time " << timeInsertion << "\n";
 
     Camera2D camera(960, 540);
     camera.set_scale(1, 1);
@@ -135,56 +139,56 @@ int main() {
         }
 
         //////TEST CODE
-        vec2f mouseScreenPos;
-        SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
-        vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
-        rectF rectAroundMouse = rectF(
-            screenPos.x - mouseBoxSize / 2,
-            screenPos.y - mouseBoxSize / 2,
-            mouseBoxSize, mouseBoxSize
-        );
-       
-        rectF cameraSpace = camera.get_view_rect();
-        std::size_t objectsCount = 0;
-        Stopwatch timer;
-        //draw
-        auto foundObjects = myObjsQuad.search_area(cameraSpace);
-        for (const auto& each : foundObjects) {
-            //first draw
-            auto& object = myObjsQuad[each];
-            rectF cameraAdjusted = camera.world_to_screen(object.rect);
-            renManager.fill_area_with(cameraAdjusted, object.col);
-            objectsCount++;
-        }
-        //apply move
-        for (auto& each : foundObjects) {
-            auto& object = myObjsQuad[each];
-            rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
-        
-            myObjsQuad.relocate(each, newPos);
-            object.rect = newPos;
-        }
-        auto colliders = myObjsQuad.search_collisions();
-       
-        float elapsedTime = timer.dt_float();
-       
-        //draw mouse
-        rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
-        Color mouseCol = Colors::Magenta;
-        mouseCol.set_alpha(125u);
-        renManager.fill_area_with(camGirlAdjusted, mouseCol);
-       
-       
-        //draw text
-        std::string print = "quadtree: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "->time: " + std::to_string(elapsedTime);
-        font->set_text(print);
-        font->draw(renManager.get_renderer(), vec2f(0, 0));
+        //vec2f mouseScreenPos;
+        //SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
+        //vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
+        //rectF rectAroundMouse = rectF(
+        //    screenPos.x - mouseBoxSize / 2,
+        //    screenPos.y - mouseBoxSize / 2,
+        //    mouseBoxSize, mouseBoxSize
+        //);
+        //
+        //rectF cameraSpace = camera.get_view_rect();
+        //std::size_t objectsCount = 0;
+        //Stopwatch timer;
+        ////draw
+        //auto foundObjects = myObjsQuad.search_area(cameraSpace);
+        //for (const auto& each : foundObjects) {
+        //    //first draw
+        //    auto& object = myObjsQuad[each];
+        //    rectF cameraAdjusted = camera.world_to_screen(object.rect);
+        //    renManager.fill_area_with(cameraAdjusted, object.col);
+        //    objectsCount++;
+        //}
+        ////apply move
+        //for (auto& each : foundObjects) {
+        //    auto& object = myObjsQuad[each];
+        //    rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
+        //
+        //    myObjsQuad.relocate(each, newPos);
+        //    object.rect = newPos;
+        //}
+        //auto colliders = myObjsQuad.search_collisions();
+        //
+        //float elapsedTime = timer.dt_float();
+        //
+        ////draw mouse
+        //rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
+        //Color mouseCol = Colors::Magenta;
+        //mouseCol.set_alpha(125u);
+        //renManager.fill_area_with(camGirlAdjusted, mouseCol);
+        //
+        //
+        ////draw text
+        //std::string print = "quadtree: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "->time: " + std::to_string(elapsedTime);
+        //font->set_text(print);
+        //font->draw(renManager.get_renderer(), vec2f(0, 0));
         //////########################################################
         
         //PRESENT
         renManager.renderer_present();
     }
-
+    logData.close();
     SDL_Quit();
 
     return 0;
