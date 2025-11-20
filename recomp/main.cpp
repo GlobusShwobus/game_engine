@@ -79,7 +79,7 @@ int main() {
     }
     float timeInsertion = insertionTimer.dt_float();
     logData << "insert time " << timeInsertion << "\n";
-
+    logData.close();
     Camera2D camera(960, 540);
     camera.set_scale(1, 1);
 
@@ -188,7 +188,6 @@ int main() {
         //PRESENT
         renManager.renderer_present();
     }
-    logData.close();
     SDL_Quit();
 
     return 0;
