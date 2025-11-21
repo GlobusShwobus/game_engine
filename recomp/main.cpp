@@ -161,13 +161,54 @@ int main() {
             auto& object = myObjsQuad[each];
             rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
         
-            myObjsQuad.relocate(each, newPos);
-            object.rect = newPos;
+          //  myObjsQuad.relocate(each, newPos);
+           // object.rect = newPos;
+        }
+
+        for (std::size_t i = 0; i < myObjsQuad.size();++i) {
+            auto& obj = myObjsQuad[i];
+            rectF newBox = obj.rect;
+            vec2f newVel = obj.vel;
+            bool ifReflect = false;
+            if (newBox.x < 0) {
+                newBox.x = 0;
+                newVel.x = -newVel.x;
+                ifReflect = true;
+            }
+            else if (newBox.x + newBox.w >= 960) {
+                newBox.x = 960 - newBox.w;
+                newVel.x = -newVel.x;
+                ifReflect = true;
+            }
+
+            if (newBox.y < 0) {
+                newBox.y = 0;
+                newVel.y = -newVel.y;
+                ifReflect = true;
+            }
+            else if (newBox.y + newBox.h >= 540) {
+                newBox.y = 540 - newBox.h;
+                newVel.y = -newVel.y;
+                ifReflect = true;
+            }
+
+            if (ifReflect) {
+               // myObjsQuad.relocate(i, newBox);
+               // obj.rect = newBox;
+               // obj.vel = newVel;
+            }
+
         }
         auto colliders = myObjsQuad.search_collisions();
         
         float elapsedTime = timer.dt_float();
         
+        static int removeafafafafaf = 0;
+        if (removeafafafafaf == 10) {
+            myObjsQuad.remove_dead_cells();
+            removeafafafafaf = 0;
+        }
+        removeafafafafaf++;
         //draw mouse
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
         Color mouseCol = Colors::Magenta;
@@ -176,7 +217,7 @@ int main() {
         
         
         //draw text
-        std::string print = "quadtree: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "->time: " + std::to_string(elapsedTime);
+        std::string print = "Object Count: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "\ntime: " + std::to_string(elapsedTime) + "\nnodes: "+std::to_string(myObjsQuad.branch_count());
         font->set_text(print);
         font->draw(renManager.get_renderer(), vec2f(0, 0));
         //////########################################################

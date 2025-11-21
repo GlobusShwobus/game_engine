@@ -13,7 +13,7 @@ namespace badEngine {
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
-		static constexpr std::size_t MAX_DEPTH = 4;
+		static constexpr std::size_t MAX_DEPTH = 6;
 
 		class QuadWindow;
 
@@ -132,27 +132,25 @@ namespace badEngine {
 				if (localIndex < mWorkers.size())
 					mWorkers[localIndex].mManagerIndex = newManager;
 			}
-			bool is_no_workers_left_remove() noexcept {
-				//first check this (top) layer
-				bool hasWorkers = !mWorkers.empty();
+			bool has_workers_recursive()const noexcept {
+				if (!mWorkers.empty())return true;
 
-				//check every subwindow
-				for (auto& subwindow : mSubWindows) {
+				for (const auto& sub:mSubWindows) 
+					if (sub.mStorage && sub.mStorage->has_workers_recursive())
+						return true;
+				return false;
+			}
+			void prune_empty_branches()noexcept {
+				for (auto& sub : mSubWindows) {
+					if (!sub.mStorage) continue;
 
-					if (subwindow.mStorage) {
-
-						//subwindow calls is_no_workers_left_remove recursively going to the bottom of each branch
-						//then as it moves back up removes shit
-						bool keep = subwindow.mStorage->is_no_workers_left_remove();
-
-						if (!keep) //if empty remove
-							subwindow.mStorage.reset();
-						else //else keep but this means top layer must also keep it, thus hasWorkers must also be set as true
-							hasWorkers = true;
+					if (!sub.mStorage->has_workers_recursive()) {
+						sub.mStorage.reset();
 					}
-
+					else {
+						sub.mStorage->prune_empty_branches();
+					}
 				}
-				return hasWorkers;
 			}
 
 			void count_branches(std::size_t& counter)const noexcept {
@@ -338,8 +336,9 @@ namespace badEngine {
 			mManagers.remove_unpreserved_order(mManagers.begin() + removeIndex);
 		}
 		void remove_dead_cells() {
-			if (!mRoot.is_no_workers_left_remove()) {
-				mRoot.clear();//last return of remove_dead_cells is about the top layer, if it's also empty call this (should be cheap anyway)
+			mRoot.prune_empty_branches();
+			if (!mRoot.has_workers_recursive()) {
+				mRoot.clear();
 			}
 		}
 
