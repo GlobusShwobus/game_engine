@@ -4,13 +4,15 @@
 
 #include <memory>
 #include <array>
-#include <optional>
+
 //TODO:: INCLUDE SEARCH COLLISIONS ONLY FOR AREA, TO DO THAT INCLUDE A DEFAULT PARAMETER WITH SEARCH SIZE
 
 namespace badEngine {
-
-	template <typename OBJECT_TYPE>
-		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
+	struct OBJECT_TYPE {
+		int meme = 0;
+	};
+	//template <typename OBJECT_TYPE>
+		//requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t MAX_DEPTH = 6;
@@ -101,36 +103,23 @@ namespace badEngine {
 				}
 			}
 
-			bool remove(std::size_t workerIndex, std::size_t managerIndex, std::optional<std::size_t>& newManagerIndex) {
-				//check if index is valid at all
-				if (mWorkers.size() <= workerIndex)
+			bool remove(std::size_t workerIndex, std::size_t managerIndex, std::size_t& newManagerIndex) {
+				//cache
+				auto& worker = mWorkers[workerIndex];
+				//important shittest, if manager indexes don't match it means fatal bookkeeping error
+				if (worker.mManagerIndex != managerIndex)
 					return false;
-				//check if the observers match (maybe throw is better?)
-				if (!(mWorkers[workerIndex].mManagerIndex == managerIndex))
-					return false;
-
-				//removing an object is done in an unordered way. object somewhere in the middle gets swapped with the last object and the new last is then cut off
-				//this means that the previously last, but now in a new index worker has the wrong manager and needs to be updated
-				// TWO THINGS TO KEEP IN MIND: 1) if removed item is the last item, then no new manager is to be updated
-				//                             2) if the container is empty afterwards, then also no new manager. no worker no manager
-
-
-				//swap places between local and last and remove the new last
-				mWorkers.remove_unpreserved_order(mWorkers.begin() + workerIndex);
-
-				//check if the container after removing is not empty and if we didn't remove the last item in the last step
-				if (!mWorkers.empty() && !(mWorkers.size() == workerIndex)) {
-					newManagerIndex = mWorkers[workerIndex].mManagerIndex;
-				}
-				else {
-					newManagerIndex.reset();
-				}
+				//cache iterators
+				auto it = mWorkers.begin() + workerIndex;
+				auto back = mWorkers.end() - 1;
+				//if the item removed is the last item, then no bookkeeping required upstream, otherwise need to know which manager to update
+				if (it < back)
+					newManagerIndex = mWorkers.back().mManagerIndex;
+			
+				//swap places with last and it and pop
+				mWorkers.remove_unpreserved_order(it);
+				
 				return true;
-			}
-			void assign_new_manager(std::size_t localIndex, std::size_t newManager)noexcept {
-				//check validity first and swap managers
-				if (localIndex < mWorkers.size())
-					mWorkers[localIndex].mManagerIndex = newManager;
 			}
 			bool has_workers_recursive()const noexcept {
 				if (!mWorkers.empty())return true;
@@ -144,12 +133,10 @@ namespace badEngine {
 				for (auto& sub : mSubWindows) {
 					if (!sub.mStorage) continue;
 
-					if (!sub.mStorage->has_workers_recursive()) {
+					if (!sub.mStorage->has_workers_recursive()) 
 						sub.mStorage.reset();
-					}
-					else {
+					else
 						sub.mStorage->prune_empty_branches();
-					}
 				}
 			}
 
@@ -160,6 +147,10 @@ namespace badEngine {
 						subwindow.mStorage->count_branches(counter);
 					}
 				}
+			}
+
+			void set_new_manager_to_worker(std::size_t workerIndex, std::size_t newManager)noexcept {
+				mWorkers[workerIndex].mManagerIndex = newManager;
 			}
 
 			bool assign_new_working_area(std::size_t workerIndex, const rectF& newArea) {
@@ -229,6 +220,7 @@ namespace badEngine {
 					if (subwindow.mStorage)
 						subwindow.mStorage->collect_area_all(collector);
 			}
+
 
 		private:
 			//LAYER DEPTH
@@ -320,38 +312,36 @@ namespace badEngine {
 
 			5. remove the top layer object
 			*/
-			//invalid index or something
+
+			//test valid index (meh)
 			if (removeIndex >= mManagers.size())
 				throw std::runtime_error("invalid index");
-		
-		
-			//first step is to get rid of the index
+			//cache remove node
 			auto& REMOVE_NODE = mManagers[removeIndex].second;
-		
-			std::optional<std::size_t> newManagerIndex;
-		
-			//first remove the object internally from the tree
-			if (REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, removeIndex, newManagerIndex)) {
-				//since internally things got swapped around, this means the previous index of the worker (which now indexes a different object)
-				//is now managed but the newManager (in other words, it's just bookkeeping)
-				if (newManagerIndex.has_value())
-					mManagers[newManagerIndex.value()].second.mWorkerIndex = REMOVE_NODE.mWorkerIndex;
-			}
-			else {
+			//assign variable incase a manager needs to update who it observes
+			std::size_t internalManagerSwap = std::numeric_limits<std::size_t>::max();
+			
+			//remove the node, throw if managers miss match. generally should never happen but if it does... we done goofed
+			if (REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, removeIndex, internalManagerSwap)) 
+				//if the worker moved around, then the worker knows who his manager is, but the manager doesn't know who his worker is anymore, thus bookkeeping
+				if (internalManagerSwap != std::numeric_limits<std::size_t>::max())
+					mManagers[internalManagerSwap].second.mWorkerIndex = REMOVE_NODE.mWorkerIndex;
+			else 
 				throw std::runtime_error("index miss-match between parent and child nodes");
-			}
-		
-			//previously, the object somewhere in the tree was removed. this meant a top level manager had to be notified of the change
-			//in this step we are removing a top level manager object, this means a worker somewhere in the tree needs to be notified of the change
-		
-			//if the removed node is the last node, then the bookkeeping is already done, otherwise do the step
-			if (removeIndex != mManagers.size() - 1) {
+
+			//cache iters
+			auto it = mManagers.begin() + removeIndex;
+			auto back = mManagers.end() - 1;
+			//if removed object is not last
+			if (it < back) {
+				//then the worker of the manager that is about to be moved, needs to be told who his new manager index is (manager still knows the worker)
 				auto& CURRENT_LAST_NODE = mManagers.back();
-				CURRENT_LAST_NODE.second.mWorkingWindow->assign_new_manager(CURRENT_LAST_NODE.second.mWorkerIndex, removeIndex);
+				//go to the branch, then tell it to change the worker (worker index), the manager to the index of remove item, because the remvoed obj is not the last and they get swaped
+				CURRENT_LAST_NODE.second.mWorkingWindow->set_new_manager_to_worker(CURRENT_LAST_NODE.second.mWorkerIndex, removeIndex);
 			}
 		
 			//finally remove the piece of shit
-			mManagers.remove_unpreserved_order(mManagers.begin() + removeIndex);
+			mManagers.remove_unpreserved_order(it);
 		}
 
 		void remove_dead_cells() {
@@ -361,7 +351,7 @@ namespace badEngine {
 			}
 		}
 
-		void relocate(std::size_t itemIndex, const rectF& itemSize) {
+		void relocate(std::size_t itemIndex, const rectF& newBoundingBox) {
 			/*
 			1. relocating does not DELETE the object
 			1.1 this means top level object stays in place
@@ -377,7 +367,7 @@ namespace badEngine {
 			//index check
 			if (itemIndex >= mManagers.size())
 				throw std::runtime_error("invalid index");
-
+			
 			auto& RELOCATE_PAYLOAD = mManagers[itemIndex].second;
 
 			//check if relocation is necessary at all or just update the box
