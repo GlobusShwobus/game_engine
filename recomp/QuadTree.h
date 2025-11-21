@@ -113,22 +113,18 @@ namespace badEngine {
 						subwindow.mStorage->collect_area(searchArea, collector);
 				}
 			}
-
 			bool remove(std::size_t workerIndex, std::size_t managerIndex, std::size_t& newManagerIndex) {
-				//cache
-				auto& worker = mWorkers[workerIndex];
+
 				//important test, if manager indexes don't match it means fatal bookkeeping error
-				if (worker.mManagerIndex != managerIndex)
+				if (mWorkers[workerIndex].mManagerIndex != managerIndex)
 					return false;
-				//cache iterators
-				auto it = mWorkers.begin() + workerIndex;
-				auto back = mWorkers.end() - 1;
-				//if the item removed is the last item, then no bookkeeping required upstream, otherwise need to know which manager to update
-				if (it < back)
-					newManagerIndex = back->mManagerIndex;
-			
+
 				//swap places with last and it and pop
-				mWorkers.remove_unpreserved_order(it);
+				mWorkers.remove_unpreserved_order(mWorkers.begin() + workerIndex);
+
+				//workerIndex now a new object
+				if (workerIndex < mWorkers.size()) 
+					newManagerIndex = mWorkers[workerIndex].mManagerIndex;
 				
 				return true;
 			}
@@ -302,6 +298,8 @@ namespace badEngine {
 			for (auto& id : list)
 				remove(id);
 		}
+
+
 		void remove(std::size_t removeIndex) {
 			//test valid index (meh)
 			if (removeIndex >= mManagers.size())
@@ -312,26 +310,26 @@ namespace badEngine {
 			std::size_t internalManagerSwap = std::numeric_limits<std::size_t>::max();
 			
 			//remove the node, throw if managers miss match. generally should never happen but if it does... we done goofed
-			if (REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, removeIndex, internalManagerSwap)) 
-				//if the worker moved around, then the worker knows who his manager is, but the manager doesn't know who his worker is anymore, thus bookkeeping
-				if (internalManagerSwap != std::numeric_limits<std::size_t>::max())
-					mManagers[internalManagerSwap].second.mWorkerIndex = REMOVE_NODE.mWorkerIndex;
-			else 
+			if (!REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, removeIndex, internalManagerSwap)) 
 				throw std::runtime_error("index miss-match between parent and child nodes");
 
-			//cache iters
-			auto it = mManagers.begin() + removeIndex;
-			auto back = mManagers.end() - 1;
-			//if removed object is not last
-			if (it < back) {
-				//then the worker of the manager that is about to be moved, needs to be told who his new manager index is (manager still knows the worker)
-				auto& CURRENT_LAST_NODE = mManagers.back();
-				//go to the branch, then tell it to change the worker (worker index), the manager to the index of remove item, because the remvoed obj is not the last and they get swaped
-				CURRENT_LAST_NODE.second.mWorkingWindow->set_new_manager_to_worker(CURRENT_LAST_NODE.second.mWorkerIndex, removeIndex);
-			}
-		
-			//finally remove the piece of shit
-			mManagers.remove_unpreserved_order(it);
+			//if the worker moved around, then the worker knows who his manager is, but the manager doesn't know who his worker is anymore, thus bookkeeping
+			if (internalManagerSwap != std::numeric_limits<std::size_t>::max())
+				mManagers[internalManagerSwap].second.mWorkerIndex = REMOVE_NODE.mWorkerIndex;
+
+			//FUCK BLYAT SAVE BOOKKEEPING FIRST
+			const bool isNotLastNode = (removeIndex != mManagers.size() - 1);
+
+			//save bookkeeping info in case the removed item is not last one
+			auto& LAST_NODE = mManagers.back();
+			std::size_t lastWorkerIndex = LAST_NODE.second.mWorkerIndex;
+			QuadWindow* lastWindow = LAST_NODE.second.mWorkingWindow;
+
+			//remove
+			mManagers.remove_unpreserved_order(mManagers.begin() + removeIndex);
+			//tell this child their manager has changed
+			if (isNotLastNode)
+				lastWindow->set_new_manager_to_worker(lastWorkerIndex, removeIndex);
 		}
 
 		void relocate(std::size_t itemIndex, const rectF& newBoundingBox) {

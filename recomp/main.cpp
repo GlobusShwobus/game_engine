@@ -199,7 +199,7 @@ int main() {
             }
 
         }
-        auto colliders = myObjsQuad.search_collisions();
+        //auto colliders = myObjsQuad.search_collisions();
         
         float elapsedTime = timer.dt_float();
         
@@ -214,7 +214,6 @@ int main() {
 
         if (plzDeleteArea) {
             myObjsQuad.remove_area(rectAroundMouse);
-            plzDeleteArea = false;
         }
         Color mouseCol = Colors::Magenta;
         mouseCol.set_alpha(125u);
