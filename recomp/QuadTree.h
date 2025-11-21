@@ -8,11 +8,11 @@
 //TODO:: INCLUDE SEARCH COLLISIONS ONLY FOR AREA, TO DO THAT INCLUDE A DEFAULT PARAMETER WITH SEARCH SIZE
 
 namespace badEngine {
-	struct OBJECT_TYPE {
-		int meme = 0;
-	};
-	//template <typename OBJECT_TYPE>
-		//requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
+	//struct OBJECT_TYPE {
+		//int meme = 0;
+	//};
+	template <typename OBJECT_TYPE>
+		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t MAX_DEPTH = 6;
@@ -38,7 +38,7 @@ namespace badEngine {
 
 		public:
 
-			QuadWindow(const rectF& window, std::size_t depth) {
+			QuadWindow(const rectF& window, std::size_t depth, QuadWindow* parent = nullptr) {
 				clear();
 				const float width = window.w / 2.0f;
 				const float height = window.h / 2.0f;
@@ -50,6 +50,9 @@ namespace badEngine {
 
 				mWindow = window;
 				mDepth = depth;
+
+				if (parent) 
+					mParent = parent;
 			}
 			void clear() {
 				mWorkers.clear();
@@ -74,7 +77,7 @@ namespace badEngine {
 
 						//check for nullptr and init the branch if not yet set
 						if (!subwindow.mStorage)
-							subwindow.mStorage = std::make_unique<QuadWindow>(subwindow.mArea, mDepth + 1);
+							subwindow.mStorage = std::make_unique<QuadWindow>(subwindow.mArea, mDepth + 1, this);
 
 						//pass the item down the chain
 						return subwindow.mStorage->insert(workingArea, managerIndex);
@@ -84,6 +87,14 @@ namespace badEngine {
 				mWorkers.emplace_back(workingArea, managerIndex);
 				//return back the metadata so that parent knows where it's child is
 				return ManagerNode(this, mWorkers.size() - 1);
+			}
+			ManagerNode relocate_insert(const rectF& workingArea, std::size_t managerIndex) {
+				QuadWindow* node = this;
+
+				while (node->mParent && !node->mWindow.contains(workingArea))
+					node = node->mParent;
+
+				return node->insert(workingArea, managerIndex);
 			}
 			void collect_area(const rectF& searchArea, SequenceM<std::size_t>& collector)const noexcept {
 				//first check for items belonging to this layer
@@ -106,7 +117,7 @@ namespace badEngine {
 			bool remove(std::size_t workerIndex, std::size_t managerIndex, std::size_t& newManagerIndex) {
 				//cache
 				auto& worker = mWorkers[workerIndex];
-				//important shittest, if manager indexes don't match it means fatal bookkeeping error
+				//important test, if manager indexes don't match it means fatal bookkeeping error
 				if (worker.mManagerIndex != managerIndex)
 					return false;
 				//cache iterators
@@ -114,7 +125,7 @@ namespace badEngine {
 				auto back = mWorkers.end() - 1;
 				//if the item removed is the last item, then no bookkeeping required upstream, otherwise need to know which manager to update
 				if (it < back)
-					newManagerIndex = mWorkers.back().mManagerIndex;
+					newManagerIndex = back->mManagerIndex;
 			
 				//swap places with last and it and pop
 				mWorkers.remove_unpreserved_order(it);
@@ -153,15 +164,12 @@ namespace badEngine {
 				mWorkers[workerIndex].mManagerIndex = newManager;
 			}
 
-			bool assign_new_working_area(std::size_t workerIndex, const rectF& newArea) {
-				//index check
-				if (mWorkers.size() <= workerIndex)
-					return false;
+			bool set_new_pos_to_worker(std::size_t workerIndex, const rectF& newSize) {
 				//check if new area is withing this window
-				if (!mWindow.contains(newArea))
+				if (!mWindow.contains(newSize))
 					return false;
 				//assign
-				mWorkers[workerIndex].mWorkerArea = newArea;
+				mWorkers[workerIndex].mWorkerArea = newSize;
 				return true;
 			}
 
@@ -232,6 +240,9 @@ namespace badEngine {
 			//POINTERS TO OTHER WINDOWNS NESTED INSIDE
 			std::array<SubWindow, 4> mSubWindows;
 
+			//PARENT BRANCH
+			QuadWindow* mParent = nullptr;
+
 			//STORE INFO
 			SequenceM<WorkerNode> mWorkers;
 		};
@@ -292,27 +303,6 @@ namespace badEngine {
 				remove(id);
 		}
 		void remove(std::size_t removeIndex) {
-			/*
-			1. when i remove, i need to remove from both top level and bottom level
-			1.2 this means first remove bottom layer
-
-			2. in the bottom layer, removing an object means swap object with last, then cut
-			2.1 the cut object is irrelevant, it gets removed
-			2.2 the object that got moved views the correct manager
-			2.3 but the manager of this moved object does not view the correct worker any longer
-			2.4 i can access this new manager directly and assign it the new index of the worker
-			
-			3. if the removed object in the bottom layer is the last in the list, this means no manager needs updating because it is the one in the process of removal
-			
-			4. removing the object from the top layer
-			4.1 if the object is last then there is no further bookkeeping 
-			4.2 if the object is not last then it gets swapped with another top layer object
-			4.3 this means whoever this top layer object is, it is observing the correct worker
-			4.4 but the worker it is observing no longer observes the correct manager, so the worker can be accessed directly and updated
-
-			5. remove the top layer object
-			*/
-
 			//test valid index (meh)
 			if (removeIndex >= mManagers.size())
 				throw std::runtime_error("invalid index");
@@ -344,13 +334,6 @@ namespace badEngine {
 			mManagers.remove_unpreserved_order(it);
 		}
 
-		void remove_dead_cells() {
-			mRoot.prune_empty_branches();
-			if (!mRoot.has_workers_recursive()) {
-				mRoot.clear();
-			}
-		}
-
 		void relocate(std::size_t itemIndex, const rectF& newBoundingBox) {
 			/*
 			1. relocating does not DELETE the object
@@ -367,30 +350,35 @@ namespace badEngine {
 			//index check
 			if (itemIndex >= mManagers.size())
 				throw std::runtime_error("invalid index");
-			
+			//cache relocated node
 			auto& RELOCATE_PAYLOAD = mManagers[itemIndex].second;
+			QuadWindow* oldNode = RELOCATE_PAYLOAD.mWorkingWindow;
 
-			//check if relocation is necessary at all or just update the box
-			if (RELOCATE_PAYLOAD.mWorkingWindow->assign_new_working_area(RELOCATE_PAYLOAD.mWorkerIndex, itemSize))
+			//check if relocation is necessary at all or just update the box within its current location
+			if (oldNode->set_new_pos_to_worker(RELOCATE_PAYLOAD.mWorkerIndex, newBoundingBox))
 				return;
 
-			//do need to relocate
-			std::optional<std::size_t> newManagerIndex;
+			//assign variable incase a manager needs to update who it observes
+			std::size_t internalManagerSwap = std::numeric_limits<std::size_t>::max();
 
-			//handle removing the worker internally
-			if (RELOCATE_PAYLOAD.mWorkingWindow->remove(RELOCATE_PAYLOAD.mWorkerIndex, itemIndex, newManagerIndex)) {
-				//since internally things got swapped around, this means the previous index of the worker (which now indexes a different object)
-				//is now managed but the newManager (in other words, it's just bookkeeping)
-				if (newManagerIndex.has_value())
-					mManagers[newManagerIndex.value()].second.mWorkerIndex = RELOCATE_PAYLOAD.mWorkerIndex;
-			}
-			else {
+			//remove the node, throw if managers miss match. generally should never happen but if it does... we done goofed
+			if (oldNode->remove(RELOCATE_PAYLOAD.mWorkerIndex, itemIndex, internalManagerSwap))
+				//if the worker moved around, then the worker knows who his manager is, but the manager doesn't know who his worker is anymore, thus bookkeeping
+				if (internalManagerSwap != std::numeric_limits<std::size_t>::max())
+					mManagers[internalManagerSwap].second.mWorkerIndex = RELOCATE_PAYLOAD.mWorkerIndex;
+			else
 				throw std::runtime_error("index miss-match between parent and child nodes");
-			}
-			//reinsert it where ever
-			RELOCATE_PAYLOAD = mRoot.insert(itemSize, itemIndex);
+
+
+			RELOCATE_PAYLOAD = oldNode->relocate_insert(newBoundingBox, itemIndex);
 		}
 
+		void remove_dead_cells() {
+			mRoot.prune_empty_branches();
+			if (!mRoot.has_workers_recursive()) {
+				mRoot.clear();
+			}
+		}
 		void re_initialize(const rectF& newArea) {
 			mManagers.clear();
 			mRoot = QuadWindow(newArea, 0);

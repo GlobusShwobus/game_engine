@@ -161,8 +161,8 @@ int main() {
             auto& object = myObjsQuad[each];
             rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
         
-          //  myObjsQuad.relocate(each, newPos);
-           // object.rect = newPos;
+            //myObjsQuad.relocate(each, newPos);
+            //object.rect = newPos;
         }
 
         for (std::size_t i = 0; i < myObjsQuad.size();++i) {
@@ -193,9 +193,9 @@ int main() {
             }
 
             if (ifReflect) {
-               // myObjsQuad.relocate(i, newBox);
-               // obj.rect = newBox;
-               // obj.vel = newVel;
+                //myObjsQuad.relocate(i, newBox);
+                //obj.rect = newBox;
+                //obj.vel = newVel;
             }
 
         }
@@ -210,12 +210,15 @@ int main() {
         }
         removeafafafafaf++;
         //draw mouse
-        rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
+        rectF  cameraAdjustedMouse= camera.world_to_screen(rectAroundMouse);
 
-        myObjsQuad.remove_area(camGirlAdjusted);
+        if (plzDeleteArea) {
+            myObjsQuad.remove_area(rectAroundMouse);
+            plzDeleteArea = false;
+        }
         Color mouseCol = Colors::Magenta;
         mouseCol.set_alpha(125u);
-        renManager.fill_area_with(camGirlAdjusted, mouseCol);
+        renManager.fill_area_with(cameraAdjustedMouse, mouseCol);
         
         
         //draw text
