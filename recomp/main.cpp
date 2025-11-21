@@ -211,6 +211,8 @@ int main() {
         removeafafafafaf++;
         //draw mouse
         rectF camGirlAdjusted = camera.world_to_screen(rectAroundMouse);
+
+        myObjsQuad.remove_area(camGirlAdjusted);
         Color mouseCol = Colors::Magenta;
         mouseCol.set_alpha(125u);
         renManager.fill_area_with(camGirlAdjusted, mouseCol);

@@ -198,8 +198,6 @@ namespace badEngine {
 					sub.mStorage->collect_collisions(collisions);
 				}
 			}
-
-
 		private:
 			void check_worker_intersects(const WorkerNode& parentWorker,
 				SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept
@@ -302,16 +300,36 @@ namespace badEngine {
 				remove(id);
 		}
 		void remove(std::size_t removeIndex) {
+			/*
+			1. when i remove, i need to remove from both top level and bottom level
+			1.2 this means first remove bottom layer
+
+			2. in the bottom layer, removing an object means swap object with last, then cut
+			2.1 the cut object is irrelevant, it gets removed
+			2.2 the object that got moved views the correct manager
+			2.3 but the manager of this moved object does not view the correct worker any longer
+			2.4 i can access this new manager directly and assign it the new index of the worker
+			
+			3. if the removed object in the bottom layer is the last in the list, this means no manager needs updating because it is the one in the process of removal
+			
+			4. removing the object from the top layer
+			4.1 if the object is last then there is no further bookkeeping 
+			4.2 if the object is not last then it gets swapped with another top layer object
+			4.3 this means whoever this top layer object is, it is observing the correct worker
+			4.4 but the worker it is observing no longer observes the correct manager, so the worker can be accessed directly and updated
+
+			5. remove the top layer object
+			*/
 			//invalid index or something
 			if (removeIndex >= mManagers.size())
 				throw std::runtime_error("invalid index");
-
-
+		
+		
 			//first step is to get rid of the index
 			auto& REMOVE_NODE = mManagers[removeIndex].second;
-
+		
 			std::optional<std::size_t> newManagerIndex;
-
+		
 			//first remove the object internally from the tree
 			if (REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, removeIndex, newManagerIndex)) {
 				//since internally things got swapped around, this means the previous index of the worker (which now indexes a different object)
@@ -322,19 +340,20 @@ namespace badEngine {
 			else {
 				throw std::runtime_error("index miss-match between parent and child nodes");
 			}
-
+		
 			//previously, the object somewhere in the tree was removed. this meant a top level manager had to be notified of the change
 			//in this step we are removing a top level manager object, this means a worker somewhere in the tree needs to be notified of the change
-
+		
 			//if the removed node is the last node, then the bookkeeping is already done, otherwise do the step
 			if (removeIndex != mManagers.size() - 1) {
 				auto& CURRENT_LAST_NODE = mManagers.back();
 				CURRENT_LAST_NODE.second.mWorkingWindow->assign_new_manager(CURRENT_LAST_NODE.second.mWorkerIndex, removeIndex);
 			}
-
+		
 			//finally remove the piece of shit
 			mManagers.remove_unpreserved_order(mManagers.begin() + removeIndex);
 		}
+
 		void remove_dead_cells() {
 			mRoot.prune_empty_branches();
 			if (!mRoot.has_workers_recursive()) {
@@ -343,7 +362,18 @@ namespace badEngine {
 		}
 
 		void relocate(std::size_t itemIndex, const rectF& itemSize) {
+			/*
+			1. relocating does not DELETE the object
+			1.1 this means top level object stays in place
+			1.2 this means leaf gets moved
+			1.3 this means remove the leaf
+			1.4 this needs to reinsert the leaf
+			1.5 this assumes the reinserted leaf views the correct top level (can check from the previous ancestor?)
+			1.6 this means top levels bookkeeping, who it views must be updated
 
+			2.0 is it true that if the leaf does not escape its node, i can skip the process and just assign it the new area if it passes the check?
+			
+			*/
 			//index check
 			if (itemIndex >= mManagers.size())
 				throw std::runtime_error("invalid index");
