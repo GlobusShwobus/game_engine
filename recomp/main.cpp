@@ -69,7 +69,7 @@ int main() {
         rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
         SomeObjWithArea item = SomeObjWithArea(
             box,
-            vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
+            vec2f(rng.random_float(-0.05, 0.05), rng.random_float(-0.05, 0.05)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
         );
     
@@ -87,6 +87,9 @@ int main() {
     bool plzDeleteArea = false;
     bool plzPruneMe = false;
     renManager.enable_blend_mode();
+
+    float testMeAverage = 0.0f;
+    std::size_t framesDone = 0;
     //////#######################################################
 
     //main loop
@@ -134,16 +137,7 @@ int main() {
             ////////######################################################
         }
 
-        //////TEST CODE
-        vec2f mouseScreenPos;
-        SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
-        vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
-        rectF rectAroundMouse = rectF(
-            screenPos.x - mouseBoxSize / 2,
-            screenPos.y - mouseBoxSize / 2,
-            mouseBoxSize, mouseBoxSize
-        );
-        
+        //////TEST CODE        
         rectF cameraSpace = camera.get_view_rect();
         std::size_t objectsCount = 0;
         Stopwatch timer;
@@ -165,60 +159,71 @@ int main() {
             //object.rect = newPos;
         }
 
-        for (std::size_t i = 0; i < myObjsQuad.size();++i) {
+        for (std::size_t i = 0; i < myObjsQuad.size(); ++i) {
             auto& obj = myObjsQuad[i];
             rectF newBox = obj.rect;
             vec2f newVel = obj.vel;
-            bool ifReflect = false;
+            newBox.increment_pos(newVel);
+
             if (newBox.x < 0) {
                 newBox.x = 0;
                 newVel.x = -newVel.x;
-                ifReflect = true;
             }
             else if (newBox.x + newBox.w >= 960) {
                 newBox.x = 960 - newBox.w;
                 newVel.x = -newVel.x;
-                ifReflect = true;
             }
 
             if (newBox.y < 0) {
                 newBox.y = 0;
                 newVel.y = -newVel.y;
-                ifReflect = true;
             }
             else if (newBox.y + newBox.h >= 540) {
                 newBox.y = 540 - newBox.h;
                 newVel.y = -newVel.y;
-                ifReflect = true;
             }
 
-            if (ifReflect) {
-                //myObjsQuad.relocate(i, newBox);
-                //obj.rect = newBox;
-                //obj.vel = newVel;
-            }
+            myObjsQuad.relocate(i, newBox);
+
+            obj.rect = newBox;
+            obj.vel = newVel;
 
         }
         //auto colliders = myObjsQuad.search_collisions();
         
-        float elapsedTime = timer.dt_float();
-        
-        static int removeafafafafaf = 0;
-        if (removeafafafafaf == 10) {
+        static int justSomeCounter = 0;
+        if (justSomeCounter == 10) {
             myObjsQuad.remove_dead_cells();
-            removeafafafafaf = 0;
+            justSomeCounter = 0;
         }
-        removeafafafafaf++;
+        justSomeCounter++;
+
+        float elapsedTime = timer.dt_float();
+        testMeAverage += elapsedTime;
+        framesDone++;
+
         //draw mouse
+        vec2f mouseScreenPos;
+        SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
+        vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
+        rectF rectAroundMouse = rectF(
+            screenPos.x - mouseBoxSize / 2,
+            screenPos.y - mouseBoxSize / 2,
+            mouseBoxSize, mouseBoxSize
+        );
         rectF  cameraAdjustedMouse= camera.world_to_screen(rectAroundMouse);
 
         if (plzDeleteArea) {
-            myObjsQuad.remove_area(rectAroundMouse);
+            rectF hardcode(200, 200, 200, 200);
+
+            myObjsQuad.remove_area(hardcode);
         }
+
         Color mouseCol = Colors::Magenta;
         mouseCol.set_alpha(125u);
         renManager.fill_area_with(cameraAdjustedMouse, mouseCol);
-        
+
+
         
         //draw text
         std::string print = "Object Count: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "\ntime: " + std::to_string(elapsedTime) + "\nnodes: "+std::to_string(myObjsQuad.branch_count());
@@ -229,8 +234,9 @@ int main() {
         //PRESENT
         renManager.renderer_present();
     }
-    SDL_Quit();
 
+    SDL_Quit();
+    std::cout << "average: " << (testMeAverage / framesDone);
     return 0;
 }
 
