@@ -145,9 +145,9 @@ int main() {
         auto foundObjects = myObjsQuad.search_area(cameraSpace);
         for (const auto& each : foundObjects) {
             //first draw
-            auto& object = myObjsQuad[each];
-            rectF cameraAdjusted = camera.world_to_screen(object.rect);
-            renManager.fill_area_with(cameraAdjusted, object.col);
+            auto& obj = myObjsQuad[each];
+            rectF cameraAdjusted = camera.world_to_screen(obj.rect);
+            renManager.fill_area_with(cameraAdjusted, obj.col);
             objectsCount++;
         }
         //apply move
@@ -164,7 +164,7 @@ int main() {
             rectF newBox = obj.rect;
             vec2f newVel = obj.vel;
             newBox.increment_pos(newVel);
-
+        
             if (newBox.x < 0) {
                 newBox.x = 0;
                 newVel.x = -newVel.x;
@@ -173,7 +173,7 @@ int main() {
                 newBox.x = 960 - newBox.w;
                 newVel.x = -newVel.x;
             }
-
+        
             if (newBox.y < 0) {
                 newBox.y = 0;
                 newVel.y = -newVel.y;
@@ -182,12 +182,12 @@ int main() {
                 newBox.y = 540 - newBox.h;
                 newVel.y = -newVel.y;
             }
-
-            myObjsQuad.relocate(i, newBox);
-
-            obj.rect = newBox;
-            obj.vel = newVel;
-
+        
+            //myObjsQuad.relocate(i, newBox);
+        
+            //obj.rect = newBox;
+            //obj.vel = newVel;
+        
         }
         //auto colliders = myObjsQuad.search_collisions();
         
@@ -216,7 +216,7 @@ int main() {
         if (plzDeleteArea) {
             rectF hardcode(200, 200, 200, 200);
 
-            myObjsQuad.remove_area(hardcode);
+            myObjsQuad.remove_area(rectAroundMouse);
         }
 
         Color mouseCol = Colors::Magenta;
@@ -227,6 +227,7 @@ int main() {
         
         //draw text
         std::string print = "Object Count: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "\ntime: " + std::to_string(elapsedTime) + "\nnodes: "+std::to_string(myObjsQuad.branch_count());
+
         font->set_text(print);
         font->draw(renManager.get_renderer(), vec2f(0, 0));
         //////########################################################
@@ -238,5 +239,6 @@ int main() {
     SDL_Quit();
     std::cout << "average: " << (testMeAverage / framesDone);
     return 0;
+
 }
 
