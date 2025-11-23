@@ -183,10 +183,10 @@ int main() {
                 newVel.y = -newVel.y;
             }
         
-            //myObjsQuad.relocate(i, newBox);
+            myObjsQuad.relocate(i, newBox);
         
-            //obj.rect = newBox;
-            //obj.vel = newVel;
+            obj.rect = newBox;
+            obj.vel = newVel;
         
         }
         //auto colliders = myObjsQuad.search_collisions();
