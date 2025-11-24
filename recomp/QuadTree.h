@@ -4,7 +4,7 @@
 
 #include <memory>
 #include <array>
-#include <list>
+
 
 namespace badEngine {
 	//struct OBJECT_TYPE {
@@ -96,8 +96,15 @@ namespace badEngine {
 			ManagerNode relocate_insert(const rectF& workingArea, std::size_t managerIndex) {
 				QuadWindow* node = this;
 
-				while (node->mParent && node->mParent->mWindow.contains(workingArea))
+				while (true) {
+					if (!node->mParent)
+						break;
+
+					if (node->mParent->mWindow.contains(workingArea))
+						break;
+
 					node = node->mParent;
+				}
 
 				return node->insert(workingArea, managerIndex);
 			}
@@ -346,7 +353,7 @@ namespace badEngine {
 		void remove_area(const rectF& area) {
 			auto list = search_area(area);
 			std::sort(list.begin(), list.end(), std::greater<>());
-			
+
 			for (auto index : list)
 				remove(index);
 		}
@@ -377,69 +384,28 @@ namespace badEngine {
 		void relocate(SequenceM<std::pair<std::size_t, rectF>>& pendingRelocations) {
 
 
-			//////index check
-			//if (itemIndex >= mManagers.size())
-			//	throw std::runtime_error("invalid index");
-			////cache relocated node
-			//auto& RELOCATE_PAYLOAD = mManagers[itemIndex].second;
-			//QuadWindow* oldNode = RELOCATE_PAYLOAD.mWorkingWindow;
-			//
-			////check if relocation is necessary at all or just update the box within its current location
-			//if (oldNode->try_set_new_pos_to_worker(RELOCATE_PAYLOAD.mWorkerIndex, newBoundingBox))
-			//	return;
-			//
-			////assign variable incase a manager needs to update who it observes
-			//std::size_t internalManagerSwap = std::numeric_limits<std::size_t>::max();
-			//
-			////remove the node, throw if managers miss match. generally should never happen but if it does... we done goofed
-			//if (!oldNode->remove(RELOCATE_PAYLOAD.mWorkerIndex, itemIndex, internalManagerSwap))
-			//	throw std::runtime_error("index miss-match between parent and child nodes");
-			//
-			////if the worker moved around, then the worker knows who his manager is, but the manager doesn't know who his worker is anymore, thus bookkeeping
-			//if (internalManagerSwap != std::numeric_limits<std::size_t>::max())
-			//	mManagers[internalManagerSwap].second.mWorkerIndex = RELOCATE_PAYLOAD.mWorkerIndex;
-			//
-			//
-			//RELOCATE_PAYLOAD = oldNode->relocate_insert(newBoundingBox, itemIndex);
-		}
+			std::sort(pendingRelocations.begin(), pendingRelocations.end(), [](const std::pair<std::size_t, rectF>& A, const std::pair<std::size_t, rectF>& B) {
+				return A.first < A.first;
+				});
 
+			for (std::size_t i = 0; i < pendingRelocations.size(); ++i) {
+				auto& pender = pendingRelocations[i];
+				auto& RELOCATE_NODE = mManagers[pender.first].second;
+
+				if (RELOCATE_NODE.mWorkingWindow->try_set_new_pos_to_worker(RELOCATE_NODE.mWorkerIndex, pender.second))
+					continue;
+
+				auto tellManagerAboutWorker = RELOCATE_NODE.mWorkingWindow->remove(RELOCATE_NODE.mWorkerIndex, pender.first);
+
+				if (tellManagerAboutWorker.confirmBookKeeping) {
+					mManagers[tellManagerAboutWorker.mManagerIndex].second.mWorkerIndex = tellManagerAboutWorker.mWorkerIndex;
+				}
+
+				auto NEW_NODE = mRoot.relocate_insert(pender.second, pender.first);
+
+				RELOCATE_NODE.mWorkingWindow = NEW_NODE.mWorkingWindow;
+				RELOCATE_NODE.mWorkerIndex = NEW_NODE.mWorkerIndex;
+			}
+		}
 	};
 }
-
-/*
-* IRON VERSION
-void remove_area(const rectF& area) {
-			auto list = search_area(area);
-
-
-			for (std::size_t i = 0; i < list.size(); ++i) {
-
-				const auto& index = list[i];
-				const auto currentLastIndex = mManagers.size() - 1;
-				auto& REMOVE_NODE = mManagers[index].second;
-
-				auto tellManagerAboutWorker = REMOVE_NODE.mWorkingWindow->remove(REMOVE_NODE.mWorkerIndex, index);
-
-				if (tellManagerAboutWorker.confirmBookKeeping)
-					mManagers[tellManagerAboutWorker.mManagerIndex].second.mWorkerIndex = tellManagerAboutWorker.mWorkerIndex;
-
-				RemoveHandle stemHandle;
-				stemHandle.confirmBookKeeping = index < mManagers.size() - 1;
-
-				if (stemHandle.confirmBookKeeping) {
-					auto& tellWorkerAboutManager = mManagers.back().second;
-					stemHandle.mManagerIndex = index;
-					stemHandle.mWorkerIndex = tellWorkerAboutManager.mWorkerIndex;
-
-					tellWorkerAboutManager.mWorkingWindow->update_manager_after_remove(stemHandle);
-				}
-
-				mManagers.remove_unpreserved_order(mManagers.begin() + index);
-
-				auto it = std::find(list.begin(), list.end(), currentLastIndex);
-				if (it != list.end() && currentLastIndex!= index) {
-					*it = index;
-				}
-
-			}
-*/

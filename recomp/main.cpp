@@ -15,7 +15,7 @@
 
 #include <iostream>
 /*
-* 
+*
 FIRST DO A OVERLAP CHECK
 THEN GET COLLIDERS FROM THE QUADTREE
 
@@ -65,14 +65,14 @@ int main() {
         //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
         float boxWidth = rng.random_float(1, 10);
         float boxHeight = rng.random_float(1, 10);
-    
+
         rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
         SomeObjWithArea item = SomeObjWithArea(
             box,
-            vec2f(rng.random_float(-0.05, 0.05), rng.random_float(-0.05, 0.05)),
+            vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
             Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
         );
-    
+
         myObjsQuad.insert(std::move(item), box);
     }
 
@@ -154,17 +154,19 @@ int main() {
         for (auto& each : foundObjects) {
             auto& object = myObjsQuad[each];
             rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
-        
+
             //myObjsQuad.relocate(each, newPos);
             //object.rect = newPos;
         }
+
+        SequenceM<std::pair<std::size_t, rectF>> relocations;
 
         for (std::size_t i = 0; i < myObjsQuad.size(); ++i) {
             auto& obj = myObjsQuad[i];
             rectF newBox = obj.rect;
             vec2f newVel = obj.vel;
             newBox.increment_pos(newVel);
-        
+
             if (newBox.x < 0) {
                 newBox.x = 0;
                 newVel.x = -newVel.x;
@@ -173,7 +175,7 @@ int main() {
                 newBox.x = 960 - newBox.w;
                 newVel.x = -newVel.x;
             }
-        
+
             if (newBox.y < 0) {
                 newBox.y = 0;
                 newVel.y = -newVel.y;
@@ -182,15 +184,15 @@ int main() {
                 newBox.y = 540 - newBox.h;
                 newVel.y = -newVel.y;
             }
-        
-            myObjsQuad.relocate(i, newBox);
-        
             obj.rect = newBox;
             obj.vel = newVel;
-        
+            relocations.emplace_back(i, std::move(newBox));
         }
+
+        //std::cout << relocations.size() << '\n';
         //auto colliders = myObjsQuad.search_collisions();
-        
+        myObjsQuad.relocate(relocations);
+
         static int justSomeCounter = 0;
         if (justSomeCounter == 10) {
             myObjsQuad.remove_dead_cells();
@@ -211,7 +213,7 @@ int main() {
             screenPos.y - mouseBoxSize / 2,
             mouseBoxSize, mouseBoxSize
         );
-        rectF  cameraAdjustedMouse= camera.world_to_screen(rectAroundMouse);
+        rectF  cameraAdjustedMouse = camera.world_to_screen(rectAroundMouse);
 
         if (plzDeleteArea) {
             rectF hardcode(200, 200, 200, 200);
@@ -224,14 +226,14 @@ int main() {
         renManager.fill_area_with(cameraAdjustedMouse, mouseCol);
 
 
-        
+
         //draw text
-        std::string print = "Object Count: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "\ntime: " + std::to_string(elapsedTime) + "\nnodes: "+std::to_string(myObjsQuad.branch_count());
+        std::string print = "Object Count: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "\ntime: " + std::to_string(elapsedTime) + "\nnodes: " + std::to_string(myObjsQuad.branch_count());
 
         font->set_text(print);
         font->draw(renManager.get_renderer(), vec2f(0, 0));
         //////########################################################
-        
+
         //PRESENT
         renManager.renderer_present();
     }
