@@ -77,7 +77,7 @@ int main() {
     }
 
     Camera2D camera(960, 540);
-    camera.set_scale(1, 1);
+    camera.set_scale(1);
 
     float mouseBoxSize = 50.0f;
     bool mouseHeld = false;

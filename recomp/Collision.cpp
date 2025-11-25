@@ -3,12 +3,23 @@
 namespace badEngine {
 	bool sweptAABB_static(const vec2f& ray_origin, const vec2f& ray_dir, const rectF& target, float& t_hit_near, vec2i* contact_normal)
 	{
+		
+		// Cache vals
+		auto targetPos = target.get_pos();
+		auto targetSize = target.get_size();
 		// Cache division
 		vec2f invdir = 1.0f / ray_dir;
 
 		// Calculate intersections with rectangle bounding axes
-		vec2f t_near = (target.get_pos() - ray_origin) * invdir;
-		vec2f t_far = (target.get_pos() + target.get_size() - ray_origin) * invdir;
+		vec2f t_near(
+			(targetPos.x - ray_origin.x) * invdir.x,
+			(targetPos.y - ray_origin.y) * invdir.y
+		);
+
+		vec2f t_far(
+			(targetPos.x + targetSize.x - ray_origin.x) * invdir.x,
+			(targetPos.y + targetSize.y - ray_origin.y) * invdir.y
+		);
 
 		if (std::isnan(t_far.y) || std::isnan(t_far.x)) return false;
 		if (std::isnan(t_near.y) || std::isnan(t_near.x)) return false;

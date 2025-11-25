@@ -13,18 +13,17 @@ namespace badEngine {
 		Camera2D(vec2i screenSize)noexcept :mScreenSize(std::move(screenSize)) {}
 
 		//SCALE AND ZOOM
-		vec2f get_scale()const noexcept {
+		float get_scale()const noexcept {
 			return mScale;
 		}
-		void set_scale(float x, float y)noexcept {
-			mScale = vec2f(x, y);
+
+		void set_scale(float factor)noexcept {
+			if (factor > 0.0f) {
+				mScale = factor;
+			}
 		}
-		void set_scale(float x)noexcept {
-			mScale = vec2f(x, x);
-		}
-		void set_scale(vec2f scale)noexcept {
-			mScale = std::move(scale);
-		}
+
+
 		void zoom_towards(float factor, const vec2f& focus)noexcept {
 			//before zoom coordiante
 			vec2f worldBefore = screen_to_world_point(focus);
@@ -52,22 +51,18 @@ namespace badEngine {
 		template<typename S>
 		rectF world_to_screen(const Rectangle<S>& worldRect)const noexcept {
 			return rectF(
-				(worldRect.x - mOffset.x) * mScale.x,
-				(worldRect.y - mOffset.y) * mScale.y,
-				worldRect.w * mScale.x,
-				worldRect.h * mScale.y
+				(worldRect.get_pos() - mOffset) * mScale,
+				worldRect.get_size() * mScale
 			);
 		}
 		vec2f screen_to_world_point(const vec2f& screenPoint)const noexcept {
 			return vec2f(
-				(screenPoint.x / mScale.x) + mOffset.x,
-				(screenPoint.y / mScale.y) + mOffset.y
-			);
+				(screenPoint / mScale) + mOffset);
 		}
 		
 		rectF get_view_rect()const noexcept {
 			return rectF(
-				mOffset.x, mOffset.y, mScreenSize.x / mScale.x, mScreenSize.y / mScale.y
+				mOffset, mScreenSize / mScale
 			);
 		}
 
@@ -84,7 +79,8 @@ namespace badEngine {
 
 	private:
 		vec2f mOffset;
-		vec2f mScale = vec2f(1.0f, 1.0f);
+
+		float mScale = 1.f;
 
 		vec2i mScreenSize;
 	};
