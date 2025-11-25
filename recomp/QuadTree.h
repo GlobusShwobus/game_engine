@@ -4,7 +4,9 @@
 
 #include <memory>
 #include <array>
-
+/*
+TODO: optimization for relocation IS BUSTED try_set_new_pos_to_worker specifically. fix it, no idea how
+*/
 
 namespace badEngine {
 	//struct OBJECT_TYPE {

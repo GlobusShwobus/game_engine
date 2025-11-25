@@ -2,7 +2,9 @@
 
 namespace badEngine {
 
-	Sprite::Sprite(std::shared_ptr<Texture> texture) :mTexture(std::move(texture)) {}
+	Sprite::Sprite(Texture* texture) :mTexture(texture){
+		assert(mTexture != nullptr && "texture can not be init with nullptr");
+	}
 
 	void Sprite::draw(SDL_Renderer* renderer)noexcept {
 		mTexture->draw(renderer, mSource, mDest);
@@ -12,8 +14,8 @@ namespace badEngine {
 	}
 	//####################################################################################
 
-	Animation::Animation(std::shared_ptr<Texture> texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
-		:Sprite(std::move(texture)), mFrameCount(fCount)
+	Animation::Animation(Texture* texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
+		:Sprite(texture), mFrameCount(fCount)
 	{
 		assert(start.x >= 0 && start.y >= 0 && "Out of bounds texture access");
 
@@ -51,8 +53,8 @@ namespace badEngine {
 	}
 	//#########################################################################################
 
-	Font::Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount)
-		:Sprite(std::move(texture)),
+	Font::Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount)
+		:Sprite(texture),
 		mColumnsCount(columnsCount),
 		mRowsCount(rowsCount)
 	{

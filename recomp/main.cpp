@@ -82,7 +82,8 @@ int main() {
     float mouseBoxSize = 50.0f;
     bool mouseHeld = false;
 
-    std::unique_ptr<Font> font = std::make_unique<Font>(32, 3, "C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer());
+    std::unique_ptr<Texture> fontTextureOwner = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer());
+    std::unique_ptr<Font> font = std::make_unique<Font>(fontTextureOwner.get(), 32, 3);
 
     bool plzDeleteArea = false;
     bool plzPruneMe = false;

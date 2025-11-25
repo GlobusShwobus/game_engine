@@ -11,7 +11,7 @@ namespace badEngine {
 	
 	protected:
 
-		Sprite(std::shared_ptr<Texture> texture);
+		Sprite(Texture* texture);
 
 		void draw(SDL_Renderer* renderer)noexcept;
 		//source managment should be restricted to inheritence because the assumption is
@@ -48,7 +48,7 @@ namespace badEngine {
 		}
 	private:
 
-		std::shared_ptr<Texture> mTexture;
+		Texture* mTexture = nullptr;
 		rectF mSource;
 		rectF mDest;
 	};
@@ -57,12 +57,7 @@ namespace badEngine {
 
 	public:
 
-		template<typename... Args>
-			requires std::constructible_from<Texture, Args&&...>
-		Animation(const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount, Args&&... args)//gigantic dicks
-			:Animation(std::make_shared<Texture>(std::forward<Args>(args)...), fWidth, fHeight, fCount) {}
-
-		Animation(std::shared_ptr<Texture> texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
+		Animation(Texture* texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
 
 		void draw(SDL_Renderer* renderer, const vec2f& pos)noexcept;
 
@@ -102,12 +97,7 @@ namespace badEngine {
 
 	public:
 
-		template<typename... Args>
-			requires std::constructible_from<Texture, Args&&...>
-		Font(uint32_t columnsCount, uint32_t rowsCount, Args&&... args)
-			:Font(std::make_shared<Texture>(std::forward<Args>(args)...), columnsCount, rowsCount) {}
-
-		Font(std::shared_ptr<Texture> texture, uint32_t columnsCount, uint32_t rowsCount);
+		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount);
 		void draw(SDL_Renderer* renderer, const vec2f& pos);
 		
 		void set_text(std::string_view string)noexcept;
