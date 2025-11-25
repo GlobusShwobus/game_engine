@@ -43,7 +43,7 @@ namespace badEngine {
 
 		public:
 
-			QuadWindow(const rectF& window, std::size_t depth, QuadWindow* parent = nullptr) {
+			QuadWindow(const rectF& window, std::size_t depth) {
 				clear();
 				const float width = window.w / 2.0f;
 				const float height = window.h / 2.0f;
@@ -55,9 +55,6 @@ namespace badEngine {
 
 				mWindow = window;
 				mDepth = depth;
-
-				if (parent)
-					mParent = parent;
 			}
 			void clear() {
 				mWorkers.clear();
@@ -82,7 +79,7 @@ namespace badEngine {
 
 						//check for nullptr and init the branch if not yet set
 						if (!subwindow.mStorage)
-							subwindow.mStorage = std::make_unique<QuadWindow>(subwindow.mArea, mDepth + 1, this);
+							subwindow.mStorage = std::make_unique<QuadWindow>(subwindow.mArea, mDepth + 1);
 
 						//pass the item down the chain
 						return subwindow.mStorage->insert(workingArea, managerIndex);
@@ -92,21 +89,6 @@ namespace badEngine {
 				mWorkers.emplace_back(workingArea, managerIndex);
 				//return back the metadata so that parent knows where it's child is
 				return ManagerNode(this, mWorkers.size() - 1);
-			}
-			ManagerNode relocate_insert(const rectF& workingArea, std::size_t managerIndex) {
-				QuadWindow* node = this;
-
-				while (true) {
-					if (!node->mParent)
-						break;
-
-					if (node->mParent->mWindow.contains(workingArea))
-						break;
-
-					node = node->mParent;
-				}
-
-				return node->insert(workingArea, managerIndex);
 			}
 			void collect_area(const rectF& searchArea, SequenceM<std::size_t>& collector)const noexcept {
 				//first check for items belonging to this layer
@@ -152,14 +134,7 @@ namespace badEngine {
 					}
 				}
 			}
-			bool try_set_new_pos_to_worker(std::size_t workerIndex, const rectF& newSize) {
-				//check if new area is withing this window
-				if (!mWindow.contains(newSize))
-					return false;
-				//assign
-				mWorkers[workerIndex].mWorkerArea = newSize;
-				return true;
-			}
+
 
 			void collect_collisions(SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept {
 				//check all local workers for intersection
@@ -228,9 +203,6 @@ namespace badEngine {
 			//POINTERS TO OTHER WINDOWNS NESTED INSIDE
 			std::array<SubWindow, 4> mSubWindows;
 
-			//PARENT BRANCH
-			QuadWindow* mParent = nullptr;
-
 			//STORE INFO
 			SequenceM<WorkerNode> mWorkers;
 		public:
@@ -259,6 +231,15 @@ namespace badEngine {
 				if (handle.confirmBookKeeping) {
 					mWorkers[handle.mWorkerIndex].mManagerIndex = handle.mManagerIndex;
 				}
+			}
+			//BUGED LOGIC
+			bool try_set_new_pos_to_worker(std::size_t workerIndex, const rectF& newSize) {
+				//check if new area is withing this window
+				if (!mWindow.contains(newSize))
+					return false;
+				//assign
+				mWorkers[workerIndex].mWorkerArea = newSize;
+				return true;
 			}
 		};
 
@@ -384,24 +365,25 @@ namespace badEngine {
 		void relocate(SequenceM<std::pair<std::size_t, rectF>>& pendingRelocations) {
 
 
-			std::sort(pendingRelocations.begin(), pendingRelocations.end(), [](const std::pair<std::size_t, rectF>& A, const std::pair<std::size_t, rectF>& B) {
-				return A.first < A.first;
-				});
+			//std::sort(pendingRelocations.begin(), pendingRelocations.end(), [](const std::pair<std::size_t, rectF>& A, const std::pair<std::size_t, rectF>& B) {
+			//	return A.first < B.first;
+			//	});
 
 			for (std::size_t i = 0; i < pendingRelocations.size(); ++i) {
+				//cache info
 				auto& pender = pendingRelocations[i];
-				auto& RELOCATE_NODE = mManagers[pender.first].second;
-
-				if (RELOCATE_NODE.mWorkingWindow->try_set_new_pos_to_worker(RELOCATE_NODE.mWorkerIndex, pender.second))
-					continue;
-
+				auto& RELOCATE_NODE = mManagers[pender.first].second;//this is ManagerNode
+				//try this
+				//if (RELOCATE_NODE.mWorkingWindow->try_set_new_pos_to_worker(RELOCATE_NODE.mWorkerIndex, pender.second))
+					//continue;
+				//then that
 				auto tellManagerAboutWorker = RELOCATE_NODE.mWorkingWindow->remove(RELOCATE_NODE.mWorkerIndex, pender.first);
-
+				//maybe need to update manager
 				if (tellManagerAboutWorker.confirmBookKeeping) {
 					mManagers[tellManagerAboutWorker.mManagerIndex].second.mWorkerIndex = tellManagerAboutWorker.mWorkerIndex;
 				}
 
-				auto NEW_NODE = mRoot.relocate_insert(pender.second, pender.first);
+				auto NEW_NODE = mRoot.insert(pender.second, pender.first);
 
 				RELOCATE_NODE.mWorkingWindow = NEW_NODE.mWorkingWindow;
 				RELOCATE_NODE.mWorkerIndex = NEW_NODE.mWorkerIndex;

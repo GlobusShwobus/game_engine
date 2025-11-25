@@ -38,8 +38,8 @@ namespace badEngine {
 			return
 				pos.x >= x &&
 				pos.y >= y &&
-				pos.x < x + w &&
-				pos.y < y + h;
+				pos.x <= x + w &&
+				pos.y <= y + h;
 		}
 
 		template <typename S>
@@ -47,8 +47,8 @@ namespace badEngine {
 			return 
 				rect.x >= x &&
 				rect.y >= y &&
-				rect.x + rect.w < x + w &&
-				rect.y + rect.h < y + h;
+				rect.x + rect.w <= x + w &&
+				rect.y + rect.h <= y + h;
 		}
 
 		template <typename S>
