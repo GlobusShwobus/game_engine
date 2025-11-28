@@ -5,13 +5,15 @@
 #include <memory>
 #include <array>
 /*
+TODO: recheck collision logic
+TODO: recheck extras
 TODO: optimization for relocation IS BUSTED try_set_new_pos_to_worker specifically. fix it, no idea how
 */
 
 namespace badEngine {
-	//struct OBJECT_TYPE {
-		//int aaa;
-	//};
+	struct OBJECT_TYPE {
+		int aaa;
+	};
 	template <typename OBJECT_TYPE>
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
@@ -67,6 +69,9 @@ namespace badEngine {
 						subwindow.mStorage.reset();
 					}
 				}
+			}
+			const rectF& window_rect()const {
+				return mWindow;
 			}
 
 			ManagerNode insert(const rectF& workingArea, std::size_t managerIndex) {
@@ -127,7 +132,6 @@ namespace badEngine {
 						sub.mStorage->prune_empty_branches();
 				}
 			}
-
 			void count_branches(std::size_t& counter)const noexcept {
 				for (const auto& subwindow : mSubWindows) {
 					if (subwindow.mStorage) {
@@ -233,15 +237,6 @@ namespace badEngine {
 				if (handle.confirmBookKeeping) {
 					mWorkers[handle.mWorkerIndex].mManagerIndex = handle.mManagerIndex;
 				}
-			}
-			//BUGED LOGIC
-			bool try_set_new_pos_to_worker(std::size_t workerIndex, const rectF& newSize) {
-				//check if new area is withing this window
-				if (!mWindow.contains(newSize))
-					return false;
-				//assign
-				mWorkers[workerIndex].mWorkerArea = newSize;
-				return true;
 			}
 		};
 
@@ -364,32 +359,29 @@ namespace badEngine {
 			}
 			mManagers.remove_unpreserved_order(mManagers.begin() + removeIndex);
 		}
+
+
 		void relocate(SequenceM<std::pair<std::size_t, rectF>>& pendingRelocations) {
-
-
-			//std::sort(pendingRelocations.begin(), pendingRelocations.end(), [](const std::pair<std::size_t, rectF>& A, const std::pair<std::size_t, rectF>& B) {
-			//	return A.first < B.first;
-			//	});
-
+		
 			for (std::size_t i = 0; i < pendingRelocations.size(); ++i) {
 				//cache info
 				auto& pender = pendingRelocations[i];
 				auto& RELOCATE_NODE = mManagers[pender.first].second;//this is ManagerNode
-				//try this
-				//if (RELOCATE_NODE.mWorkingWindow->try_set_new_pos_to_worker(RELOCATE_NODE.mWorkerIndex, pender.second))
-					//continue;
-				//then that
+
+				const bool ifKnowLocation = RELOCATE_NODE.mWorkingWindow->window_rect().contains(pender.second);
+
 				auto tellManagerAboutWorker = RELOCATE_NODE.mWorkingWindow->remove(RELOCATE_NODE.mWorkerIndex, pender.first);
 				//maybe need to update manager
 				if (tellManagerAboutWorker.confirmBookKeeping) {
 					mManagers[tellManagerAboutWorker.mManagerIndex].second.mWorkerIndex = tellManagerAboutWorker.mWorkerIndex;
 				}
-
-				auto NEW_NODE = mRoot.insert(pender.second, pender.first);
-
+		
+				auto NEW_NODE = ifKnowLocation? RELOCATE_NODE.mWorkingWindow->insert(pender.second, pender.first) : mRoot.insert(pender.second, pender.first);
+		
 				RELOCATE_NODE.mWorkingWindow = NEW_NODE.mWorkingWindow;
 				RELOCATE_NODE.mWorkerIndex = NEW_NODE.mWorkerIndex;
 			}
 		}
+
 	};
 }
