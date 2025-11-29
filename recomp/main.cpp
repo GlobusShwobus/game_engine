@@ -62,7 +62,7 @@ int main() {
 
     QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
 
-    for (int i = 0; i < 5000; i++) {
+    for (int i = 0; i < 10000; i++) {
         //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
         float boxWidth = rng.random_float(1, 10);
         float boxHeight = rng.random_float(1, 10);
@@ -191,8 +191,7 @@ int main() {
             relocations.emplace_back(i, std::move(newBox));
         }
 
-        //std::cout << relocations.size() << '\n';
-        //auto colliders = myObjsQuad.search_collisions();
+        auto colliders = myObjsQuad.search_collisions();
         myObjsQuad.relocate(relocations);
 
         static int justSomeCounter = 0;
