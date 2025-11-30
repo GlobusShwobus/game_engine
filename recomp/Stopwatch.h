@@ -6,9 +6,10 @@ namespace badEngine {
 
 	class Stopwatch {
 
-		using Floatsec = std::chrono::duration<float>;
+		using Valuesec = std::chrono::duration<double>;
 		using Millisec = std::chrono::milliseconds;
 		using Microsec = std::chrono::microseconds;
+		using Nanosec  = std::chrono::nanoseconds;
 
 		template<typename DurationType = Millisec>
 		DurationType delta_time()noexcept {
@@ -18,18 +19,22 @@ namespace badEngine {
 		}
 
 	public:
-		Stopwatch()noexcept {
-			mWatch = std::chrono::steady_clock::now();
+		Stopwatch()noexcept 
+		:mWatch(std::chrono::steady_clock::now())
+		{
 		}
 
-		float dt_float()noexcept {
-			return delta_time<Floatsec>().count();
+		double dt_float()noexcept {
+			return delta_time<Valuesec>().count();
 		}
 		std::size_t dt_millisec()noexcept {
 			return delta_time<Millisec>().count();
 		}
 		std::size_t dt_microsec()noexcept {
 			return delta_time<Microsec>().count();
+		}
+		std::size_t dt_nanosec()noexcept {
+			return delta_time<Nanosec>().count();
 		}
 
 		void reset()noexcept {

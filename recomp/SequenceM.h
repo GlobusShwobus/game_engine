@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdexcept>
 #include <memory>
 #include "badUtility.h"
+#include "BadExceptions.h"
 
 namespace badEngine {
 
@@ -177,89 +177,131 @@ namespace badEngine {
 		using const_iterator = Const_Iterator;
 
 		//iterator access
-		constexpr iterator       begin()  noexcept { return  mArray; }
-		constexpr iterator       end()    noexcept { return  mArray + mUsableSize; }
-		constexpr const_iterator begin()  const noexcept { return  mArray; }
-		constexpr const_iterator end()    const noexcept { return  mArray + mUsableSize; }
-		constexpr const_iterator cbegin() const noexcept { return  mArray; }
-		constexpr const_iterator cend()   const noexcept { return  mArray + mUsableSize; }
+		constexpr iterator begin()noexcept {
+			return  mArray;
+		}
+		constexpr iterator end()noexcept {
+			return  mArray + mUsableSize;
+		}
+		constexpr const_iterator begin()const noexcept {
+			return  mArray;
+		}
+		constexpr const_iterator end()const noexcept {
+			return  mArray + mUsableSize;
+		}
+		constexpr const_iterator cbegin()const noexcept {
+			return  mArray; 
+		}
+		constexpr const_iterator cend()const noexcept {
+			return  mArray + mUsableSize;
+		}
 
 		//meta access
-		constexpr pointer          data() noexcept { return  mArray; }
-		constexpr const_pointer    data() const noexcept { return  mArray; }
+		constexpr pointer data() noexcept {
+			return  mArray; 
+		}
+		constexpr const_pointer data() const noexcept {
+			return  mArray; 
+		}
 
 		//basic access
 		constexpr reference front() {
-			empty_array_error();
+			assert(mUsableSize > 0 && "front() called on empty container");
 			return mArray[0];
 		}
 		constexpr const_reference front()const {
-			empty_array_error();
+			assert(mUsableSize > 0 && "front() called on empty container");
 			return mArray[0];
 		}
 		constexpr reference back() {
-			empty_array_error();
+			assert(mUsableSize > 0 && "back() called on empty container");
 			return mArray[mUsableSize - 1];
 		}
 		constexpr const_reference back()const {
-			empty_array_error();
+			assert(mUsableSize > 0 && "back() called on empty container");
 			return mArray[mUsableSize - 1];
 		}
-		constexpr reference       operator[](size_type index) { return mArray[index]; }
-		constexpr const_reference operator[](size_type index)const { return mArray[index]; }
-		constexpr reference at(size_type index) {
-			out_of_range_access(index);
+		constexpr reference operator[](size_type index) {
+			assert(index < mUsableSize && "operator[] access with out of range index");
 			return mArray[index];
 		}
-		constexpr const_reference at(size_type index)const {
-			out_of_range_access(index);
+		constexpr const_reference operator[](size_type index)const { 
+			assert(index < mUsableSize && "operator[] access with out of range index");
+			return mArray[index]; 
+		}
+		reference at(size_type index) {
+			if (index >= mUsableSize)
+				throw BAD_BASIC_EXCEPTION("at() access with out of range index");
+			return mArray[index];
+		}
+		const_reference at(size_type index)const {
+			if (index >= mUsableSize)
+				throw BAD_BASIC_EXCEPTION("at() access with out of range index");
 			return mArray[index];
 		}
 
 		//meta data
-		constexpr size_type size()         const noexcept { return mUsableSize; }
-		constexpr size_type capacity()     const noexcept { return mCapacity; }
-		constexpr size_type storage_left() const noexcept { return mCapacity - mUsableSize; }
+		constexpr size_type size()const noexcept { 
+			return mUsableSize;
+		}
+		constexpr size_type capacity() const noexcept {
+			return mCapacity;
+		}
+		constexpr size_type storage_left() const noexcept {
+			return mCapacity - mUsableSize;
+		}
+		constexpr bool isEmpty()const noexcept { 
+			return mUsableSize == EMPTY_GUARD;
+		}
 
-		constexpr bool empty()             const noexcept { return mUsableSize == EMPTY_GUARD; }
-
-		//setters for vector growth reistors
-		constexpr void set_growth_resist_high()     noexcept { mGrowthResistor = GROWTH_HIGH_RESIST; }
-		constexpr void set_growth_resist_medium()   noexcept { mGrowthResistor = GROWTH_MEDIUM_RESIST; }
-		constexpr void set_growth_resist_low()      noexcept { mGrowthResistor = GROWTH_LOW_RESIST; }
-		constexpr void set_growth_resist_negative() noexcept { mGrowthResistor = GROWTH_NEGATIVE_RESIST; }
+		//setters for vector growth resistors
+		constexpr void set_growth_resist_high()noexcept { 
+			mGrowthResistor = GROWTH_HIGH_RESIST;
+		}
+		constexpr void set_growth_resist_medium()noexcept {
+			mGrowthResistor = GROWTH_MEDIUM_RESIST;
+		}
+		constexpr void set_growth_resist_low()noexcept { 
+			mGrowthResistor = GROWTH_LOW_RESIST;
+		}
+		constexpr void set_growth_resist_negative() noexcept {
+			mGrowthResistor = GROWTH_NEGATIVE_RESIST;
+		}
 
 	private:
 		//implementation critical functions
 
 		//memory handlers
+		constexpr size_type max_size()const noexcept {
+			return std::numeric_limits<size_type>::max() / sizeof(value_type);
+		}
 		pointer alloc_memory(size_type count) {
+			if (count > max_size())
+				throw BAD_BASIC_EXCEPTION("max size overflow error");
 			return static_cast<pointer>(::operator new(count * sizeof(value_type)));
 		}
 		pointer free_memory(pointer mem)noexcept {
 			::operator delete(mem);
 			return nullptr;
 		}
-		constexpr void deconstruct_objects(pointer begin, pointer end) {
+		void deconstruct_objects(pointer begin, pointer end)noexcept {
 			std::destroy(begin, end);
-		}
-		constexpr void destroy_if_nontrivial(pointer ptr) noexcept {
-			if constexpr (!std::is_trivially_destructible_v<value_type>)
-				std::destroy_at(ptr);
 		}
 
 		//internal ptr usage
-		pointer pBegin_mem()noexcept { return mArray; }
-		pointer pEnd_usable()noexcept { return mArray + mUsableSize; }
-		pointer pEnd_constructed()noexcept { return mArray + mConstructedSize; }
+		pointer pBegin_mem()noexcept {
+			return mArray; 
+		}
+		pointer pEnd_usable()noexcept {
+			return mArray + mUsableSize; 
+		}
+		pointer pEnd_constructed()noexcept {
+			return mArray + mConstructedSize;
+		}
 
 		//growth math
 		constexpr size_type growthFactor(size_type seed)const noexcept {
 			return size_type(seed + (seed / mGrowthResistor) + 1);
-		}
-		//check if there are constructed dangling objects
-		constexpr bool has_constructed_slots()const noexcept {
-			return (mConstructedSize - mUsableSize) > EMPTY_GUARD;
 		}
 		//allocator method
 		template<typename constructorPredicate> requires std::predicate<constructorPredicate, pointer, size_type>
@@ -411,7 +453,7 @@ namespace badEngine {
 			//current end point
 			pointer slot = pEnd_usable();
 			//if there is a constructed but depricated slot, copy assign into it
-			if (has_constructed_slots()) {
+			if ((mConstructedSize - mUsableSize) > EMPTY_GUARD) {
 				*slot = value;
 			}
 			//if there aren't any slots remaining, need official constructor
@@ -434,10 +476,14 @@ namespace badEngine {
 			//current end point
 			pointer slot = pEnd_usable();
 			//if there is a constructed but depricated slot must destroy it first
-			if (has_constructed_slots())
-				destroy_if_nontrivial(slot);
-			else //otherwise need to increment mConstructedSize bookkeeping
+			if ((mConstructedSize - mUsableSize) > EMPTY_GUARD) {
+				if constexpr (!std::is_trivially_destructible_v<value_type>) {
+					std::destroy_at(slot);
+				}
+			}
+			else { //otherwise need to increment mConstructedSize bookkeeping
 				++mConstructedSize;
+			}
 			//construct the element
 			std::construct_at(slot, std::forward<Args>(args)...);
 			//in any case after adding incr usable size
@@ -445,7 +491,7 @@ namespace badEngine {
 		}
 		//does nothing besides decrementing counter
 		constexpr void pop_back()noexcept {
-			if (!empty())
+			if (!isEmpty())
 				--mUsableSize;
 		}
 		//basically erase
@@ -530,17 +576,5 @@ namespace badEngine {
 		static constexpr float     GROWTH_MEDIUM_RESIST = 2.0f;
 		static constexpr float     GROWTH_LOW_RESIST = 1.0f;
 		static constexpr float     GROWTH_NEGATIVE_RESIST = 0.80f;
-
-		//errors
-		constexpr void empty_array_error()const {
-			if (empty())
-				throw std::out_of_range("calling function on an empty sequence");
-			//assert(mValidSize > EMPTY_GUARD); if check is slow in testing, opt for assert instead
-		}
-		constexpr void out_of_range_access(size_type index)const {
-			if (index >= size())
-				throw std::out_of_range("position out of range");
-			//assert(mValidSize > EMPTY_GUARD && index < mValidSize); if check is slow in testing, opt for assert instead
-		}
 	};
 }

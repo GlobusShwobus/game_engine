@@ -113,7 +113,7 @@ namespace badEngine {
 				}
 			}
 			bool has_workers_recursive()const noexcept {
-				if (!mWorkers.empty())return true;
+				if (!mWorkers.isEmpty())return true;
 
 				for (const auto& sub : mSubWindows)
 					if (sub.mStorage && sub.mStorage->has_workers_recursive())

@@ -1,8 +1,11 @@
 #pragma once
 #include <stdexcept>
+#include <cassert>
 #include <string>
 
 namespace badEngine {
+
+#define BAD_BASIC_EXCEPTION(note) BadException(__FILE__, __LINE__, note)
 
 	class BadException : public std::exception {
 	
