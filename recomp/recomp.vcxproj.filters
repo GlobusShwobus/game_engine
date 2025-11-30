@@ -79,6 +79,9 @@
     <ClInclude Include="Collision.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
+    <ClInclude Include="BadExceptions.h">
+      <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

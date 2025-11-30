@@ -5,7 +5,6 @@
 #include <memory>
 #include <array>
 /*
-TODO: recheck collision logic
 TODO: recheck extras
 */
 

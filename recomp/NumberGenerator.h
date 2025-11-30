@@ -2,6 +2,7 @@
 
 #include <random>
 #include <memory>
+#include "BadExceptions.h"
 
 namespace badEngine {
 
@@ -10,34 +11,25 @@ namespace badEngine {
 		std::unique_ptr<std::mt19937> rng;
 
 	public:
-		NumberGenerator()
-			:rng(std::make_unique<std::mt19937>(std::random_device{}())) {
+		NumberGenerator() {
+			try {
+				rng = std::make_unique<std::mt19937>(std::random_device{}());
+			}
+			catch (const std::runtime_error& e) {
+				throw BadException(__FILE__, __LINE__, "No entropy source for std::random_device");
+			}
 		}
 
 
 		int random_int(int min, int max)const noexcept {
+			assert(min <= max && "Invalid logic: min is more than max");
 			return std::uniform_int_distribution<int>(min, max)(*rng);
 		}
 
 		float random_float(float min, float max)const noexcept {
+			assert(min <= max && "Invalid logic: min is more than max");
 			return std::uniform_real_distribution<float>(min, max)(*rng);
 		}
-
-		/*
-		//DEPRICATED (over templetization)
-		//also requries #include badUtility
-		template <typename T>
-			requires IS_INTEGER_TYPE_T<T> || IS_FLOATING_TYPE_T<T>
-		T get_random(T min, T max)const {
-
-			if constexpr (IS_INTEGER_TYPE_T<T>) {
-				return std::uniform_int_distribution<T>(min, max)(*rng);
-			}
-			else {
-				return std::uniform_real_distribution<T>(min, max)(*rng);
-			}
-		}
-		*/
 	};
 
 }
