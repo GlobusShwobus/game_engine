@@ -20,7 +20,10 @@ namespace badEngine {
 	concept IS_LESS_THAN_COMPARABLE = requires (T a, T b) {
 		{ a < b }->std::convertible_to<bool>;
 	};
-
+	template <typename PtrPredicate, typename Pointer, typename Sizetype>
+	concept PtrPredicateFunc = requires(PtrPredicate func, Pointer p, Sizetype n) {
+		{ func(p, n) }->std::same_as<Pointer>;
+	};
 	template <typename T>
 	concept IS_SEQUENCE_COMPATIBLE =
 		std::destructible<T> &&

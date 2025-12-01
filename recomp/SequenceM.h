@@ -1,4 +1,10 @@
 #pragma once
+/*
+Does not guarantee safety against invariance on reallocation failure beyond conceptual requirements of
+std::is_nothrow_move_constructible_v and std::is_nothrow_move_assignable_v.
+Concepts should protect against invariance up front, but if in any case something was to happen mid way an operation
+then invariance WILL happen.
+*/
 
 #include <memory>
 #include "badUtility.h"
@@ -303,19 +309,20 @@ namespace badEngine {
 		constexpr size_type growthFactor(size_type seed)const noexcept {
 			return size_type(seed + (seed / mGrowthResistor) + 1);
 		}
-		//allocator method
-		template<typename constructorPredicate> requires std::predicate<constructorPredicate, pointer, size_type>
-		pointer alloc_and_construct(constructorPredicate constructor, size_type size) {
-			pointer destination = alloc_memory(size);
-			pointer initialized = destination;
+		//allocator method, on failure guaranteed clean up and nullptr
+		template<PtrPredicateFunc<pointer, size_type> ConstructorPred>
+		pointer alloc_and_construct(ConstructorPred constructor, size_type size) {
+			pointer destination = nullptr;
+			pointer initialized = nullptr;
 
 			try {
+				destination = alloc_memory(size);
 				initialized = constructor(destination, size);
 			}
 			catch (...) {
 				deconstruct_objects(destination, initialized);
 				destination = free_memory(destination);
-				throw std::runtime_error("POSSIBLE ERRORS: faulty predicate or T object constructors");
+				throw;
 			}
 
 			return destination;
@@ -328,11 +335,9 @@ namespace badEngine {
 			pointer constructedMem = alloc_and_construct([from, to](pointer dest, size_type n) {
 				return std::uninitialized_move(from, to, dest);
 				}, newSize);
-
-			//destroy current shit
+			//destroy current
 			deconstruct_objects(pBegin_mem(), pEnd_constructed());
 			mArray = free_memory(mArray);
-			//set new shit
 			mArray = constructedMem;
 			mCapacity = newSize;
 
@@ -342,7 +347,7 @@ namespace badEngine {
 			mConstructedSize = mUsableSize;
 		}
 		//basic setter
-		constexpr void initalize(pointer data, size_type size) noexcept {
+		constexpr void basic_construction_setter(pointer data, size_type size) noexcept {
 			mArray = data;
 			mUsableSize = size;
 			mConstructedSize = size;
@@ -360,7 +365,7 @@ namespace badEngine {
 					return std::uninitialized_value_construct_n(dest, n);
 					}, count);
 
-				initalize(constructedMemory, count);
+				basic_construction_setter(constructedMemory, count);
 			}
 		}
 		SequenceM(size_type count, const_reference value)
@@ -371,7 +376,7 @@ namespace badEngine {
 					return std::uninitialized_fill_n(dest, n, value);
 					}, count);
 
-				initalize(constructedMemory, count);
+				basic_construction_setter(constructedMemory, count);
 			}
 		}
 		SequenceM(std::initializer_list<value_type> init)
@@ -383,7 +388,7 @@ namespace badEngine {
 					return std::uninitialized_copy(init.begin(), init.end(), dest);
 					}, size);
 
-				initalize(constructedMemory, size);
+				basic_construction_setter(constructedMemory, size);
 			}
 		}
 		SequenceM(const SequenceM& rhs)
@@ -395,15 +400,24 @@ namespace badEngine {
 					return std::uninitialized_copy(rhs.begin(), rhs.end(), dest);
 					}, size);
 
-				initalize(constructedMemory, size);
+				basic_construction_setter(constructedMemory, size);
 			}
 		}
 		constexpr SequenceM(SequenceM&& rhs)noexcept {
-			mArray = std::exchange(rhs.mArray, nullptr);
-			mUsableSize = std::exchange(rhs.mUsableSize, 0);
-			mConstructedSize = std::exchange(rhs.mConstructedSize, 0);
-			mCapacity = std::exchange(rhs.mCapacity, 0);
-			mGrowthResistor = std::exchange(rhs.mGrowthResistor, 0);
+			mArray = rhs.mArray;
+			rhs.mArray = nullptr;
+
+			mUsableSize = rhs.mUsableSize;
+			rhs.mUsableSize = 0;
+
+			mConstructedSize = rhs.mConstructedSize;
+			rhs.mConstructedSize = 0;
+
+			mCapacity = rhs.mCapacity;
+			rhs.mCapacity = 0;
+
+			mGrowthResistor = rhs.mGrowthResistor;
+			rhs.mGrowthResistor = GROWTH_MEDIUM_RESIST;
 		}
 		SequenceM& operator=(SequenceM rhs)noexcept {
 			//using swap idiom
@@ -416,7 +430,7 @@ namespace badEngine {
 			temp.swap(*this);
 			return *this;
 		}
-		~SequenceM() {
+		~SequenceM()noexcept {//compiler didn't implicitly add noexcept (?) it should
 			reset();
 		}
 		//swap
@@ -441,6 +455,7 @@ namespace badEngine {
 				mUsableSize = 0;
 				mConstructedSize = 0;
 				mCapacity = 0;
+				mGrowthResistor = GROWTH_MEDIUM_RESIST;
 			}
 		}
 		//copies elements
@@ -501,11 +516,10 @@ namespace badEngine {
 			pointer target = pos.base();
 			pointer begin = pBegin_mem();
 			pointer end = pEnd_usable();
-			//TODO::maybe assert so at runtime it would just YOLO
-			if (target < begin || target >= end)
-				throw std::out_of_range("position out of range");
-			//skip deconstructing the object (since it's not like it saves memory and it should not be accessed anyway)
-			std::move(target + 1, end, target);//from, till, into
+
+			assert(target >= begin && target < end && "position out of range");
+			//from, till, into... can theoretically throw std::bad_alloc but concept requirements should protect against most faults up front
+			std::move(target + 1, end, target);
 			//reminder: constructed object counter DOES NOT CHANGE
 			--mUsableSize;
 		}
@@ -515,14 +529,12 @@ namespace badEngine {
 		{
 			pointer targetBegin = first.base();
 			pointer targetEnd = last.base();
-			//if range is 0 then there is nothing to remove (MAY BE FLAWED LOGIC)
-			if (targetBegin == targetEnd) return;
-
 			pointer arrayBegin = pBegin_mem();
 			pointer arrayEnd = pEnd_usable();
-			//TODO::maybe assert so at runtime it would just YOLO
-			if (targetBegin < arrayBegin || targetEnd > arrayEnd || targetEnd < targetBegin)
-				throw std::out_of_range("position out of range or invalid ordering");
+			assert(arrayBegin <= targetBegin && targetBegin <= targetEnd && targetEnd <= arrayEnd && "position invalidation");
+
+			//if range is 0 then there is nothing to remove (MAY BE FLAWED LOGIC)
+			if (targetBegin == targetEnd) return;
 
 			//if target end is not arrays end then move the elements from targets end until arry end into target begin (cutting of the middle chunck)	
 			//otherwise, since we skip deconstruction, just skip the step
@@ -539,9 +551,8 @@ namespace badEngine {
 			pointer target = pos.base();
 			pointer begin = pBegin_mem();
 			pointer end = pEnd_usable();
-			//TODO::maybe assert so at runtime it would just YOLO
-			if (target < begin || target >= end)
-				throw std::out_of_range("position out of range");
+			
+			assert(begin <= target && target < end && "position invalidation");
 
 			//end is one off the end so first update the end
 			--end;
@@ -552,7 +563,7 @@ namespace badEngine {
 		}
 		//reserves more memory if condition is met
 		void reserve(size_type newCapacity) {
-			//when reserving, just cut off the dangling end, doesn't make a diff here
+			//note: when reserving, any objects between usable and constructed get destroyed, which is good
 			if (newCapacity > mCapacity)
 				reallocate(newCapacity);
 		}
