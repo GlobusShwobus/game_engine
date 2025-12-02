@@ -31,15 +31,8 @@ int main() {
     using namespace badEngine;
 
     //configs
-    Configs windowConfig;
+    Configs windowConfig("SystemManagerConfig.json");
 
-    try {
-        windowConfig.init_from_file("SystemManagerConfig.json");
-    }
-    catch (const std::exception& excpt) {
-        printf(excpt.what());
-        return -1;
-    }
     //init SDL system, can throw
     RenderManager renManager;
     try {

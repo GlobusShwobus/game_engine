@@ -237,12 +237,12 @@ namespace badEngine {
 		}
 		reference at(size_type index) {
 			if (index >= mUsableSize)
-				throw BAD_BASIC_EXCEPTION("at() access with out of range index");
+				throw BadException(__FILE__, __LINE__, "at() access with out of range index");
 			return mArray[index];
 		}
 		const_reference at(size_type index)const {
 			if (index >= mUsableSize)
-				throw BAD_BASIC_EXCEPTION("at() access with out of range index");
+				throw BadException(__FILE__, __LINE__, "at() access with out of range index");
 			return mArray[index];
 		}
 
@@ -283,7 +283,7 @@ namespace badEngine {
 		}
 		pointer alloc_memory(size_type count) {
 			if (count > max_size())
-				throw BAD_BASIC_EXCEPTION("max size overflow error");
+				throw BadException(__FILE__, __LINE__, "max size overflow error");
 			return static_cast<pointer>(::operator new(count * sizeof(value_type)));
 		}
 		pointer free_memory(pointer mem)noexcept {
