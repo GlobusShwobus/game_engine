@@ -31,20 +31,30 @@ namespace badEngine {
 		!std::is_const_v<T>;
 
 	template <typename T> requires IS_LESS_THAN_COMPARABLE<T>
-	constexpr auto mValue_max(const T& x, const T& y)noexcept {
+	constexpr auto bad_maxV(const T& x, const T& y)noexcept {
 		return (x < y) ? y : x;
 	}
 	template<typename T> requires IS_LESS_THAN_COMPARABLE<T>
-	constexpr auto mValue_min(const T& x, const T& y)noexcept {
+	constexpr auto bad_minV(const T& x, const T& y)noexcept {
 		return (x < y) ? x : y;
 	}
 
-	template<typename T>requires IS_MATHMATICAL_VECTOR_T<T>
+	template<typename T>requires IS_MATHMATICAL_T<T>
 	constexpr bool isMinus(T x)noexcept {
 		return x < 0;
 	}
-	template<typename T>requires IS_MATHMATICAL_VECTOR_T<T>
+	template<typename T>requires IS_MATHMATICAL_T<T>
 	constexpr bool isPlus(T x)noexcept {
 		return x > 0;
+	}
+	template<typename T> requires IS_MATHMATICAL_T<T>
+	constexpr void swap_numerical(T& n1, T& n2)noexcept {
+		T temp = n1;
+		n1 = n2;
+		n2 = temp;
+	}
+	template<typename T> requires IS_FLOATING_TYPE_T<T>
+	constexpr bool bad_isNaN(T x)noexcept {
+		return x != x;
 	}
 }

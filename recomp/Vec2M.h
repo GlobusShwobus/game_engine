@@ -2,7 +2,9 @@
 
 #include "badUtility.h"
 #include <cmath>
-
+/*
+NOTE: no operator overlaod checks for NAN or INFINITY. functions provide some checks
+*/
 namespace badEngine {
 
 	template <typename T>
@@ -15,12 +17,12 @@ namespace badEngine {
 		constexpr Vec2M(T X, T Y)noexcept :x(X), y(Y) {}
 		//CONVERSION CONSTRUCTOR
 		template <typename S>
-		constexpr Vec2M(const Vec2M<S>& rhs)noexcept :x(T(rhs.x)), y(T(rhs.y)) {}
+		constexpr Vec2M(const Vec2M<S>& rhs)noexcept :x(static_cast<T>(rhs.x)), y(static_cast<T>(rhs.y)) {}
 		//CONVERSION ASSIGNMENT
 		template <typename S>
 		constexpr Vec2M& operator=(const Vec2M<S>& rhs)noexcept {
-			x = T(rhs.x);
-			y = T(rhs.y);
+			x = static_cast<T>(rhs.x);
+			y = static_cast<T>(rhs.y);
 			return *this;
 		}
 
@@ -55,7 +57,7 @@ namespace badEngine {
 		template<typename S>
 			requires IS_MATHMATICAL_T<S>
 		constexpr Vec2M<float> operator*(const S scalar)const noexcept {
-			return Vec2M<float>(float(x) * scalar, float(y) * scalar);
+			return Vec2M<float>(static_cast<float>(x) * scalar, static_cast<float>(y) * scalar);
 		}
 		template<typename S>
 			requires IS_MATHMATICAL_T<S>
@@ -69,7 +71,7 @@ namespace badEngine {
 		template<typename S>
 			requires IS_MATHMATICAL_T<S>
 		constexpr Vec2M<float> operator/(const S scalar)const noexcept {
-			return Vec2M<float>(float(x) / scalar, float(y) / scalar);
+			return Vec2M<float>(static_cast<float>(x) / scalar, static_cast<float>(y) / scalar);
 		}
 		template<typename S>
 			requires IS_MATHMATICAL_T<S>
@@ -113,13 +115,13 @@ namespace badEngine {
 	template<typename T, typename U>
 		requires IS_MATHMATICAL_T<T>
 	Vec2M<float> operator*(T scalar, const Vec2M<U>& v)noexcept {
-		return Vec2M<float>(float(v.x) * scalar, float(v.y) * scalar);
+		return Vec2M<float>(static_cast<float>(v.x) * scalar, static_cast<float>(v.y) * scalar);
 	}
 
 	template<typename T, typename U> 
 		requires IS_MATHMATICAL_T<T>
 	Vec2M<float> operator/(T scalar, const Vec2M<U>& v)noexcept {
-		return Vec2M<float>(float(v.x) / scalar, float(v.y) / scalar);
+		return Vec2M<float>(static_cast<float>(v.x) / scalar, static_cast<float>(v.y) / scalar);
 	}
 
 
@@ -136,36 +138,51 @@ namespace badEngine {
 	inline float length_vector(const Vec2M<T>& v)noexcept {
 		return std::sqrt(static_cast<float>((v.x * v.x) + (v.y * v.y)));
 	}
+	//if dot of vectors is 0, returns NAN
+	//if product of lenghts is 0, returns NAN
 	template <typename T>
 	inline float angle_vector(const Vec2M<T>& v1, const Vec2M<T>& v2)noexcept {
+
+		const float dot = dot_vector(v1, v2);
+		if (dot == 0)
+			return NAN;
+
 		const float len1 = length_vector(v1);
 		const float len2 = length_vector(v2);
 
 		if (len1 == 0.0f || len2 == 0.0f)
-			return std::numeric_limits<float>::max();
+			return NAN;
 
-		const float cosAlpha = dot_vector(v1, v2) / (len1 * len2);
+		const float cosAlpha = dot / (len1 * len2);
 
 		return std::acosf(cosAlpha);
 	}
-	template <typename T>
-	constexpr vec2d reciprocal_vector(const Vec2M<T>& v)noexcept {
-		return vec2d(1.0f / v.x, 1.0f / v.y);
-	}
-
+	//if length of the vector is 0, then returns a vec2d(NAN,NAN)
 	template <typename T>
 	inline vec2d unit_vector(const Vec2M<T>& v) noexcept {
-		const float length = length_vector(v);
-		return vec2d(v.x / length, v.y / length);
+
+		const float len = length_vector(v);
+
+		if (len == 0.0f)
+			return vec2d(NAN, NAN);
+		
+		if (v.x == 0.0f)
+			return vec2d(0.0f, (v.y > 0.0f) ? 1.0 : -1.0);
+		if (v.y == 0.0f)
+			return vec2d((v.x > 0.0f) ? 1.0f : -1.0f, 0.0f);
+
+		return vec2d(v.x / len, v.y / len);
 	}
 
 	template <typename T>
 	constexpr auto normal_vector(Vec2M<T> v)noexcept {
 		if (v.x > 0) v.x = 1;
 		else if (v.x < 0) v.x = -1;
+		else v.x = 0;
 
 		if (v.y > 0) v.y = 1;
 		else if (v.y < 0) v.y = -1;
+		else v.y = 0;
 
 		return v;
 	}

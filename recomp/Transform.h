@@ -1,26 +1,19 @@
 #pragma once
 
 #include "Rectangle.h"
-#include <utility>
-
-#include "Color.h"//TEMP FOR TESTING
 
 namespace badEngine {
 
-	template <typename T>
-		requires IS_MATHMATICAL_VECTOR_T<T>
 	class Transform {
 
 	public:
 
 		//CONSTRUCTORS
 		constexpr Transform()noexcept = default;
-		constexpr Transform(Rectangle<T> rectangle, Vec2M<T> velocity)noexcept
-			:mBox(std::move(rectangle)), mVelocity(std::move(velocity)), mCurrVelocity(mVelocity) {
-		}
-		constexpr Transform(Rectangle<T> rectangle)noexcept
-			:mBox(std::move(rectangle)) {
-		}
+		constexpr Transform(const rectF& rectangle, const vec2f& velocity)noexcept
+			:mBox(rectangle), mVelocity(velocity), mCurrVelocity(mVelocity) {}
+		constexpr Transform(const rectF& rectangle)noexcept
+			:mBox(rectangle) {}
 
 		void update_position()noexcept {
 			mBox.increment_pos(mCurrVelocity);
@@ -31,11 +24,8 @@ namespace badEngine {
 
 	public:
 
-		Rectangle<T> mBox;
-		Vec2M<T> mVelocity;
-		Vec2M<T> mCurrVelocity;
+		rectF mBox;
+		vec2f mVelocity;
+		vec2f mCurrVelocity;
 	};
-
-	using TransformI = Transform<int>;
-	using TransformF = Transform<float>;
 }

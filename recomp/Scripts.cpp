@@ -39,11 +39,11 @@ namespace badEngine{
         }
     }
 
-    void script_do_continuous_collision_routine(SequenceM<TransformF*>& objects) {
+    void script_do_continuous_collision_routine(SequenceM<Transform*>& objects) {
         //second do first round of checks
         struct Colliders {
-            TransformF* A = nullptr;
-            TransformF* B = nullptr;
+            Transform* A = nullptr;
+            Transform* B = nullptr;
             float time = 1.0f;
         };
         const std::size_t objCount = objects.size();

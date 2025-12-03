@@ -4,26 +4,25 @@
 
 namespace badEngine {
 
-	template<typename T> requires IS_MATHMATICAL_VECTOR_T<T>
+	template<typename T> 
+		requires IS_MATHMATICAL_VECTOR_T<T>
 	class Rectangle {
 	public:
 		//CONSTRUCTORS
 		constexpr Rectangle()noexcept = default;
 		constexpr Rectangle(T x, T y, T w, T h) noexcept :x(x), y(y), w(w), h(h) {}
-
-		template <typename S>
-		constexpr Rectangle(const Vec2M<S>& pos, const Vec2M<S>& size) noexcept : x(T(pos.x)), y(T(pos.y)), w(T(size.x)), h(T(size.y)) {}
+		constexpr Rectangle(const Vec2M<T>& pos, const Vec2M<T>& size) noexcept : x(pos.x), y(pos.y), w(size.x), h(size.y) {}
 
 		//CONVERSION CONSTRUCTOR
 		template<typename S>
-		constexpr Rectangle(const Rectangle<S>& rhs)noexcept :x(T(rhs.x)), y(T(rhs.y)), w(T(rhs.w)), h(T(rhs.h)) {}
+		constexpr Rectangle(const Rectangle<S>& rhs)noexcept :x(static_cast<T>(rhs.x)), y(static_cast<T>(rhs.y)), w(static_cast<T>(rhs.w)), h(static_cast<T>(rhs.h)) {}
 		//CONVERSION ASSIGNMENT
 		template<typename S>
 		constexpr Rectangle& operator=(const Rectangle<S>& rhs)noexcept {
-			x = T(rhs.x);
-			y = T(rhs.y);
-			w = T(rhs.w);
-			h = T(rhs.h);
+			x = static_cast<T>(rhs.x);
+			y = static_cast<T>(rhs.y);
+			w = static_cast<T>(rhs.w);
+			h = static_cast<T>(rhs.h);
 			return *this;
 		}
 
@@ -60,13 +59,6 @@ namespace badEngine {
 				y + h > rhs.y;
 		}
 
-		constexpr vec2f get_center_point()const noexcept {
-			return get_pos() + get_half_size();
-		}
-		constexpr vec2f get_half_size()const noexcept {
-			return vec2f(w * 0.5f, h * 0.5f);
-		}
-
 		constexpr void set_pos(const Vec2M<T>& pos)noexcept {
 			x = pos.x;
 			y = pos.y;
@@ -86,6 +78,16 @@ namespace badEngine {
 		constexpr Vec2M<T> get_size()const noexcept {
 			return Vec2M<T>(w, h);
 		}
+		constexpr vec2f get_center_point()const noexcept {
+			return vec2f(
+				x + (w * 0.5f),
+				y + (h * 0.5f)
+			);
+		}
+		constexpr vec2f get_half_size()const noexcept {
+			return vec2f(w * 0.5f, h * 0.5f);
+		}
+
 
 	public:
 		T x = 0;
