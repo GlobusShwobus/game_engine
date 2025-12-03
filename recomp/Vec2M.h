@@ -132,10 +132,21 @@ namespace badEngine {
 	constexpr auto dot_vector(const Vec2M<T>& v1, const Vec2M<T>& v2)noexcept {
 		return (v1.x * v2.x) + (v1.y * v2.y);
 	}
-
 	template <typename T>
 	inline float length_vector(const Vec2M<T>& v)noexcept {
 		return std::sqrt(static_cast<float>((v.x * v.x) + (v.y * v.y)));
+	}
+	template <typename T>
+	inline float angle_vector(const Vec2M<T>& v1, const Vec2M<T>& v2)noexcept {
+		const float len1 = length_vector(v1);
+		const float len2 = length_vector(v2);
+
+		if (len1 == 0.0f || len2 == 0.0f)
+			return std::numeric_limits<float>::max();
+
+		const float cosAlpha = dot_vector(v1, v2) / (len1 * len2);
+
+		return std::acosf(cosAlpha);
 	}
 	template <typename T>
 	constexpr vec2d reciprocal_vector(const Vec2M<T>& v)noexcept {
