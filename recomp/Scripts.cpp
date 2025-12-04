@@ -37,6 +37,13 @@ namespace badEngine{
                 camera.zoom_towards(0.9f, mouseScreenPos);
             }
         }
+
+        if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+
+            camera.set_screen(event.window.data1, event.window.data2);
+
+        }
+
     }
 
     void script_do_continuous_collision_routine(SequenceM<Transform*>& objects) {

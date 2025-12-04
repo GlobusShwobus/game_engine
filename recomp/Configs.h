@@ -10,20 +10,17 @@ TODO: can do something interesting with JSON custom parsing using parser_callbac
 */
 namespace badEngine {
 
-#define BAD_CONFIG_EXCEPTION(note, code) Configs::ConfigException(note, __FILE__, __LINE__, code)
+#define BAD_CONFIG_EXCEPTION(type, note, code) Configs::ConfigException(__FILE__, __LINE__, type, note, code)
 
 	class Configs {
 	public:
 		class ConfigException :public BadException {
 		public:
-			ConfigException(const std::string& note, const char* file, unsigned int line, int error_code)
-				:BadException(file, line, note), error_code(error_code) {
+			ConfigException(const char* file, unsigned int line, const char* type, const std::string& description, int error_code)
+				:BadException(file, line, type, description), error_code(error_code) {
 			}
-			
-			void build_msg()override {
-				mMsg = "Exception at " + get_location() + "  code [" + std::to_string(error_code) + "]";
-				if (!mNote.empty())
-					mMsg += " : " + mNote;
+			std::string full_message()const noexcept override {
+				return "TYPE: " + mType + " at " + mLocation + " IS >> " + mDescription + " CODE " + std::to_string(error_code);
 			}
 			int get_code() const noexcept {
 				return error_code;
@@ -55,15 +52,15 @@ namespace badEngine {
 
 				file.seekg(0, std::ios::end);
 				if (file.tellg() == 0)
-					throw BAD_CONFIG_EXCEPTION("Config file is empty [" + std::string(path), -1);
+					throw BAD_CONFIG_EXCEPTION("File IO error", "Config file is empty [" + std::string(path)+"]", -1);
 				file.seekg(0, std::ios::beg);
 				data = nlohmann::json::parse(file, nullptr, true, false);//no custom parser, allow exceptions, don't ignore trailing commas
 			}
 			catch (const std::ios_base::failure& e) {
-				throw BAD_CONFIG_EXCEPTION("File IO error [" + std::string(path) + "] " + std::string(e.what()), e.code().value());
+				throw BAD_CONFIG_EXCEPTION("File IO error", "[" + std::string(path) + "] " + std::string(e.what()), e.code().value());
 			}
 			catch (const nlohmann::json::parse_error& e) {
-				throw BAD_CONFIG_EXCEPTION("JSON parse_error [" + std::string(path) + "] at byte {" + std::to_string(e.byte) + "} " + std::string(e.what()), e.id);
+				throw BAD_CONFIG_EXCEPTION("JSON parse_error", "[" + std::string(path) + "] at byte{" + std::to_string(e.byte) + "} " + std::string(e.what()), e.id);
 			}
 			catch (const ConfigException& e) {
 				throw;

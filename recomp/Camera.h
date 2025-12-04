@@ -2,7 +2,7 @@
 
 #include "Rectangle.h"
 #include "Vec2M.h"
-
+#include <cassert>
 namespace badEngine {
 
 	class Camera2D {
@@ -18,12 +18,15 @@ namespace badEngine {
 		}
 
 		void set_scale(float factor)noexcept {
-			if (factor > 0.0f) {
-				mScale = factor;
-			}
+			assert(factor > 0.0f && "scale can not be negative or zero");
+
+			/*
+			new size / old size = ratio
+			scale * ratio = new scale
+			*/
+
+			mScale = factor;
 		}
-
-
 		void zoom_towards(float factor, const vec2f& focus)noexcept {
 			//before zoom coordiante
 			vec2f worldBefore = screen_to_world_point(focus);
@@ -80,7 +83,7 @@ namespace badEngine {
 	private:
 		vec2f mOffset;
 
-		float mScale = 1.f;
+		float mScale = 1.0f;
 
 		vec2i mScreenSize;
 	};

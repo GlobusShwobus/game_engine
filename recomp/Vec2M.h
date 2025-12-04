@@ -166,12 +166,8 @@ namespace badEngine {
 		if (len == 0.0f)
 			return vec2d(NAN, NAN);
 		
-		if (v.x == 0.0f)
-			return vec2d(0.0f, (v.y > 0.0f) ? 1.0 : -1.0);
-		if (v.y == 0.0f)
-			return vec2d((v.x > 0.0f) ? 1.0f : -1.0f, 0.0f);
-
-		return vec2d(v.x / len, v.y / len);
+		const float invlen = 1.0f / len;
+		return vec2d(v.x * invlen, v.y * invlen);
 	}
 
 	template <typename T>

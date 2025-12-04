@@ -71,7 +71,6 @@ int main() {
     }
 
     Camera2D camera(960, 540);
-    camera.set_scale(1);
 
     float mouseBoxSize = 50.0f;
     bool mouseHeld = false;
@@ -81,7 +80,7 @@ int main() {
 
     bool plzDeleteArea = false;
     bool plzPruneMe = false;
-    renManager.enable_blend_mode();
+    renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
     float testMeAverage = 0.0f;
     std::size_t framesDone = 0;
@@ -102,7 +101,7 @@ int main() {
         frameHold = 0;//fucking oops...
 
         //CLEAR RENDERING
-        renManager.renderer_clear();
+        renManager.renderer_refresh();
 
         //LISTEN TO EVENTS
 
