@@ -40,7 +40,7 @@ namespace badEngine{
 
         if (event.type == SDL_EVENT_WINDOW_RESIZED) {
 
-            camera.set_screen(event.window.data1, event.window.data2);
+            camera.set_screen_update(event.window.data1, event.window.data2);
 
         }
 

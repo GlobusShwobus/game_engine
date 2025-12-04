@@ -13,20 +13,10 @@ namespace badEngine {
 		Camera2D(vec2i screenSize)noexcept :mScreenSize(std::move(screenSize)) {}
 
 		//SCALE AND ZOOM
-		float get_scale()const noexcept {
+		vec2f get_scale()const noexcept {
 			return mScale;
 		}
 
-		void set_scale(float factor)noexcept {
-			assert(factor > 0.0f && "scale can not be negative or zero");
-
-			/*
-			new size / old size = ratio
-			scale * ratio = new scale
-			*/
-
-			mScale = factor;
-		}
 		void zoom_towards(float factor, const vec2f& focus)noexcept {
 			//before zoom coordiante
 			vec2f worldBefore = screen_to_world_point(focus);
@@ -38,43 +28,53 @@ namespace badEngine {
 			mOffset += (worldBefore - worldAfter);
 		}
 
-
 		//SCREEN
 		vec2i get_screen()const noexcept {
 			return mScreenSize;
 		}
-		void set_screen(int screenWidth, int screenHeight)noexcept {
+		void set_screen_update(int screenWidth, int screenHeight)noexcept {
+			
+			auto old = mScreenSize;
 			mScreenSize = vec2i(screenWidth, screenHeight);
-		}
-		void set_screen(vec2i size)noexcept {
-			mScreenSize = std::move(size);
+
+			float proportionalX = static_cast<float>(mScreenSize.x) / old.x;
+			float proportionalY = static_cast<float>(mScreenSize.y) / old.y;
+
+			mScale.x *= proportionalX;
+			mScale.y *= proportionalY;
 		}
 
 		//TRANSLATE A BEWEEN WORLD AND SCREEN SPACE
 		template<typename S>
 		rectF world_to_screen(const Rectangle<S>& worldRect)const noexcept {
 			return rectF(
-				(worldRect.get_pos() - mOffset) * mScale,
-				worldRect.get_size() * mScale
+				(worldRect.x - mOffset.x) * mScale.x,
+				(worldRect.y - mOffset.y) * mScale.y,
+				worldRect.w * mScale.x,
+				worldRect.h * mScale.y
 			);
 		}
 		vec2f screen_to_world_point(const vec2f& screenPoint)const noexcept {
 			return vec2f(
-				(screenPoint / mScale) + mOffset);
+				(screenPoint.x / mScale.x) + mOffset.x,
+				(screenPoint.y / mScale.y) + mOffset.y
+			);
 		}
 		
 		rectF get_view_rect()const noexcept {
 			return rectF(
-				mOffset, mScreenSize / mScale
+				mOffset, vec2f(mScreenSize.x / mScale.x, mScreenSize.y / mScale.y)
 			);
 		}
 
 		void focus_on(const vec2f& point)noexcept {
-			mOffset = point - (mScreenSize * 0.5f) / mScale;
+			mOffset.x = point.x - (mScreenSize.x * 0.5f) / mScale.x;
+			mOffset.y = point.y - (mScreenSize.y * 0.5f) / mScale.y;
 		}
 		
 		void pan(vec2f point)noexcept {
-			mOffset += point / mScale;
+			mOffset.x += point.x / mScale.x;
+			mOffset.y += point.y / mScale.y;
 		}
 		void pan(float x, float y)noexcept {
 			pan(vec2f(x, y));
@@ -83,7 +83,7 @@ namespace badEngine {
 	private:
 		vec2f mOffset;
 
-		float mScale = 1.0f;
+		vec2f mScale = vec2f(1.0f, 1.0f);
 
 		vec2i mScreenSize;
 	};
