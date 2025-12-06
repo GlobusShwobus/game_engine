@@ -44,15 +44,6 @@ namespace badEngine {
 		//set_source_size(vec2f(GylphWidth, GylphHeight));
 		//set_dest_size(vec2f(GylphWidth, GylphHeight));
 	}
-	
-	void Font::draw(SDL_Renderer* renderer, const vec2f& pos) {
-		for (const auto& letter : mLetterPos) {
-			set_source_pos(letter.mSourcePos);
-			set_dest_pos(letter.mDestPos);
-			Sprite::draw(renderer);
-		}
-	}
-
 	void Font::set_text(std::string_view string, const vec2f& pos)noexcept {
 		clear_text();
 		const float scaledW = mGlyphWidth * mScale;

@@ -53,6 +53,10 @@ namespace badEngine {
 		inline void set_dest_size(const vec2f& size)noexcept {
 			mDest.set_size(size);
 		}
+
+		SDL_Texture* const get_texture()const {
+			return mTexture->get();
+		}
 	private:
 
 		Texture* mTexture = nullptr;
@@ -106,7 +110,6 @@ namespace badEngine {
 	public:
 
 		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount);
-		void draw(SDL_Renderer* renderer, const vec2f& pos);
 		
 		void set_text(std::string_view string, const vec2f& pos)noexcept;
 		void clear_text()noexcept;
@@ -115,6 +118,9 @@ namespace badEngine {
 			mScale = scale;
 		}
 
+		const SequenceM<std::pair<rectF, rectF>>& get_letter_positions()const {
+			return mLetterPos;
+		}
 	private:
 		SequenceM<std::pair<rectF, rectF>> mLetterPos;
 

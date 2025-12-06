@@ -69,7 +69,7 @@ int main() {
     float mouseBoxSize = 50.0f;
     bool mouseHeld = false;
 
-    std::unique_ptr<Texture> fontTextureOwner = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager.get_renderer());
+    std::unique_ptr<Texture> fontTextureOwner = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager);
     std::unique_ptr<Font> font = std::make_unique<Font>(fontTextureOwner.get(), 32, 3);
 
     bool plzDeleteArea = false;
@@ -217,8 +217,8 @@ int main() {
         //draw text
         std::string print = "Object Count: " + std::to_string(objectsCount) + "/" + std::to_string(myObjsQuad.size()) + "\ntime: " + std::to_string(elapsedTime) + "\nnodes: " + std::to_string(myObjsQuad.branch_count());
 
-        font->set_text(print);
-        font->draw(renManager.get_renderer(), vec2f(0, 0));
+        font->set_text(print, vec2f(0, 0));
+        renManager.draw(font->get_texture(), font->get_letter_positions());
         //////########################################################
 
         //PRESENT

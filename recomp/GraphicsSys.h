@@ -7,6 +7,7 @@
 #include "Rectangle.h"
 #include "json.hpp"
 #include "BadExceptions.h"
+#include "SequenceM.h"
 
 namespace badEngine {
 #define BAD_RENDERER_EXCEPTION(type,note) BadException(__FILE__, __LINE__,type,note)
@@ -132,18 +133,23 @@ namespace badEngine {
 		//draws pairs of sources and destinations from texture to current rendering target
 		//returns false on failure, call SDL_GetError
 		bool draw(SDL_Texture* texture, const SequenceM<std::pair<rectF, rectF>>& list)const noexcept {
-			SDL_FRect sdlSrc = convert_rect(source);
-			SDL_FRect sdlDest = convert_rect(dest);
-			SDL_Renderer* ren = mRenderer.get();
 
+			SDL_Renderer* ren = mRenderer.get();
 			int screenW, screenH;
 			SDL_GetRenderOutputSize(ren, &screenW, &screenH);
 
-			//if obj is fully off screen skip any further rendering, might be faulty logic though, just keep eyes open
-			if (sdlDest.x + sdlDest.w <= 0 || sdlDest.y + sdlDest.h <= 0 || sdlDest.x >= screenW || sdlDest.y >= screenH)
-				return true;
+			for (const auto& pair : list) {
+				auto src = convert_rect(pair.first);
+				auto dest = convert_rect(pair.second);
 
-			return SDL_RenderTexture(ren, texture, &sdlSrc, &sdlDest);
+				if (dest.x + dest.w <= 0 || dest.y + dest.h <= 0 || dest.x >= screenW || dest.y >= screenH)
+					return true;
+
+				if (!SDL_RenderTexture(ren, texture, &src, &dest)) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 	private:
