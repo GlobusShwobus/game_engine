@@ -169,7 +169,6 @@
     <ClCompile Include="GraphicsSys.cpp" />
     <ClCompile Include="Scripts.cpp" />
     <ClCompile Include="Sprite.cpp" />
-    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="entity_config.json" />

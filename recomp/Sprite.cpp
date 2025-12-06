@@ -2,16 +2,7 @@
 
 namespace badEngine {
 
-	Sprite::Sprite(Texture* texture) :mTexture(texture){
-		assert(mTexture != nullptr && "texture can not be init with nullptr");
-	}
 
-	void Sprite::draw(SDL_Renderer* renderer)noexcept {
-		mTexture->draw(renderer, mSource, mDest);
-	}
-	bool Sprite::is_within_bounds(const rectF& rect)const noexcept {
-		return mTexture->get_control_block().contains(rect);
-	}
 	//####################################################################################
 
 	Animation::Animation(Texture* texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
@@ -36,21 +27,6 @@ namespace badEngine {
 
 		set_dest_size(vec2f(fWidth, fHeight));//default inital
 	}
-
-	void Animation::draw(SDL_Renderer* renderer, const vec2f& pos) noexcept {
-		//source size is set in constructor with frame width, height, not a good idea to willynilly edit that
-		set_source_pos(mFrames[mCurrentFrame]);
-		set_dest_pos(pos);
-
-		Sprite::draw(renderer);
-	}
-	void Animation::progress(float dt)noexcept {
-		mCurrentFrameTime += dt;
-		while (mCurrentFrameTime >= mHoldTime) {
-			next_frame();
-			mCurrentFrameTime -= mHoldTime;
-		}
-	}
 	//#########################################################################################
 
 	Font::Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount)
@@ -60,14 +36,15 @@ namespace badEngine {
 	{
 		rectF textureBounds = get_bounds();
 
-		const int GylphWidth = int(textureBounds.w / columnsCount);
-		const int GylphHeight = int(textureBounds.h / rowsCount);
+		mGlyphWidth = static_cast<unsigned int>(textureBounds.w / columnsCount);
+		mGlyphHeight = static_cast<unsigned int>(textureBounds.h / rowsCount);
 		//becasue int vs float
-		assert(GylphWidth * columnsCount == textureBounds.w && "texture image likely off size or invalid counts");
-		assert(GylphHeight * rowsCount == textureBounds.h && "texture image likely off size or invalid counts");
-		set_source_size(vec2f(GylphWidth, GylphHeight));
-		set_dest_size(vec2f(GylphWidth, GylphHeight));
+		assert(mGlyphWidth * columnsCount == textureBounds.w && "texture image likely off size or invalid counts");
+		assert(mGlyphHeight * rowsCount == textureBounds.h && "texture image likely off size or invalid counts");
+		//set_source_size(vec2f(GylphWidth, GylphHeight));
+		//set_dest_size(vec2f(GylphWidth, GylphHeight));
 	}
+	
 	void Font::draw(SDL_Renderer* renderer, const vec2f& pos) {
 		for (const auto& letter : mLetterPos) {
 			set_source_pos(letter.mSourcePos);
@@ -75,31 +52,51 @@ namespace badEngine {
 			Sprite::draw(renderer);
 		}
 	}
-	void Font::set_text(std::string_view string)noexcept {
+
+	void Font::set_text(std::string_view string, const vec2f& pos)noexcept {
 		clear_text();
-		vec2i arrangement(0, 0);
-		vec2f gylphSize = get_source().get_size();
+		const float scaledW = mGlyphWidth * mScale;
+		const float scaledH = mGlyphHeight * mScale;
+		vec2f destP = pos;
 
 		for (char c : string) {
 
 			if (c == '\n') {
 				//if new line start in the same position on x axis but below offset by 1 amount of height
-				arrangement = vec2i(0, arrangement.y += gylphSize.y);
+				destP.x = pos.x;
+				destP.y += scaledH;
 				continue;
 			}
+			//spacebar
+			if (c == first_ASCII_character) {
+				destP.x += scaledW;
+				continue;
+			}
+
 			// if char is the empty space key (c == first_ASCII_character), then skip this part as in anycase
 			// position is incremented for the next iteration in the loop
-			else if (c >= first_ASCII_character + 1 && c <= last_ASCII_character) {
+			if (c >= first_ASCII_character + 1 && c <= last_ASCII_character) {
 				const int gylphIndex = c - first_ASCII_character;
-				const int yGylph = gylphIndex / mColumnsCount;//ASCII math
-				const int xGylph = gylphIndex % mColumnsCount;//ASCII math
+				const int glyphY = gylphIndex / mColumnsCount;//ASCII math
+				const int glyphX = gylphIndex % mColumnsCount;//ASCII math
 
 				mLetterPos.emplace_back(
-					vec2f(xGylph * gylphSize.x, yGylph * gylphSize.y),
-					arrangement
+					rectF(
+						glyphX * mGlyphWidth, //source x
+						glyphY * mGlyphHeight,//source y
+						mGlyphWidth,          //source w
+						mGlyphHeight          //source h
+					),
+					rectF(
+						destP.x, //dest x
+						destP.y, //dest y
+						scaledW, //dest w
+						scaledH  //dest h
+					)
 				);
+				//move cursor to next 
+				destP.x += scaledW;
 			}
-			arrangement.x += gylphSize.x;
 		}
 	}
 	void Font::clear_text()noexcept {

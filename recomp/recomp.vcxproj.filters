@@ -93,9 +93,6 @@
     <ClCompile Include="Scripts.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
-    <ClCompile Include="Texture.cpp">
-      <Filter>RENDERING_STUFF</Filter>
-    </ClCompile>
     <ClCompile Include="Sprite.cpp">
       <Filter>RENDERING_STUFF</Filter>
     </ClCompile>

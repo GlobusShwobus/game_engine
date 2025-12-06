@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "SDL3/SDL.h"
+#include <SDL3_image/SDL_image.h>
 #include "Color.h"
 #include "Rectangle.h"
 #include "json.hpp"
@@ -23,6 +24,10 @@ namespace badEngine {
 
 
 		void do_setup(std::string_view heading, Uint32 width, Uint32 height, SDL_WindowFlags flags);
+
+		inline SDL_FRect convert_rect(const rectF& rect)const noexcept {
+			return SDL_FRect(rect.x, rect.y, rect.w, rect.h);
+		}
 
 	public:
 
@@ -65,12 +70,80 @@ namespace badEngine {
 		bool renderer_present();
 		bool renderer_refresh();
 
-		
-		SDL_Renderer* const get_renderer()noexcept {
-			return mRenderer.get();
+
+		//returns texture or nullptr on failure, call SDL_GetError
+		SDL_Texture* load_texture_static(SDL_Surface* surface)const {
+			return SDL_CreateTextureFromSurface(mRenderer.get(), surface);
 		}
-		SDL_Window* const get_window()noexcept {
-			return mWindow.get();
+		//returns texture or nullptr on failure, call SDL_GetError
+		SDL_Texture* load_texture_static(std::string_view path)const {
+			return IMG_LoadTexture(mRenderer.get(), path.data());
+		}
+		//returns texture or nullptr on failure, call SDL_GetError
+		SDL_Texture* create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from = nullptr)const {
+
+			SDL_Renderer* ren = mRenderer.get();
+			//create texture
+			SDL_Texture* texture = SDL_CreateTexture(
+				ren, 
+				SDL_PIXELFORMAT_RGBA8888,
+				SDL_TEXTUREACCESS_TARGET,
+				width, 
+				height
+			);
+			if (!texture)
+				return nullptr;
+			//set blend mode to blend to read alpha channels, this is default behavior
+			SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
+			if (copy_from) {
+
+				float targetW, targetH;
+				SDL_GetTextureSize(texture, &targetW, &targetH);
+				SDL_FRect dest(0, 0, targetW, targetH);
+
+				//store current target, if null is fine
+				SDL_Texture* oldTarget = SDL_GetRenderTarget(ren);
+				//set this texture as target so we copy data onto it
+				SDL_SetRenderTarget(ren, texture);
+				//copy from copy_from using RenderTexture which renders to current rendering target
+				SDL_RenderTexture(ren, copy_from, nullptr, &dest);
+				//reset target
+				SDL_SetRenderTarget(ren, oldTarget);
+			}
+			return texture;
+		}
+		//draws a source rectangle from texture to the position of dest on current rendering target
+		//returns false on failure, call SDL_GetError
+		bool draw(SDL_Texture* texture, const rectF& source, const rectF& dest)const noexcept {
+			SDL_FRect sdlSrc = convert_rect(source);
+			SDL_FRect sdlDest = convert_rect(dest);
+			SDL_Renderer* ren = mRenderer.get();
+
+			int screenW, screenH;
+			SDL_GetRenderOutputSize(ren, &screenW, &screenH);
+
+			//if obj is fully off screen skip any further rendering, might be faulty logic though, just keep eyes open
+			if (sdlDest.x + sdlDest.w <= 0 || sdlDest.y + sdlDest.h <= 0 || sdlDest.x >= screenW || sdlDest.y >= screenH)
+				return true;
+
+			return SDL_RenderTexture(ren, texture, &sdlSrc, &sdlDest);
+		}
+		//draws pairs of sources and destinations from texture to current rendering target
+		//returns false on failure, call SDL_GetError
+		bool draw(SDL_Texture* texture, const SequenceM<std::pair<rectF, rectF>>& list)const noexcept {
+			SDL_FRect sdlSrc = convert_rect(source);
+			SDL_FRect sdlDest = convert_rect(dest);
+			SDL_Renderer* ren = mRenderer.get();
+
+			int screenW, screenH;
+			SDL_GetRenderOutputSize(ren, &screenW, &screenH);
+
+			//if obj is fully off screen skip any further rendering, might be faulty logic though, just keep eyes open
+			if (sdlDest.x + sdlDest.w <= 0 || sdlDest.y + sdlDest.h <= 0 || sdlDest.x >= screenW || sdlDest.y >= screenH)
+				return true;
+
+			return SDL_RenderTexture(ren, texture, &sdlSrc, &sdlDest);
 		}
 
 	private:

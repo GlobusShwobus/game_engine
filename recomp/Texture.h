@@ -1,10 +1,6 @@
 #pragma once
 
-#include <memory>
-#include <string_view>
-#include "SDL3/SDL_render.h"
-#include <SDL3_image/SDL_image.h>
-#include "Rectangle.h"
+#include "GraphicsSys.h"
 
 namespace badEngine {
 	
@@ -12,23 +8,34 @@ namespace badEngine {
 
 	class Texture {
 
-		inline SDL_FRect convert_rect(const rectF& rect)const noexcept {
-			return SDL_FRect(rect.x, rect.y, rect.w, rect.h);
-		}
-
 	public:
 
-		Texture(std::unique_ptr<SDL_Texture, decltype(SDLTextureDeleter)> texture);
+		Texture(SDL_Surface& surface, const GraphicsSys& gfx)
+		{
+			SDL_Texture* txtr = gfx.load_texture_static(&surface);
+			if (!txtr) {
+				// throw error
+			}
+			mTexture.reset(txtr);
+		}
 
-		Texture(SDL_Surface& surface, SDL_Renderer* rendererRef);
+		Texture(std::string_view path, const GraphicsSys& gfx)
+		{
+			SDL_Texture* txtr = gfx.load_texture_static(path);
+			if (!txtr) {
+				// throw error
+			}
 
-		Texture(std::string_view path, SDL_Renderer* rendererRef);
+			mTexture.reset(txtr);
+		}
 
 		inline rectF get_control_block()const {
 			return rectF(0.f, 0.f, (float)mTexture->w, (float)mTexture->h);
 		}
 
-		void draw(SDL_Renderer* renderer, const rectF& source, const rectF& dest)noexcept;
+		SDL_Texture* const get() {
+			return mTexture.get();
+		}
 
 		inline bool isNullPtr()const noexcept {
 			return mTexture == nullptr;
