@@ -28,7 +28,7 @@
     <ClInclude Include="Configs.h">
       <Filter>JSON_THINGIES</Filter>
     </ClInclude>
-    <ClInclude Include="RenderManager.h">
+    <ClInclude Include="GraphicsSys.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
     <ClInclude Include="badUtility.h">
@@ -87,7 +87,7 @@
     <ClCompile Include="main.cpp">
       <Filter>MAIN</Filter>
     </ClCompile>
-    <ClCompile Include="RenderManager.cpp">
+    <ClCompile Include="GraphicsSys.cpp">
       <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
     <ClCompile Include="Scripts.cpp">

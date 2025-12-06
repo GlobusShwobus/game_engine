@@ -1,5 +1,5 @@
 #include "Stopwatch.h"
-#include "RenderManager.h"
+#include "GraphicsSys.h"
 #include "Configs.h"
 #include <thread>
 
@@ -34,14 +34,8 @@ int main() {
     Configs windowConfig("SystemManagerConfig.json");
 
     //init SDL system, can throw
-    RenderManager renManager;
-    try {
-        renManager.init(windowConfig.get());
-    }
-    catch (const std::exception& excpt) {
-        printf(excpt.what());
-        return -1;
-    }
+    GraphicsSys renManager(windowConfig.get());
+
     ////// TEST CODE
     struct SomeObjWithArea {
         rectF rect;

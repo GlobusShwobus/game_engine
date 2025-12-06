@@ -161,12 +161,12 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vec2M.h" />
-    <ClInclude Include="RenderManager.h" />
+    <ClInclude Include="GraphicsSys.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="RenderManager.cpp" />
+    <ClCompile Include="GraphicsSys.cpp" />
     <ClCompile Include="Scripts.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="Texture.cpp" />
