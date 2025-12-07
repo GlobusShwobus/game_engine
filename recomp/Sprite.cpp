@@ -1,5 +1,6 @@
 #include "Sprite.h"
 
+#include <iostream>
 namespace badEngine {
 
 
@@ -22,24 +23,19 @@ namespace badEngine {
 		);
 
 		//check if the entire demand is within the control block
-		assert(!mTexture.get_control_block().contains(requiredArea) && "demanded size too large for this texture");
+		assert(mTexture.get_control_block().contains(requiredArea) && "demanded size too large for this texture");
 
+		for (uint16_t row = 0; row < rowCount; ++row) 
+			for (uint16_t col = 0; col < columnCount; ++col) 
+				mFrames.emplace_back(col * frameWidth, row * frameHeight);
+			
+		mColumns = columnCount;
+		mRows = rowCount;
 
-		for (uint16_t i = 0; i < columnCount; ++i) {
-
-			for (uint16_t j = 0; j < rowCount; ++j) {
-
-			}
-
-		}
-
-		for (uint16_t i = 0; i < fCount; ++i)
-			mFrames.emplace_back(start.x + (i * fWidth), start.y);
-		
 		mSource.set_pos(mFrames.front());
-		vec2f size(vec2f(static_cast<float>(fWidth), static_cast<float>(fHeight)));
-		mSource.set_size(size);//size of the frame
-		mDest.set_size(size);//default initial draw size
+		vec2f size(vec2f(static_cast<float>(frameWidth), static_cast<float>(frameHeight)));
+		mSource.set_size(size);
+		mDest.set_size(size);//default (set scale will mod it too)
 	}
 	void Animation::update(float dt, vec2f* pos)noexcept {
 		//add to the time counter
@@ -47,13 +43,13 @@ namespace badEngine {
 		//while if counter is more than hold time
 		while (mCurrentFrameTime >= mHoldTime) {
 			++mCurrentFrame;					  //next frame
-			if (mCurrentFrame >= mFrameCount)	  //if frame reached the end
+			if (mCurrentFrame >= mColumns)  //if frame reached the end
 				mCurrentFrame = 0;				  //reset
 
 			mCurrentFrameTime -= mHoldTime;       //subtract 1 update cycle worth of time
 		}
-
-		mSource.set_pos(mFrames[mCurrentFrame]);  //set source position
+		int index = mCurrentRow * mColumns + mCurrentFrame;
+		mSource.set_pos(mFrames[index]);  //set source position
 
 		if (pos)                                  //if pos set dest position
 			mDest.set_pos(*pos);

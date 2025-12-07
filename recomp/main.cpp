@@ -36,7 +36,7 @@ int main() {
     ////// TEST CODE
    
     std::unique_ptr<Texture> txtr = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", renManager);
-    std::unique_ptr<Animation> anim = std::make_unique<Animation>(*txtr.get(), vec2i(0, 0), 32, 32, 8);
+    std::unique_ptr<Animation> anim = std::make_unique<Animation>(*txtr.get(), 32, 32);
 
     //////#######################################################
 
@@ -49,7 +49,7 @@ int main() {
         static float frameHold = 0;
         float dt = UPDATE_DELTA_TIMER.dt_float();
         frameHold += dt;
-        if (frameHold < 0.008f) {
+        if (frameHold < 0.08f) {
             continue;//skip the frame. a bit rigged atm, better to encapsulate in the IF
         }
         frameHold = 0;//fucking oops...

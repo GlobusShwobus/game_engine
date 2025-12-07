@@ -49,18 +49,24 @@ namespace badEngine {
 
 		void update(float dt, vec2f* pos = nullptr)noexcept;
 		void set_frame_hold_time(float time)noexcept;
+		uint16_t get_lines_count()const noexcept {
+			return mRows;
+		}
+		void set_line(uint16_t line)noexcept {
+			assert(line < mRows && "input line can not exceed the count of rows");
+			mCurrentRow = line;
+		}
 
 	private:
 		SequenceM<vec2i> mFrames;
 
 		float mHoldTime = 0.08f;
 		float mCurrentFrameTime = 0.0f;
-		float mScale = 1.0f;
 
-		uint16_t mColumnCount = 0;
-		uint16_t mRowCount = 0;
+		uint16_t mColumns = 0;
+		uint16_t mRows = 0;
 
-		uint16_t mFramesPerLine = 0;
+		uint16_t mCurrentRow = 0;
 		uint16_t mCurrentFrame = 0;
 	};
 
