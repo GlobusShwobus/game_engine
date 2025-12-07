@@ -70,7 +70,8 @@ int main() {
     bool mouseHeld = false;
 
     std::unique_ptr<Texture> fontTextureOwner = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Fonts/font_32x3.png", renManager);
-    std::unique_ptr<Font> font = std::make_unique<Font>(fontTextureOwner.get(), 32, 3);
+    std::unique_ptr<Font> font = std::make_unique<Font>(*fontTextureOwner.get(), 32, 3);
+
 
     bool plzDeleteArea = false;
     bool plzPruneMe = false;

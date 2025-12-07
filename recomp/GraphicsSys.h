@@ -55,12 +55,12 @@ namespace badEngine {
 		void reset()noexcept;
 
 		//on fail call SDL_GetError()
-		bool set_render_blend_mode(SDL_BlendMode mode)noexcept;
+		bool set_render_blend_mode(SDL_BlendMode mode)const noexcept;
 		//on fail call SDL_GetError()
 		bool set_render_draw_color(Color color)noexcept;
 
 		
-		void fill_area_with(const rectF& area, Color color);
+		void fill_area_with(const rectF& area, Color color)const noexcept;
 
 		//overrides location that is being drawn on. 
 		//Texture will be permanently overwritten in memory, so make a copy or just keep in mind to reload a clean slate
@@ -68,89 +68,22 @@ namespace badEngine {
 		//useful for soemthing like a worldmap to have permanent changes
 		bool set_render_target(SDL_Texture* target);
 		
-		bool renderer_present();
-		bool renderer_refresh();
+		bool renderer_present()const noexcept;
+		bool renderer_refresh()const noexcept;
 
 
 		//returns texture or nullptr on failure, call SDL_GetError
-		SDL_Texture* load_texture_static(SDL_Surface* surface)const {
-			return SDL_CreateTextureFromSurface(mRenderer.get(), surface);
-		}
+		SDL_Texture* load_texture_static(SDL_Surface* surface)const noexcept;
 		//returns texture or nullptr on failure, call SDL_GetError
-		SDL_Texture* load_texture_static(std::string_view path)const {
-			return IMG_LoadTexture(mRenderer.get(), path.data());
-		}
+		SDL_Texture* load_texture_static(std::string_view path)const noexcept;
 		//returns texture or nullptr on failure, call SDL_GetError
-		SDL_Texture* create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from = nullptr)const {
-
-			SDL_Renderer* ren = mRenderer.get();
-			//create texture
-			SDL_Texture* texture = SDL_CreateTexture(
-				ren, 
-				SDL_PIXELFORMAT_RGBA8888,
-				SDL_TEXTUREACCESS_TARGET,
-				width, 
-				height
-			);
-			if (!texture)
-				return nullptr;
-			//set blend mode to blend to read alpha channels, this is default behavior
-			SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-
-			if (copy_from) {
-
-				float targetW, targetH;
-				SDL_GetTextureSize(texture, &targetW, &targetH);
-				SDL_FRect dest(0, 0, targetW, targetH);
-
-				//store current target, if null is fine
-				SDL_Texture* oldTarget = SDL_GetRenderTarget(ren);
-				//set this texture as target so we copy data onto it
-				SDL_SetRenderTarget(ren, texture);
-				//copy from copy_from using RenderTexture which renders to current rendering target
-				SDL_RenderTexture(ren, copy_from, nullptr, &dest);
-				//reset target
-				SDL_SetRenderTarget(ren, oldTarget);
-			}
-			return texture;
-		}
+		SDL_Texture* create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from = nullptr)const noexcept;
 		//draws a source rectangle from texture to the position of dest on current rendering target
 		//returns false on failure, call SDL_GetError
-		bool draw(SDL_Texture* texture, const rectF& source, const rectF& dest)const noexcept {
-			SDL_FRect sdlSrc = convert_rect(source);
-			SDL_FRect sdlDest = convert_rect(dest);
-			SDL_Renderer* ren = mRenderer.get();
-
-			int screenW, screenH;
-			SDL_GetRenderOutputSize(ren, &screenW, &screenH);
-
-			//if obj is fully off screen skip any further rendering, might be faulty logic though, just keep eyes open
-			if (sdlDest.x + sdlDest.w <= 0 || sdlDest.y + sdlDest.h <= 0 || sdlDest.x >= screenW || sdlDest.y >= screenH)
-				return true;
-
-			return SDL_RenderTexture(ren, texture, &sdlSrc, &sdlDest);
-		}
+		bool draw(SDL_Texture* texture, const rectF& source, const rectF& dest)const noexcept;
 		//draws pairs of sources and destinations from texture to current rendering target
 		//returns false on failure, call SDL_GetError
-		bool draw(SDL_Texture* texture, const SequenceM<std::pair<rectF, rectF>>& list)const noexcept {
-
-			SDL_Renderer* ren = mRenderer.get();
-			int screenW, screenH;
-			SDL_GetRenderOutputSize(ren, &screenW, &screenH);
-
-			for (const auto& pair : list) {
-				auto src = convert_rect(pair.first);
-				auto dest = convert_rect(pair.second);
-
-				if (dest.x + dest.w <= 0 || dest.y + dest.h <= 0 || dest.x >= screenW || dest.y >= screenH)
-					return true;
-
-				if (!SDL_RenderTexture(ren, texture, &src, &dest)) {
-					return false;
-				}
-			}
-			return true;
-		}
+		bool draw(SDL_Texture* texture, const SequenceM<std::pair<rectF, rectF>>& list)const noexcept;
 
 	private:
 		/* ORDER MATTERS BECAUSE OF DELETER! */

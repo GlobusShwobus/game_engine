@@ -57,7 +57,7 @@ namespace badEngine {
 		mDrawColor = Colors::Black;
 		SDL_Quit();
 	}
-	bool GraphicsSys::set_render_blend_mode(SDL_BlendMode mode)noexcept
+	bool GraphicsSys::set_render_blend_mode(SDL_BlendMode mode)const noexcept
 	{
 		return SDL_SetRenderDrawBlendMode(mRenderer.get(), mode);
 	}
@@ -69,7 +69,7 @@ namespace badEngine {
 		}
 		return false;
 	}
-	void GraphicsSys::fill_area_with(const rectF& area, Color color) 
+	void GraphicsSys::fill_area_with(const rectF& area, Color color)const noexcept
 	{
 		SDL_Renderer* ren = mRenderer.get();
 		SDL_SetRenderDrawColor(ren, color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
@@ -81,7 +81,7 @@ namespace badEngine {
 	{
 		return target != nullptr && SDL_SetRenderTarget(mRenderer.get(), target);
 	}
-	bool GraphicsSys::renderer_present()
+	bool GraphicsSys::renderer_present()const noexcept
 	{
 		SDL_Renderer* ren = mRenderer.get();
 		if (SDL_GetRenderTarget(ren) != nullptr)
@@ -89,7 +89,7 @@ namespace badEngine {
 
 		return SDL_RenderPresent(ren);
 	}
-	bool GraphicsSys::renderer_refresh() 
+	bool GraphicsSys::renderer_refresh()const noexcept
 	{
 		SDL_Renderer* ren = mRenderer.get();
 		if (SDL_GetRenderTarget(ren) != nullptr)
@@ -98,7 +98,82 @@ namespace badEngine {
 		//clears everything to current draw color
 		return SDL_RenderClear(ren);
 	}
+	SDL_Texture* GraphicsSys::load_texture_static(SDL_Surface* surface)const noexcept
+	{
+		return SDL_CreateTextureFromSurface(mRenderer.get(), surface);
+	}
+	SDL_Texture* GraphicsSys::load_texture_static(std::string_view path)const noexcept
+	{
+		return IMG_LoadTexture(mRenderer.get(), path.data());
+	}
+	SDL_Texture* GraphicsSys::create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from)const noexcept
+	{
 
+		SDL_Renderer* ren = mRenderer.get();
+		//create texture
+		SDL_Texture* texture = SDL_CreateTexture(
+			ren,
+			SDL_PIXELFORMAT_RGBA8888,
+			SDL_TEXTUREACCESS_TARGET,
+			width,
+			height
+		);
+		if (!texture)
+			return nullptr;
+		//set blend mode to blend to read alpha channels, this is default behavior
+		SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
+		if (copy_from) {
+
+			float targetW, targetH;
+			SDL_GetTextureSize(texture, &targetW, &targetH);
+			SDL_FRect dest(0, 0, targetW, targetH);
+
+			//store current target, if null is fine
+			SDL_Texture* oldTarget = SDL_GetRenderTarget(ren);
+			//set this texture as target so we copy data onto it
+			SDL_SetRenderTarget(ren, texture);
+			//copy from copy_from using RenderTexture which renders to current rendering target
+			SDL_RenderTexture(ren, copy_from, nullptr, &dest);
+			//reset target
+			SDL_SetRenderTarget(ren, oldTarget);
+		}
+		return texture;
+	}
+	bool GraphicsSys::draw(SDL_Texture* texture, const rectF& source, const rectF& dest)const noexcept
+	{
+		SDL_FRect sdlSrc = convert_rect(source);
+		SDL_FRect sdlDest = convert_rect(dest);
+		SDL_Renderer* ren = mRenderer.get();
+
+		int screenW, screenH;
+		SDL_GetRenderOutputSize(ren, &screenW, &screenH);
+
+		//if obj is fully off screen skip any further rendering, might be faulty logic though, just keep eyes open
+		if (sdlDest.x + sdlDest.w <= 0 || sdlDest.y + sdlDest.h <= 0 || sdlDest.x >= screenW || sdlDest.y >= screenH)
+			return true;
+
+		return SDL_RenderTexture(ren, texture, &sdlSrc, &sdlDest);
+	}
+	bool GraphicsSys::draw(SDL_Texture* texture, const SequenceM<std::pair<rectF, rectF>>& list)const noexcept
+	{
+
+		SDL_Renderer* ren = mRenderer.get();
+		int screenW, screenH;
+		SDL_GetRenderOutputSize(ren, &screenW, &screenH);
+
+		for (const auto& pair : list) {
+			auto src = convert_rect(pair.first);
+			auto dest = convert_rect(pair.second);
+
+			if (dest.x + dest.w <= 0 || dest.y + dest.h <= 0 || dest.x >= screenW || dest.y >= screenH)
+				return true;
+			//if obj is fully off screen skip any further rendering, might be faulty logic though, just keep eyes open
+			if (!SDL_RenderTexture(ren, texture, &src, &dest))
+				return false;
+		}
+		return true;
+	}
 }
 
 

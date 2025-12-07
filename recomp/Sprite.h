@@ -11,55 +11,32 @@ namespace badEngine {
 	
 	protected:
 
-		Sprite(Texture* texture) :mTexture(texture) {
-			assert(mTexture != nullptr && "texture can not be init with nullptr");
+		Sprite(const Texture& texture) :mTexture(texture) {
 			float w, h;
-			SDL_GetTextureSize(mTexture->get(), &w, &h);
+			SDL_GetTextureSize(mTexture.get(), &w, &h);
 			mSource = rectF(0, 0, w, h);
 			mDest = rectF(0, 0, w, h);
-		}
-
-		//source managment should be restricted to inheritence because the assumption is
-		//designing future derived classes the user knows to check bounds using is_within_bounds themselves at setup
-
-		inline void set_source_pos(const vec2f& pos)noexcept {
-			mSource.set_pos(pos);
-		}
-		inline void set_source_size(const vec2f& size)noexcept {
-			mSource.set_size(size);
 		}
 
 	public:
 
 		virtual ~Sprite() = default;
 		
-		bool is_within_bounds(const rectF& rect)const noexcept {
-			return mTexture->get_control_block().contains(rect);
-		}
-
-		inline const rectF& get_source()const noexcept {
+		const rectF& get_source()const noexcept {
 			return mSource;
 		}
-		inline const rectF& get_dest()const noexcept {
+		const rectF& get_dest()const noexcept {
 			return mDest;
 		}
-		inline const rectF get_bounds()const noexcept {
-			return mTexture->get_control_block();
+		SDL_Texture* const get_texture()const noexcept {
+			return mTexture.get();
+		}
+		bool isNullptr()const noexcept {
+			return mTexture.isNullPtr();
 		}
 
-		inline void set_dest_pos(const vec2f& pos)noexcept {
-			mDest.set_pos(pos);
-		}		
-		inline void set_dest_size(const vec2f& size)noexcept {
-			mDest.set_size(size);
-		}
-
-		SDL_Texture* const get_texture()const {
-			return mTexture->get();
-		}
-	private:
-
-		Texture* mTexture = nullptr;
+	protected:
+		const Texture& mTexture;
 		rectF mSource;
 		rectF mDest;
 	};
@@ -68,29 +45,10 @@ namespace badEngine {
 
 	public:
 
-		Animation(Texture* texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
+		Animation(const Texture& texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
 
-		void update(float dt, vec2f* pos = nullptr)noexcept {
-			//add to the time counter
-			mCurrentFrameTime += dt;
-			//while if counter is more than hold time
-			while (mCurrentFrameTime >= mHoldTime) {
-				++mCurrentFrame;					  //next frame
-				if (mCurrentFrame >= mFrameCount)	  //if frame reached the end
-					mCurrentFrame = 0;				  //reset
-				
-				mCurrentFrameTime -= mHoldTime;       //subtract 1 update cycle worth of time
-			}
-
-			set_source_pos(mFrames[mCurrentFrame]);   //set source position
-
-			if (pos)                                  //if pos set dest position
-				set_dest_pos(*pos);
-		}
-		inline void set_frame_hold_time(float time)noexcept {
-			assert(time >= 0 && "negative time");
-			mHoldTime = time;
-		}
+		void update(float dt, vec2f* pos = nullptr)noexcept;
+		void set_frame_hold_time(float time)noexcept;
 
 	private:
 		SequenceM<vec2i> mFrames;
@@ -109,14 +67,11 @@ namespace badEngine {
 
 	public:
 
-		Font(Texture* texture, uint32_t columnsCount, uint32_t rowsCount);
+		Font(const Texture& texture, uint32_t columnsCount, uint32_t rowsCount);
 		
 		void set_text(std::string_view string, const vec2f& pos)noexcept;
 		void clear_text()noexcept;
-		void set_scale(float scale)noexcept {
-			assert(scale > 0.0f && "scale can not be zero or negative");
-			mScale = scale;
-		}
+		void set_scale(float scale)noexcept;
 
 		const SequenceM<std::pair<rectF, rectF>>& get_letter_positions()const {
 			return mLetterPos;
