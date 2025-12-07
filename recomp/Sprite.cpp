@@ -5,20 +5,33 @@ namespace badEngine {
 
 	//####################################################################################
 
-	Animation::Animation(const Texture& texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount)
-		:Sprite(texture), mFrameCount(fCount)
+	Animation::Animation(const Texture& texture, uint16_t frameWidth, uint16_t frameHeight, uint16_t* nColumns, uint16_t* nRows)
+		:Sprite(texture)
 	{
-		assert(start.x >= 0 && start.y >= 0 && "Out of bounds texture access");
+		float tw, th;
+		SDL_GetTextureSize(mTexture.get(), &tw, &th);
+		//set values for iteration, internally frames are stored as 2D array
+		uint16_t columnCount = (nColumns) ? *nColumns : static_cast<uint16_t>(tw) / frameWidth;
+		uint16_t rowCount = (nRows) ? *nRows : static_cast<uint16_t>(th) / frameHeight;
 
 		const rectF requiredArea = rectF(
-			start.x,
-			start.y,
-			start.x + (fWidth * fCount),
-			start.y + (fHeight * fCount)
+			0,
+			0,
+			columnCount * frameWidth,
+			rowCount * frameHeight
 		);
 
 		//check if the entire demand is within the control block
 		assert(!mTexture.get_control_block().contains(requiredArea) && "demanded size too large for this texture");
+
+
+		for (uint16_t i = 0; i < columnCount; ++i) {
+
+			for (uint16_t j = 0; j < rowCount; ++j) {
+
+			}
+
+		}
 
 		for (uint16_t i = 0; i < fCount; ++i)
 			mFrames.emplace_back(start.x + (i * fWidth), start.y);

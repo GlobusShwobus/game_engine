@@ -45,7 +45,7 @@ namespace badEngine {
 
 	public:
 
-		Animation(const Texture& texture, const vec2i& start, uint16_t fWidth, uint16_t fHeight, uint16_t fCount);
+		Animation(const Texture& texture, uint16_t frameWidth, uint16_t frameHeight, uint16_t* nColumns = nullptr, uint16_t* nRows = nullptr);
 
 		void update(float dt, vec2f* pos = nullptr)noexcept;
 		void set_frame_hold_time(float time)noexcept;
@@ -53,11 +53,15 @@ namespace badEngine {
 	private:
 		SequenceM<vec2i> mFrames;
 
-		uint16_t mFrameCount = 0;
-		uint16_t mCurrentFrame = 0;
-
 		float mHoldTime = 0.08f;
 		float mCurrentFrameTime = 0.0f;
+		float mScale = 1.0f;
+
+		uint16_t mColumnCount = 0;
+		uint16_t mRowCount = 0;
+
+		uint16_t mFramesPerLine = 0;
+		uint16_t mCurrentFrame = 0;
 	};
 
 	class Font : public Sprite {
