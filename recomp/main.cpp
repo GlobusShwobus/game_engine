@@ -49,35 +49,43 @@ int main() {
         static float frameHold = 0;
         float dt = UPDATE_DELTA_TIMER.dt_float();
         frameHold += dt;
-        if (frameHold < 0.08f) {
-            continue;//skip the frame. a bit rigged atm, better to encapsulate in the IF
-        }
-        frameHold = 0;//fucking oops...
+        if (frameHold >= 0.008f) {
 
-        //CLEAR RENDERING
-        renManager.renderer_refresh();
+            //CLEAR RENDERING
+            renManager.renderer_refresh();
 
-        //LISTEN TO EVENTS
+            //LISTEN TO EVENTS
 
-        while (SDL_PollEvent(&EVENT)) {
-            if (EVENT.type == SDL_EVENT_QUIT) {
-                GAME_RUNNING = false;
-                continue;
+            while (SDL_PollEvent(&EVENT)) {
+                if (EVENT.type == SDL_EVENT_QUIT) {
+                    GAME_RUNNING = false;
+                    continue;
+                }
+
+                ////// TEST CODE
+                if (EVENT.key.key == SDLK_A) {
+                    anim->set_line(0);
+                }
+                if (EVENT.key.key == SDLK_B) {
+                    anim->set_line(1);
+                }
+                if (EVENT.key.key == SDLK_C) {
+                    anim->set_line(2);
+                }
+                ////////######################################################
             }
 
-            ////// TEST CODE
+            //////TEST CODE        
+            vec2f pos(100, 100);
+            anim->update(frameHold, &pos);
 
-            ////////######################################################
+            renManager.draw(anim->get_texture(), anim->get_source(), anim->get_dest());
+            //////########################################################
+
+            //PRESENT
+            renManager.renderer_present();
+            frameHold -= 0.008f;
         }
-
-        //////TEST CODE        
-        vec2f pos(100, 100);
-        anim->update(dt, &pos);
-        renManager.draw(anim->get_texture(), anim->get_source(), anim->get_dest());
-        //////########################################################
-
-        //PRESENT
-        renManager.renderer_present();
     }
 
     SDL_Quit();

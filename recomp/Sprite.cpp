@@ -1,8 +1,6 @@
 #include "Sprite.h"
 
-#include <iostream>
 namespace badEngine {
-
 
 	//####################################################################################
 
@@ -12,22 +10,23 @@ namespace badEngine {
 		float tw, th;
 		SDL_GetTextureSize(mTexture.get(), &tw, &th);
 		//set values for iteration, internally frames are stored as 2D array
-		uint16_t columnCount = (nColumns) ? *nColumns : static_cast<uint16_t>(tw) / frameWidth;
-		uint16_t rowCount = (nRows) ? *nRows : static_cast<uint16_t>(th) / frameHeight;
+		uint16_t columnCount = (nColumns!=nullptr) ? *nColumns : static_cast<uint16_t>(tw) / frameWidth;
+		uint16_t rowCount = (nRows!=nullptr) ? *nRows : static_cast<uint16_t>(th) / frameHeight;
 
-		const rectF requiredArea = rectF(
-			0,
-			0,
+		const vec2i requiredSize(
 			columnCount * frameWidth,
 			rowCount * frameHeight
 		);
 
+		auto control_block = mTexture.get_control_block();
 		//check if the entire demand is within the control block
-		assert(mTexture.get_control_block().contains(requiredArea) && "demanded size too large for this texture");
+		assert(control_block.w >= requiredSize.x && control_block.h>= requiredSize.y && "demanded size too large for this texture");
 
-		for (uint16_t row = 0; row < rowCount; ++row) 
-			for (uint16_t col = 0; col < columnCount; ++col) 
+		for (uint16_t row = 0; row < rowCount; ++row) {
+			for (uint16_t col = 0; col < columnCount; ++col) {
 				mFrames.emplace_back(col * frameWidth, row * frameHeight);
+			}
+		}
 			
 		mColumns = columnCount;
 		mRows = rowCount;
@@ -40,16 +39,20 @@ namespace badEngine {
 	void Animation::update(float dt, vec2f* pos)noexcept {
 		//add to the time counter
 		mCurrentFrameTime += dt;
-		//while if counter is more than hold time
-		while (mCurrentFrameTime >= mHoldTime) {
-			++mCurrentFrame;					  //next frame
-			if (mCurrentFrame >= mColumns)  //if frame reached the end
-				mCurrentFrame = 0;				  //reset
 
-			mCurrentFrameTime -= mHoldTime;       //subtract 1 update cycle worth of time
+		if (mCurrentFrameTime >= mHoldTime) {
+
+			//while if counter is more than hold time
+			while (mCurrentFrameTime >= mHoldTime) {
+				++mCurrentFrame;					  //next frame
+				if (mCurrentFrame >= mColumns)  //if frame reached the end
+					mCurrentFrame = 0;				  //reset
+
+				mCurrentFrameTime -= mHoldTime;       //subtract 1 update cycle worth of time
+			}
+			int index = mCurrentRow * mColumns + mCurrentFrame;
+			mSource.set_pos(mFrames[index]);  //set source position
 		}
-		int index = mCurrentRow * mColumns + mCurrentFrame;
-		mSource.set_pos(mFrames[index]);  //set source position
 
 		if (pos)                                  //if pos set dest position
 			mDest.set_pos(*pos);
