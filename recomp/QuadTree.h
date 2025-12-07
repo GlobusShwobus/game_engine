@@ -9,11 +9,11 @@ TODO: recheck extras
 */
 
 namespace badEngine {
-	struct OBJECT_TYPE {
-		int aaa;
-	};
-	//template <typename OBJECT_TYPE>
-		//requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
+	//struct OBJECT_TYPE {
+		//int aaa;
+	//};
+	template <typename OBJECT_TYPE>
+		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
 
 		static constexpr std::size_t MAX_DEPTH = 6;

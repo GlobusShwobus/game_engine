@@ -18,7 +18,7 @@ namespace badEngine {
 		);
 
 		//check if the entire demand is within the control block
-		assert(mTexture.get_control_block().contains(requiredArea) && "demanded size too large for this texture");
+		assert(!mTexture.get_control_block().contains(requiredArea) && "demanded size too large for this texture");
 
 		for (uint16_t i = 0; i < fCount; ++i)
 			mFrames.emplace_back(start.x + (i * fWidth), start.y);
@@ -28,7 +28,7 @@ namespace badEngine {
 		mSource.set_size(size);//size of the frame
 		mDest.set_size(size);//default initial draw size
 	}
-	void Animation::update(float dt, vec2f* pos = nullptr)noexcept {
+	void Animation::update(float dt, vec2f* pos)noexcept {
 		//add to the time counter
 		mCurrentFrameTime += dt;
 		//while if counter is more than hold time

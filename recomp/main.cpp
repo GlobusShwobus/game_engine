@@ -15,15 +15,12 @@
 
 #include <iostream>
 /*
-*
-FIRST DO A OVERLAP CHECK
-THEN GET COLLIDERS FROM THE QUADTREE
 
-MAKE ENGINE CLASS TO MAKE HOW CHILI AND JAVIDX DO THE GAME THING
-ENTITY+ continue chilis lessons
-?????
+1) do a hash map data structure for reasons
+2) get back to quad tree reenvigorated
+3) make engine class for on user create and run loop sepparation
+4) entities??? probably not
 
-SERIALIZE FIRST (Too early, still not there yet)
 */
 
 int main() {
@@ -37,7 +34,59 @@ int main() {
     GraphicsSys renManager(windowConfig.get());
 
     ////// TEST CODE
-    struct SomeObjWithArea {
+   
+    std::unique_ptr<Texture> txtr = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", renManager);
+    std::unique_ptr<Animation> anim = std::make_unique<Animation>(*txtr.get(), vec2i(0, 0), 32, 32, 8);
+
+    //////#######################################################
+
+    //main loop
+    Stopwatch UPDATE_DELTA_TIMER;
+    bool GAME_RUNNING = true;
+    SDL_Event EVENT;
+
+    while (GAME_RUNNING) {
+        static float frameHold = 0;
+        float dt = UPDATE_DELTA_TIMER.dt_float();
+        frameHold += dt;
+        if (frameHold < 0.008f) {
+            continue;//skip the frame. a bit rigged atm, better to encapsulate in the IF
+        }
+        frameHold = 0;//fucking oops...
+
+        //CLEAR RENDERING
+        renManager.renderer_refresh();
+
+        //LISTEN TO EVENTS
+
+        while (SDL_PollEvent(&EVENT)) {
+            if (EVENT.type == SDL_EVENT_QUIT) {
+                GAME_RUNNING = false;
+                continue;
+            }
+
+            ////// TEST CODE
+
+            ////////######################################################
+        }
+
+        //////TEST CODE        
+        vec2f pos(100, 100);
+        anim->update(dt, &pos);
+        renManager.draw(anim->get_texture(), anim->get_source(), anim->get_dest());
+        //////########################################################
+
+        //PRESENT
+        renManager.renderer_present();
+    }
+
+    SDL_Quit();
+    return 0;
+
+}
+
+/*
+ struct SomeObjWithArea {
         rectF rect;
         vec2f vel;
         Color col;
@@ -79,34 +128,9 @@ int main() {
 
     float testMeAverage = 0.0f;
     std::size_t framesDone = 0;
-    //////#######################################################
+*/
 
-    //main loop
-    Stopwatch UPDATE_DELTA_TIMER;
-    bool GAME_RUNNING = true;
-    SDL_Event EVENT;
-
-    while (GAME_RUNNING) {
-        static float frameHold = 0;
-        float dt = UPDATE_DELTA_TIMER.dt_float();
-        frameHold += dt;
-        if (frameHold < 0.008f) {
-            continue;//skip the frame. a bit rigged atm, better to encapsulate in the IF
-        }
-        frameHold = 0;//fucking oops...
-
-        //CLEAR RENDERING
-        renManager.renderer_refresh();
-
-        //LISTEN TO EVENTS
-
-        while (SDL_PollEvent(&EVENT)) {
-            if (EVENT.type == SDL_EVENT_QUIT) {
-                GAME_RUNNING = false;
-                continue;
-            }
-
-            ////// TEST CODE
+/*
             if (EVENT.key.key == SDLK_A) {
                 mouseBoxSize += 10.0f;
             }
@@ -123,10 +147,9 @@ int main() {
                 plzDeleteArea = false;
             }
             script_handle_camera_mouse(EVENT, camera);
-            ////////######################################################
-        }
+*/
 
-        //////TEST CODE        
+/*
         rectF cameraSpace = camera.get_view_rect();
         std::size_t objectsCount = 0;
         Stopwatch timer;
@@ -220,15 +243,4 @@ int main() {
 
         font->set_text(print, vec2f(0, 0));
         renManager.draw(font->get_texture(), font->get_letter_positions());
-        //////########################################################
-
-        //PRESENT
-        renManager.renderer_present();
-    }
-
-    SDL_Quit();
-    std::cout << "average: " << (testMeAverage / framesDone);
-    return 0;
-
-}
-
+*/
