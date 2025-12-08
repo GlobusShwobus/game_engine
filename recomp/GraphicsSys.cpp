@@ -79,24 +79,17 @@ namespace badEngine {
 	}
 	bool GraphicsSys::set_render_target(SDL_Texture* target)
 	{
-		return target != nullptr && SDL_SetRenderTarget(mRenderer.get(), target);
+		return SDL_SetRenderTarget(mRenderer.get(), target);
 	}
 	bool GraphicsSys::renderer_present()const noexcept
 	{
 		SDL_Renderer* ren = mRenderer.get();
-		if (SDL_GetRenderTarget(ren) != nullptr)
-			SDL_SetRenderTarget(ren, nullptr);//on setting to null should never error
-
+		SDL_SetRenderTarget(ren, nullptr);//on setting to null should never error
 		return SDL_RenderPresent(ren);
 	}
 	bool GraphicsSys::renderer_refresh()const noexcept
 	{
-		SDL_Renderer* ren = mRenderer.get();
-		if (SDL_GetRenderTarget(ren) != nullptr)
-			SDL_SetRenderTarget(ren, nullptr);
-
-		//clears everything to current draw color
-		return SDL_RenderClear(ren);
+		return SDL_RenderClear(mRenderer.get());
 	}
 	SDL_Texture* GraphicsSys::load_texture_static(SDL_Surface* surface)const noexcept
 	{

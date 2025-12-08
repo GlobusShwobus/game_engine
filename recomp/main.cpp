@@ -39,8 +39,7 @@ int main() {
     std::unique_ptr<Animation> anim = std::make_unique<Animation>(*txtr.get(), 32, 32);
     rectF jjajaja(0, 0, 256, 256);
     SDL_Texture* txtrt = renManager.create_texture_targetable(960, 540, anim->get_texture(), nullptr, &jjajaja);
-    
-
+   
     //////#######################################################
 
     //main loop
@@ -49,10 +48,12 @@ int main() {
     SDL_Event EVENT;
 
     while (GAME_RUNNING) {
-        static float frameHold = 0;
+        static float accumulatedTime = 0;
+        static const float frameTime = 0.008f;
         float dt = UPDATE_DELTA_TIMER.dt_float();
-        frameHold += dt;
-        if (frameHold >= 0.008f) {
+        accumulatedTime += dt;
+
+        if (accumulatedTime >= frameTime) {
 
             //CLEAR RENDERING
             renManager.renderer_refresh();
@@ -66,26 +67,41 @@ int main() {
                 }
 
                 ////// TEST CODE
+                if (EVENT.key.key == SDLK_A) {
+                    float x, y;
+                    SDL_GetMouseState(&x, &y);
 
-
+                    renManager.set_render_target(txtrt);
+                    vec2f mpos(x, y);
+                    anim->anim_update(accumulatedTime, &mpos);
+                    renManager.draw(anim->get_texture(), anim->get_source(), anim->get_dest());
+                }
                 ////////######################################################
             }
 
             //////TEST CODE        
+            
+            //SUPER DUPER IMPORTANT, if canvas is targetd, then it must NOT BE DRAWN TO ITSELF
+            if (renManager.get_rendering_target() != nullptr) {
+                renManager.set_render_target(nullptr);
+            }
+
             rectF src(0, 0, txtrt->w, txtrt->h);
             rectF dest = src;
             renManager.draw(txtrt, src, dest);
+
             //////########################################################
 
             //PRESENT
             renManager.renderer_present();
-            frameHold -= 0.008f;
+            accumulatedTime -= frameTime;
         }
     }
     SDL_DestroyTexture(txtrt);
     return 0;
-
 }
+
+
 
 /*
  struct SomeObjWithArea {

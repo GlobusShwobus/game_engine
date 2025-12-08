@@ -67,6 +67,9 @@ namespace badEngine {
 		//must be called each frame because renderer_present will reset it
 		//useful for soemthing like a worldmap to have permanent changes
 		bool set_render_target(SDL_Texture* target);
+		SDL_Texture* get_rendering_target()const noexcept {
+			return SDL_GetRenderTarget(mRenderer.get());
+		}
 		
 		bool renderer_present()const noexcept;
 		bool renderer_refresh()const noexcept;
