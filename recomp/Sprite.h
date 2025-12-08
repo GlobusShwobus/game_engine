@@ -11,9 +11,20 @@ namespace badEngine {
 	
 	protected:
 
-		Sprite(const Texture& texture) :mTexture(texture) {
+		Sprite(const StaticTexture& texture) :mTexture(texture.get())
+		{
+			assert(mTexture != nullptr && "Texture is nullptr");
 			float w, h;
-			SDL_GetTextureSize(mTexture.get(), &w, &h);
+			SDL_GetTextureSize(mTexture, &w, &h);
+			mSource = rectF(0, 0, w, h);
+			mDest = rectF(0, 0, w, h);
+		}
+
+		Sprite(const TargetTexture& texture) :mTexture(texture.get())
+		{
+			assert(mTexture != nullptr && "Texture is nullptr");
+			float w, h;
+			SDL_GetTextureSize(mTexture, &w, &h);
 			mSource = rectF(0, 0, w, h);
 			mDest = rectF(0, 0, w, h);
 		}
@@ -29,14 +40,14 @@ namespace badEngine {
 			return mDest;
 		}
 		SDL_Texture* const get_texture()const noexcept {
-			return mTexture.get();
+			return mTexture;
 		}
 		bool isNullptr()const noexcept {
-			return mTexture.isNullPtr();
+			return mTexture;
 		}
 
 	protected:
-		const Texture& mTexture;
+		SDL_Texture* mTexture = nullptr;
 		rectF mSource;
 		rectF mDest;
 	};
@@ -45,7 +56,7 @@ namespace badEngine {
 
 	public:
 
-		Animation(const Texture& texture, uint16_t frameWidth, uint16_t frameHeight, uint16_t* nColumns = nullptr, uint16_t* nRows = nullptr);
+		Animation(const StaticTexture& texture, uint16_t frameWidth, uint16_t frameHeight, uint16_t* nColumns = nullptr, uint16_t* nRows = nullptr);
 
 		void anim_update(float dt, vec2f* pos = nullptr)noexcept;
 		void anim_set_hold_time(float time)noexcept;
@@ -68,6 +79,7 @@ namespace badEngine {
 		uint16_t mCurrentRow = 0;
 	};
 
+
 	class Font : public Sprite {
 
 		static constexpr char first_ASCII_character = ' ';
@@ -75,8 +87,8 @@ namespace badEngine {
 
 	public:
 
-		Font(const Texture& texture, uint32_t columnsCount, uint32_t rowsCount);
-		
+		Font(const StaticTexture& texture, uint32_t columnsCount, uint32_t rowsCount);
+
 		void font_set_text(std::string_view string, const vec2f& pos)noexcept;
 		void font_clear_text()noexcept;
 		void font_set_scale(float scale)noexcept;
@@ -92,6 +104,17 @@ namespace badEngine {
 		uint32_t mGlyphWidth = 0;
 		uint32_t mGlyphHeight = 0;
 		float mScale = 1.0f;
+	};
+
+	class Canvas :public Sprite {
+	public:
+
+
+		Canvas(const TargetTexture& texture, const GraphicsSys& gfx, Uint32 w, Uint32 h)
+			:Sprite(texture)
+		{
+
+		}
 	};
 
 }

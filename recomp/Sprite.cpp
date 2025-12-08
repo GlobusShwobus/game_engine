@@ -4,23 +4,22 @@ namespace badEngine {
 
 	//####################################################################################
 
-	Animation::Animation(const Texture& texture, uint16_t frameWidth, uint16_t frameHeight, uint16_t* nColumns, uint16_t* nRows)
+	Animation::Animation(const StaticTexture& texture, uint16_t frameWidth, uint16_t frameHeight, uint16_t* nColumns, uint16_t* nRows)
 		:Sprite(texture)
 	{
-		float tw, th;
-		SDL_GetTextureSize(mTexture.get(), &tw, &th);
+		float textureW, textureH;
+		SDL_GetTextureSize(mTexture, &textureW, &textureH);
 		//set values for iteration, internally frames are stored as 2D array
-		uint16_t columnCount = (nColumns!=nullptr) ? *nColumns : static_cast<uint16_t>(tw) / frameWidth;
-		uint16_t rowCount = (nRows!=nullptr) ? *nRows : static_cast<uint16_t>(th) / frameHeight;
+		uint16_t columnCount = (nColumns!=nullptr) ? *nColumns : static_cast<uint16_t>(textureW) / frameWidth;
+		uint16_t rowCount = (nRows!=nullptr) ? *nRows : static_cast<uint16_t>(textureH) / frameHeight;
 
 		const vec2i requiredSize(
 			columnCount * frameWidth,
 			rowCount * frameHeight
 		);
 
-		auto control_block = mTexture.get_control_block();
 		//check if the entire demand is within the control block
-		assert(control_block.w >= requiredSize.x && control_block.h>= requiredSize.y && "demanded size too large for this texture");
+		assert(textureW >= requiredSize.x && textureH >= requiredSize.y && "demanded size too large for this texture");
 
 		//setup a classical 2D array
 		for (uint16_t row = 0; row < rowCount; ++row) {
@@ -81,18 +80,19 @@ namespace badEngine {
 	}
 	//#########################################################################################
 
-	Font::Font(const Texture& texture, uint32_t columnsCount, uint32_t rowsCount)
+	Font::Font(const StaticTexture& texture, uint32_t columnsCount, uint32_t rowsCount)
 		:Sprite(texture),
 		mColumnsCount(columnsCount),
 		mRowsCount(rowsCount)
 	{
-		rectF textureBounds = mTexture.get_control_block();
+		float textureW, textureH;
+		SDL_GetTextureSize(mTexture, &textureW, &textureH);
 
-		mGlyphWidth = static_cast<unsigned int>(textureBounds.w / columnsCount);
-		mGlyphHeight = static_cast<unsigned int>(textureBounds.h / rowsCount);
+		mGlyphWidth = static_cast<unsigned int>(textureW / columnsCount);
+		mGlyphHeight = static_cast<unsigned int>(textureH / rowsCount);
 		//becasue int vs float
-		assert(mGlyphWidth * columnsCount == textureBounds.w && "texture image likely off size or invalid counts");
-		assert(mGlyphHeight * rowsCount == textureBounds.h && "texture image likely off size or invalid counts");
+		assert(mGlyphWidth * columnsCount == textureW && "texture image likely off size or invalid counts");
+		assert(mGlyphHeight * rowsCount == textureH && "texture image likely off size or invalid counts");
 		//no initial default sizes nor pos is set, set_text does that
 	}
 	void Font::font_set_text(std::string_view string, const vec2f& pos)noexcept {

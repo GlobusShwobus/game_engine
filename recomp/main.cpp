@@ -35,7 +35,7 @@ int main() {
 
     ////// TEST CODE
    
-    std::unique_ptr<Texture> txtr = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", renManager);
+    std::unique_ptr<StaticTexture> txtr = std::make_unique<StaticTexture>("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", renManager);
     std::unique_ptr<Animation> anim = std::make_unique<Animation>(*txtr.get(), 32, 32);
     rectF jjajaja(0, 0, 256, 256);
     SDL_Texture* txtrt = renManager.create_texture_targetable(960, 540, anim->get_texture(), nullptr, &jjajaja);
