@@ -106,9 +106,8 @@ namespace badEngine {
 	{
 		return IMG_LoadTexture(mRenderer.get(), path.data());
 	}
-	SDL_Texture* GraphicsSys::create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from)const noexcept
+	SDL_Texture* GraphicsSys::create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from, rectF* src, rectF* dest)const noexcept
 	{
-
 		SDL_Renderer* ren = mRenderer.get();
 		//create texture
 		SDL_Texture* texture = SDL_CreateTexture(
@@ -124,17 +123,21 @@ namespace badEngine {
 		SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 
 		if (copy_from) {
+			//get full size of the copy texture
+			float copyTextureW, copyTextureH;
+			SDL_GetTextureSize(copy_from, &copyTextureW, &copyTextureH);
 
-			float targetW, targetH;
-			SDL_GetTextureSize(texture, &targetW, &targetH);
-			SDL_FRect dest(0, 0, targetW, targetH);
+			//set copied size, by default whole texture
+			SDL_FRect cSrc = (src) ? convert_rect(*src) : SDL_FRect(0, 0, copyTextureW, copyTextureH);
+			//set destination size, by default cSrc size
+			SDL_FRect cDest = (dest) ? convert_rect(*dest) : cSrc;
 
 			//store current target, if null is fine
 			SDL_Texture* oldTarget = SDL_GetRenderTarget(ren);
 			//set this texture as target so we copy data onto it
 			SDL_SetRenderTarget(ren, texture);
 			//copy from copy_from using RenderTexture which renders to current rendering target
-			SDL_RenderTexture(ren, copy_from, nullptr, &dest);
+			SDL_RenderTexture(ren, copy_from, &cSrc, &cDest);
 			//reset target
 			SDL_SetRenderTarget(ren, oldTarget);
 		}

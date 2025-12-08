@@ -22,21 +22,22 @@ namespace badEngine {
 		//check if the entire demand is within the control block
 		assert(control_block.w >= requiredSize.x && control_block.h>= requiredSize.y && "demanded size too large for this texture");
 
+		//setup a classical 2D array
 		for (uint16_t row = 0; row < rowCount; ++row) {
 			for (uint16_t col = 0; col < columnCount; ++col) {
 				mFrames.emplace_back(col * frameWidth, row * frameHeight);
 			}
 		}
 			
-		mColumns = columnCount;
-		mRows = rowCount;
+		mColumnsN = columnCount;
+		mRowsN = rowCount;
 
 		mSource.set_pos(mFrames.front());
 		vec2f size(vec2f(static_cast<float>(frameWidth), static_cast<float>(frameHeight)));
 		mSource.set_size(size);
-		mDest.set_size(size);//default (set scale will mod it too)
+		mDest.set_size(size);//default (set scale will mod it tho)
 	}
-	void Animation::update(float dt, vec2f* pos)noexcept {
+	void Animation::anim_update(float dt, vec2f* pos)noexcept {
 		//add to the time counter
 		mCurrentFrameTime += dt;
 
@@ -44,22 +45,39 @@ namespace badEngine {
 
 			//while if counter is more than hold time
 			while (mCurrentFrameTime >= mHoldTime) {
-				++mCurrentFrame;					  //next frame
-				if (mCurrentFrame >= mColumns)  //if frame reached the end
-					mCurrentFrame = 0;				  //reset
+				++mCurrentColumn;					   //next frame
+				if (mCurrentColumn >= mColumnsN)        //if frame reached the end
+					mCurrentColumn = 0;				   //reset
 
-				mCurrentFrameTime -= mHoldTime;       //subtract 1 update cycle worth of time
+				mCurrentFrameTime -= mHoldTime;        //subtract 1 update cycle worth of time
 			}
-			int index = mCurrentRow * mColumns + mCurrentFrame;
-			mSource.set_pos(mFrames[index]);  //set source position
+
+			mSource.set_pos(mFrames[mCurrentRow * mColumnsN + mCurrentColumn]);    //set source position [y*width+x]
 		}
 
-		if (pos)                                  //if pos set dest position
+		if (pos)                                        //if pos set dest position
 			mDest.set_pos(*pos);
 	}
-	void Animation::set_frame_hold_time(float time)noexcept {
+	void Animation::anim_set_hold_time(float time)noexcept {
 		assert(time >= 0 && "negative time");
 		mHoldTime = time;
+	}
+	uint16_t Animation::anim_get_lines_count()const noexcept {
+		return mRowsN;
+	}
+	void Animation::anim_set_line(uint16_t line)noexcept {
+		assert(line < mRowsN && "input line can not exceed the count of rows");
+		mCurrentRow = line;
+	}
+	float Animation::anim_get_scale()const noexcept {
+		return mScale;
+	}
+	void Animation::anim_set_scale(float scale)noexcept {
+		assert(scale > 0.0f && "scalar can not be 0 or less");
+		mScale = scale;
+		auto baseSize = mSource.get_size();
+		baseSize *= mScale;
+		mDest.set_size(baseSize);
 	}
 	//#########################################################################################
 
@@ -77,8 +95,8 @@ namespace badEngine {
 		assert(mGlyphHeight * rowsCount == textureBounds.h && "texture image likely off size or invalid counts");
 		//no initial default sizes nor pos is set, set_text does that
 	}
-	void Font::set_text(std::string_view string, const vec2f& pos)noexcept {
-		clear_text();                                    //clear text, memory buffer stays
+	void Font::font_set_text(std::string_view string, const vec2f& pos)noexcept {
+		font_clear_text();                                    //clear text, memory buffer stays
 		const float scaledW = mGlyphWidth * mScale;      //used for dest, not source
 		const float scaledH = mGlyphHeight * mScale;     //used for dest, not source
 		vec2f destP = pos;                               //modifiable pos
@@ -120,10 +138,10 @@ namespace badEngine {
 			}
 		}
 	}
-	void Font::clear_text()noexcept {
+	void Font::font_clear_text()noexcept {
 		mLetterPos.clear();
 	}
-	void Font::set_scale(float scale)noexcept {
+	void Font::font_set_scale(float scale)noexcept {
 		assert(scale > 0.0f && "scale can not be zero or negative");
 		mScale = scale;
 	}

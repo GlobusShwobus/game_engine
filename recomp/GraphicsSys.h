@@ -76,8 +76,12 @@ namespace badEngine {
 		SDL_Texture* load_texture_static(SDL_Surface* surface)const noexcept;
 		//returns texture or nullptr on failure, call SDL_GetError
 		SDL_Texture* load_texture_static(std::string_view path)const noexcept;
-		//returns texture or nullptr on failure, call SDL_GetError
-		SDL_Texture* create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from = nullptr)const noexcept;
+		//creates a new texture set as targetable, meaning it can be set as render target
+		//params width and height are mandatory
+		//params copy from, src, dest dictate what texture to copy from, the copied area source and destination
+		//by default if src is nullptr, it copies the whole texture and destination is by default same as src
+		//NOTE:: if source and/or dest are out of bounds, default SDL behavior occurs meaning things get cliped or simply not drawn at all
+		SDL_Texture* create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from = nullptr, rectF* src = nullptr, rectF* dest = nullptr)const noexcept;
 		//draws a source rectangle from texture to the position of dest on current rendering target
 		//returns false on failure, call SDL_GetError
 		bool draw(SDL_Texture* texture, const rectF& source, const rectF& dest)const noexcept;

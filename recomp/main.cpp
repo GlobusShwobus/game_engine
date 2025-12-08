@@ -37,6 +37,9 @@ int main() {
    
     std::unique_ptr<Texture> txtr = std::make_unique<Texture>("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", renManager);
     std::unique_ptr<Animation> anim = std::make_unique<Animation>(*txtr.get(), 32, 32);
+    rectF jjajaja(0, 0, 256, 256);
+    SDL_Texture* txtrt = renManager.create_texture_targetable(960, 540, anim->get_texture(), nullptr, &jjajaja);
+    
 
     //////#######################################################
 
@@ -63,23 +66,15 @@ int main() {
                 }
 
                 ////// TEST CODE
-                if (EVENT.key.key == SDLK_A) {
-                    anim->set_line(0);
-                }
-                if (EVENT.key.key == SDLK_B) {
-                    anim->set_line(1);
-                }
-                if (EVENT.key.key == SDLK_C) {
-                    anim->set_line(2);
-                }
+
+
                 ////////######################################################
             }
 
             //////TEST CODE        
-            vec2f pos(100, 100);
-            anim->update(frameHold, &pos);
-
-            renManager.draw(anim->get_texture(), anim->get_source(), anim->get_dest());
+            rectF src(0, 0, txtrt->w, txtrt->h);
+            rectF dest = src;
+            renManager.draw(txtrt, src, dest);
             //////########################################################
 
             //PRESENT
@@ -87,8 +82,7 @@ int main() {
             frameHold -= 0.008f;
         }
     }
-
-    SDL_Quit();
+    SDL_DestroyTexture(txtrt);
     return 0;
 
 }

@@ -47,27 +47,25 @@ namespace badEngine {
 
 		Animation(const Texture& texture, uint16_t frameWidth, uint16_t frameHeight, uint16_t* nColumns = nullptr, uint16_t* nRows = nullptr);
 
-		void update(float dt, vec2f* pos = nullptr)noexcept;
-		void set_frame_hold_time(float time)noexcept;
-		uint16_t get_lines_count()const noexcept {
-			return mRows;
-		}
-		void set_line(uint16_t line)noexcept {
-			assert(line < mRows && "input line can not exceed the count of rows");
-			mCurrentRow = line;
-		}
+		void anim_update(float dt, vec2f* pos = nullptr)noexcept;
+		void anim_set_hold_time(float time)noexcept;
+		uint16_t anim_get_lines_count()const noexcept;
+		void anim_set_line(uint16_t line)noexcept;
+		float anim_get_scale()const noexcept;
+		void anim_set_scale(float scale)noexcept;
 
 	private:
 		SequenceM<vec2i> mFrames;
 
 		float mHoldTime = 0.08f;
 		float mCurrentFrameTime = 0.0f;
+		float mScale = 1.0f;
 
-		uint16_t mColumns = 0;
-		uint16_t mRows = 0;
+		uint16_t mColumnsN = 0;
+		uint16_t mRowsN = 0;
 
+		uint16_t mCurrentColumn = 0;
 		uint16_t mCurrentRow = 0;
-		uint16_t mCurrentFrame = 0;
 	};
 
 	class Font : public Sprite {
@@ -79,9 +77,9 @@ namespace badEngine {
 
 		Font(const Texture& texture, uint32_t columnsCount, uint32_t rowsCount);
 		
-		void set_text(std::string_view string, const vec2f& pos)noexcept;
-		void clear_text()noexcept;
-		void set_scale(float scale)noexcept;
+		void font_set_text(std::string_view string, const vec2f& pos)noexcept;
+		void font_clear_text()noexcept;
+		void font_set_scale(float scale)noexcept;
 
 		const SequenceM<std::pair<rectF, rectF>>& get_letter_positions()const {
 			return mLetterPos;
