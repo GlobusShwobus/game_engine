@@ -37,9 +37,11 @@ int main() {
    
     std::unique_ptr<StaticTexture> txtr = std::make_unique<StaticTexture>("C:/Users/ADMIN/Desktop/recomp/Textures/player_sheet_2.png", renManager);
     std::unique_ptr<Animation> anim = std::make_unique<Animation>(*txtr.get(), 32, 32);
-    rectF jjajaja(0, 0, 256, 256);
-    SDL_Texture* txtrt = renManager.create_texture_targetable(960, 540, anim->get_texture(), nullptr, &jjajaja);
+
    
+    std::unique_ptr<TargetTexture> ttxtr = std::make_unique<TargetTexture>(960, 540, renManager);
+    std::unique_ptr<Canvas> ctxtr = std::make_unique<Canvas>(*ttxtr.get());
+
     //////#######################################################
 
     //main loop
@@ -68,27 +70,22 @@ int main() {
 
                 ////// TEST CODE
                 if (EVENT.key.key == SDLK_A) {
-                    float x, y;
-                    SDL_GetMouseState(&x, &y);
-
-                    renManager.set_render_target(txtrt);
-                    vec2f mpos(x, y);
-                    anim->anim_update(accumulatedTime, &mpos);
-                    renManager.draw(anim->get_texture(), anim->get_source(), anim->get_dest());
+                    ctxtr->start_drawing(renManager);
                 }
                 ////////######################################################
             }
 
             //////TEST CODE        
-            
-            //SUPER DUPER IMPORTANT, if canvas is targetd, then it must NOT BE DRAWN TO ITSELF
-            if (renManager.get_rendering_target() != nullptr) {
-                renManager.set_render_target(nullptr);
-            }
 
-            rectF src(0, 0, txtrt->w, txtrt->h);
-            rectF dest = src;
-            renManager.draw(txtrt, src, dest);
+            float x, y;
+            SDL_GetMouseState(&x, &y);
+            vec2f mpos(x, y);
+            anim->anim_update(accumulatedTime, &mpos);
+            renManager.draw(anim->get_texture(), anim->get_source(), anim->get_dest());
+
+            ctxtr->end_drawing(renManager);
+
+            renManager.draw(ctxtr->get_texture(), ctxtr->get_source(), ctxtr->get_dest());
 
             //////########################################################
 
@@ -97,7 +94,6 @@ int main() {
             accumulatedTime -= frameTime;
         }
     }
-    SDL_DestroyTexture(txtrt);
     return 0;
 }
 

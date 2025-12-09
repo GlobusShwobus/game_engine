@@ -6,8 +6,29 @@ namespace badEngine {
 
 	static constexpr auto SDLTextureDeleter = [](SDL_Texture* t) { if (t)SDL_DestroyTexture(t); };
 
-	class StaticTexture {
-		
+	class TextureBase {
+
+	protected:
+
+		TextureBase() = default;
+		virtual ~TextureBase() = default;
+
+	public:
+
+		SDL_Texture* const get()const noexcept {
+			return mTexture.get();
+		}
+
+		bool isNullPtr()const noexcept {
+			return mTexture == nullptr;
+		}
+
+	protected:
+		std::unique_ptr<SDL_Texture, decltype(SDLTextureDeleter)> mTexture;
+	};
+
+	class StaticTexture :public TextureBase {
+
 	public:
 		StaticTexture(SDL_Surface& surface, const GraphicsSys& gfx)
 		{
@@ -21,20 +42,9 @@ namespace badEngine {
 			assert(txtr != nullptr && "Texture is nullptr");
 			mTexture.reset(txtr);
 		}
-
-		SDL_Texture* const get()const noexcept {
-			return mTexture.get();
-		}
-
-		bool isNullPtr()const noexcept {
-			return mTexture == nullptr;
-		}
-
-	private:
-		std::unique_ptr<SDL_Texture, decltype(SDLTextureDeleter)> mTexture;
 	};
 
-	class TargetTexture {
+	class TargetTexture :public TextureBase {
 	public:
 
 		TargetTexture(Uint32 w, Uint32 h, const GraphicsSys& gfx)
@@ -43,21 +53,11 @@ namespace badEngine {
 			assert(txtr != nullptr && "Texture is nullptr");
 			mTexture.reset(txtr);
 		}
-		TargetTexture(Uint32 w, Uint32 h, const GraphicsSys& gfx, SDL_Texture* copy_from = nullptr, rectF* src = nullptr, rectF* dest = nullptr)
+		TargetTexture(Uint32 w, Uint32 h, const GraphicsSys& gfx, SDL_Texture* copy_from, rectF* src = nullptr, rectF* dest = nullptr)
 		{
 			SDL_Texture* txtr = gfx.create_texture_targetable(w, h, copy_from, src, dest);
 			assert(txtr != nullptr && "Texture is nullptr");
 			mTexture.reset(txtr);
 		}
-
-		SDL_Texture* const get()const noexcept {
-			return mTexture.get();
-		}
-
-		bool isNullPtr()const noexcept {
-			return mTexture == nullptr;
-		}
-	private:
-		std::unique_ptr<SDL_Texture, decltype(SDLTextureDeleter)> mTexture;
 	};
 }

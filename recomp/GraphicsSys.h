@@ -66,7 +66,7 @@ namespace badEngine {
 		//Texture will be permanently overwritten in memory, so make a copy or just keep in mind to reload a clean slate
 		//must be called each frame because renderer_present will reset it
 		//useful for soemthing like a worldmap to have permanent changes
-		bool set_render_target(SDL_Texture* target);
+		bool set_render_target(SDL_Texture* target)const noexcept;
 		SDL_Texture* get_rendering_target()const noexcept {
 			return SDL_GetRenderTarget(mRenderer.get());
 		}

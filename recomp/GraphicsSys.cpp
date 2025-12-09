@@ -77,7 +77,7 @@ namespace badEngine {
 		SDL_RenderFillRect(ren, &sdlArea);
 		SDL_SetRenderDrawColor(ren, mDrawColor.get_red(), mDrawColor.get_green(), mDrawColor.get_blue(), mDrawColor.get_alpha());
 	}
-	bool GraphicsSys::set_render_target(SDL_Texture* target)
+	bool GraphicsSys::set_render_target(SDL_Texture* target)const noexcept
 	{
 		return SDL_SetRenderTarget(mRenderer.get(), target);
 	}

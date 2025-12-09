@@ -42,9 +42,6 @@ namespace badEngine {
 		SDL_Texture* const get_texture()const noexcept {
 			return mTexture;
 		}
-		bool isNullptr()const noexcept {
-			return mTexture;
-		}
 
 	protected:
 		SDL_Texture* mTexture = nullptr;
@@ -110,10 +107,17 @@ namespace badEngine {
 	public:
 
 
-		Canvas(const TargetTexture& texture, const GraphicsSys& gfx, Uint32 w, Uint32 h)
+		Canvas(const TargetTexture& texture)
 			:Sprite(texture)
 		{
-
+		}
+		//false == failure, call SDL_GetError
+		bool start_drawing(const GraphicsSys& gfx)const noexcept{
+			return gfx.set_render_target(mTexture);
+		}
+		//false == failure, call SDL_GetError
+		bool end_drawing(const GraphicsSys& gfx)const noexcept {
+			return gfx.set_render_target(nullptr);
 		}
 	};
 
