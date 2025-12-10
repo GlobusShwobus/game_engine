@@ -151,7 +151,7 @@
     <ClInclude Include="Entity_Factory.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Configs.h" />
-    <ClInclude Include="HashTable.h" />
+    <ClInclude Include="SLList.h" />
     <ClInclude Include="NumberGenerator.h" />
     <ClInclude Include="QuadTree.h" />
     <ClInclude Include="Rectangle.h" />

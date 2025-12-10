@@ -467,13 +467,37 @@ namespace badEngine {
 				reallocate(growthFactor(mCapacity));
 			//current end point
 			pointer slot = pEnd_usable();
+
+			bool slotConstructed = (mConstructedSize > mUsableSize);
 			//if there is a constructed but depricated slot, copy assign into it
-			if ((mConstructedSize - mUsableSize) > EMPTY_GUARD) {
+			if (slotConstructed) {
 				*slot = value;
 			}
-			//if there aren't any slots remaining, need official constructor
-			else {
+			else {//if there aren't any slots remaining, need constructor
 				std::construct_at(slot, value);
+				//if we constructed a new thing, incr constructed counter
+				++mConstructedSize;
+			}
+			//in any case after adding incr usable size
+			++mUsableSize;
+		}
+		//moves elements
+		void push_back(value_type&& value)
+			requires std::is_nothrow_move_assignable_v<value_type>
+		{
+			//if at capacity, reallocate with extra memory
+			if (mConstructedSize == mCapacity)
+				reallocate(growthFactor(mCapacity));
+			//current end point
+			pointer slot = pEnd_usable();
+
+			bool slotConstructed = (mConstructedSize > mUsableSize);
+			//if there is a constructed but depricated slot, move assign into it
+			if (slotConstructed) {
+				*slot = std::move(value);
+			}
+			else {//if there aren't any slots remaining, need official constructor
+				std::construct_at(slot, std::move(value));
 				//if we constructed a new thing, incr constructed counter
 				++mConstructedSize;
 			}
@@ -490,8 +514,10 @@ namespace badEngine {
 				reallocate(growthFactor(mCapacity));
 			//current end point
 			pointer slot = pEnd_usable();
+
+			bool slotConstructed = (mConstructedSize > mUsableSize);
 			//if there is a constructed but depricated slot must destroy it first
-			if ((mConstructedSize - mUsableSize) > EMPTY_GUARD) {
+			if (slotConstructed) {
 				if constexpr (!std::is_trivially_destructible_v<value_type>) {
 					std::destroy_at(slot);
 				}
