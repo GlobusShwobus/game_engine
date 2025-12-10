@@ -4,12 +4,11 @@
 
 namespace badEngine {
 
-	static constexpr auto SDLTextureDeleter = [](SDL_Texture* t) { if (t)SDL_DestroyTexture(t); };
-
 	class TextureBase {
 
 	protected:
 
+		static constexpr auto SDLTextureDeleter = [](SDL_Texture* t) { if (t)SDL_DestroyTexture(t); };
 		TextureBase() = default;
 		virtual ~TextureBase() = default;
 
