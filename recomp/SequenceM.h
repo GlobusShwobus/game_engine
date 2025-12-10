@@ -468,9 +468,8 @@ namespace badEngine {
 			//current end point
 			pointer slot = pEnd_usable();
 
-			bool slotConstructed = (mConstructedSize > mUsableSize);
 			//if there is a constructed but depricated slot, copy assign into it
-			if (slotConstructed) {
+			if (mConstructedSize > mUsableSize) {
 				*slot = value;
 			}
 			else {//if there aren't any slots remaining, need constructor
@@ -490,10 +489,8 @@ namespace badEngine {
 				reallocate(growthFactor(mCapacity));
 			//current end point
 			pointer slot = pEnd_usable();
-
-			bool slotConstructed = (mConstructedSize > mUsableSize);
 			//if there is a constructed but depricated slot, move assign into it
-			if (slotConstructed) {
+			if (mConstructedSize > mUsableSize) {
 				*slot = std::move(value);
 			}
 			else {//if there aren't any slots remaining, need official constructor
@@ -507,7 +504,7 @@ namespace badEngine {
 		//creates elements and or accepts moving as well
 		template<typename... Args>
 		void emplace_back(Args&&... args)
-			requires std::constructible_from<value_type, Args&&...>
+			requires std::constructible_from<value_type, Args&&...> && std::is_nothrow_move_assignable_v<value_type>
 		{
 			//if at capacity, reallocate with extra memory
 			if (mConstructedSize == mCapacity)
@@ -515,19 +512,15 @@ namespace badEngine {
 			//current end point
 			pointer slot = pEnd_usable();
 
-			bool slotConstructed = (mConstructedSize > mUsableSize);
-			//if there is a constructed but depricated slot must destroy it first
-			if (slotConstructed) {
-				if constexpr (!std::is_trivially_destructible_v<value_type>) {
-					std::destroy_at(slot);
-				}
+			//if there is a constructed assign
+			if (mConstructedSize > mUsableSize) {
+				*slot = value_type(std::forward<Args>(args)...);
 			}
 			else { //otherwise need to increment mConstructedSize bookkeeping
+				std::construct_at(slot, std::forward<Args>(args)...);
 				++mConstructedSize;
 			}
-			//construct the element
-			std::construct_at(slot, std::forward<Args>(args)...);
-			//in any case after adding incr usable size
+			//incr count
 			++mUsableSize;
 		}
 		//does nothing besides decrementing counter
