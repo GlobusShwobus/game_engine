@@ -2,8 +2,10 @@
 #include <memory>
 
 namespace badEngine {
-	
-	template <typename T>//basic restriction should be basically just deletable
+	struct T {
+		int a;
+	};
+	//template <typename T>//basic restriction should be basically just deletable
 	class SLList {
 	private:
 
@@ -13,37 +15,148 @@ namespace badEngine {
 			Element(T&& val, std::unique_ptr<Element> next)
 				:value(std::move(val)), next(std::move(next)) {
 			}
+			template<typename... Args>
+				requires std::constructible_from<T, Args&&...>
+			Element(std::unique_ptr<Element> next, Args&&... args)
+				:value(std::forward<Args>(args)...), next(std::move(next)) {
+			}
 			T value;
 			std::unique_ptr<Element> next = nullptr;
+		};
+
+
+		class iterator {
+		public:
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = T;
+			using difference_type = std::ptrdiff_t;
+			using pointer = T*;
+			using reference = T&;
+
+			iterator() = default;
+			iterator(Element* pElem) :mPtr(pElem) {}
+
+			reference operator*()const
+			{
+				return mPtr->value;
+			}
+			pointer operator->()const
+			{
+				return &mPtr->value;
+			}
+			iterator& operator++()
+			{
+				mPtr = mPtr->next.get();
+				return *this;
+			}
+			iterator operator++(int)
+			{
+				iterator tmp = *this;
+				++(*this);
+				return tmp;
+			}
+
+			bool operator==(const iterator& rhs)const
+			{
+				return mPtr == rhs.mPtr;
+			}
+			bool operator!=(const iterator& rhs)const {
+				return mPtr != rhs.mPtr;
+			}
+
+		private:
+			Element* mPtr = nullptr;
+		};
+
+		class const_iterator {
+		public:
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = T;
+			using difference_type = std::ptrdiff_t;
+			using pointer = const T*;
+			using reference = const T&;
+
+			const_iterator() = default;
+			const_iterator(Element* pElem) :mPtr(pElem) {}
+
+			reference operator*()const
+			{
+				return mPtr->value;
+			}
+			pointer operator->()const
+			{
+				return &mPtr->value;
+			}
+			const_iterator& operator++()
+			{
+				mPtr = mPtr->next.get();
+				return *this;
+			}
+			const_iterator operator++(int)
+			{
+				const_iterator tmp = *this;
+				++(*this);
+				return tmp;
+			}
+
+			bool operator==(const const_iterator& rhs)const
+			{
+				return mPtr == rhs.mPtr;
+			}
+			bool operator!=(const const_iterator& rhs)const {
+				return mPtr != rhs.mPtr;
+			}
+
+		private:
+			Element* mPtr = nullptr;
 		};
 
 	public:
 		SLList() = default;
 		//MODIFIERS
-
 		void push_front(const T& val)
 		{
-			mFront = std::make_unique<Element>(val, std::move(mTop));
+			mFront = std::make_unique<Element>(val, std::move(mFront));
 			++mCount;
 		}
 		void push_front(T&& value)
 		{
-			mFront = std::make_unique<Element>(std::move(val), std::move(mTop));
+			mFront = std::make_unique<Element>(std::move(value), std::move(mFront));
 			++mCount;
 		}
-		void pop()
+		template <typename... Args>
+		T& emplace_front(Args&&... args)		
+			requires std::constructible_from<T, Args&&...>
 		{
-			if (mFront) {
-				mFront = std::move(mFront->next);
-				--mCount;
-			}
+			mFront = std::make_unique<Element>(std::move(mFront), std::forward<Args>(args)...);
+			++mCount;
+			return mFront->value;
 		}
+
+		void clear()noexcept
+		{
+			mFront.reset();
+			mCount = 0;
+		}
+
 		//ELEMENT ACCESS
-		T& top() {
-			return mFront->value;
+		iterator begin()noexcept {
+			return iterator(mFront.get());
 		}
-		const T& top()const {
-			return mFront->value;
+		const_iterator begin()const noexcept {
+			return const_iterator(mFront.get());
+		}
+		const_iterator cbegin()const noexcept {
+			return const_iterator(mFront.get());
+		}
+		iterator end()noexcept {
+			return iterator(nullptr);
+		}
+		const_iterator end()const noexcept {
+			return const_iterator(nullptr);
+		}
+		const_iterator cend()const noexcept {
+			return const_iterator(nullptr);
 		}
 
 		//BULLSHIT
@@ -60,7 +173,22 @@ namespace badEngine {
 		std::size_t mCount = 0;
 	};
 
+	/*
+			void pop()
+		{
+			if (mFront) {
+				mFront = std::move(mFront->next);
+				--mCount;
+			}
+		}
 
+				T& top() {
+			return mFront->value;
+		}
+		const T& top()const {
+			return mFront->value;
+		}
+	*/
 
 
 
