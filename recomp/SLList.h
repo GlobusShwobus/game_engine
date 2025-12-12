@@ -2,9 +2,7 @@
 #include <memory>
 
 namespace badEngine {
-	//struct T {
-		//int a;
-	//};
+
 	template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
 	class SLList {
 	private:
@@ -67,6 +65,7 @@ namespace badEngine {
 		private:
 			Element* mPtr = nullptr;
 		};
+
 		class const_iterator {
 		public:
 			using iterator_category = std::forward_iterator_tag;
@@ -162,14 +161,10 @@ namespace badEngine {
 		{
 			//if current is larger than count, cut
 			if (count < mCount) {
-				size_type cull = mCount - count;
-				for (size_type i = 0; i < cull; ++i)
-					pop_front();
+				resize_shrink_impl(count;)
 			}
 			else if (count > mCount) {//if count is larget than current, create
-				size_type create = count - mCount;
-				for (size_type i = 0; i < create; ++i)
-					emplace_front(value_type());
+				resize_grow_def_impl(count);
 			}
 			//else if count == mCount do nothing
 		}
@@ -177,16 +172,17 @@ namespace badEngine {
 			requires std::copyable<value_type>
 		{
 			if (count < mCount) {
-				size_type cull = mCount - count;
-				for (size_type i = 0; i < cull; ++i)
-					pop_front();
+				resize_shrink_impl(count;)
 			}
 			else if (count > mCount) {
-				size_type create = count - mCount;
-				for (size_type i = 0; i < create; ++i)
-					push_front(value);
+				resize_grow_copy_impl(count, value);
 			}
 			//else if count == mCount do nothing
+		}
+		void swap(SLList& other)noexcept
+		{
+			std::swap(mFront, other.mFront);
+			std::swap(mCount, other.mCount);
 		}
 
 		//ELEMENT ACCESS
@@ -225,26 +221,30 @@ namespace badEngine {
 		}
 
 	private:
+
+		void resize_shrink_impl(size_type targetSize)
+		{
+			size_type cull = mCount - targetSize;
+			while (cull--)
+				pop_front();
+		}
+		void resize_grow_def_impl(size_type targetSize)
+		{
+			size_type createCount = targetSize - mCount;
+			while (createCount--)
+				emplace_front(value_type{});
+		}
+		void resize_grow_copy_impl(size_type targetSize, const value_type& value)
+		{
+			size_type createCount = targetSize - mCount;
+			while (createCount--)
+				push_front(value);
+		}
+
+	private:
 		std::unique_ptr<Element> mFront = nullptr;
 		std::size_t mCount = 0;
 	};
-
-	/*
-			void pop()
-		{
-			if (mFront) {
-				mFront = std::move(mFront->next);
-				--mCount;
-			}
-		}
-
-				T& top() {
-			return mFront->value;
-		}
-		const T& top()const {
-			return mFront->value;
-		}
-	*/
 
 
 
