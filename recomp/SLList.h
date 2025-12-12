@@ -2,10 +2,10 @@
 #include <memory>
 
 namespace badEngine {
-	struct T {
-		int a;
-	};
-	//template <typename T>//basic restriction should be basically just deletable
+	//struct T {
+		//int a;
+	//};
+	template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
 	class SLList {
 	private:
 
@@ -67,7 +67,6 @@ namespace badEngine {
 		private:
 			Element* mPtr = nullptr;
 		};
-
 		class const_iterator {
 		public:
 			using iterator_category = std::forward_iterator_tag;
@@ -112,31 +111,82 @@ namespace badEngine {
 		};
 
 	public:
+
+		using value_type = T;
+		using size_type = std::size_t;
+		using difference_type = std::ptrdiff_t;
+		using reference = T&;
+		using const_reference = const T&;
+		using pointer = T*;
+		using const_pointer = const T*;
+		using iterator = SLList::iterator;
+		using const_iterator = SLList::const_iterator;
+
+	public:
 		SLList() = default;
 		//MODIFIERS
-		void push_front(const T& val)
+		void push_front(const_reference val)
 		{
 			mFront = std::make_unique<Element>(val, std::move(mFront));
 			++mCount;
 		}
-		void push_front(T&& value)
+		void push_front(value_type&& value)
 		{
 			mFront = std::make_unique<Element>(std::move(value), std::move(mFront));
 			++mCount;
 		}
 		template <typename... Args>
-		T& emplace_front(Args&&... args)		
+		reference emplace_front(Args&&... args)		
 			requires std::constructible_from<T, Args&&...>
 		{
 			mFront = std::make_unique<Element>(std::move(mFront), std::forward<Args>(args)...);
 			++mCount;
 			return mFront->value;
 		}
+		void pop_front()
+		{
+			if (mFront) {
+				mFront = std::move(mFront->next);
+				--mCount;
+			}
 
+		}
 		void clear()noexcept
 		{
 			mFront.reset();
 			mCount = 0;
+		}
+
+		void resize(size_type count)
+			requires std::default_initializable<value_type>
+		{
+			//if current is larger than count, cut
+			if (count < mCount) {
+				size_type cull = mCount - count;
+				for (size_type i = 0; i < cull; ++i)
+					pop_front();
+			}
+			else if (count > mCount) {//if count is larget than current, create
+				size_type create = count - mCount;
+				for (size_type i = 0; i < create; ++i)
+					emplace_front(value_type());
+			}
+			//else if count == mCount do nothing
+		}
+		void resize(size_type count, const value_type& value)
+			requires std::copyable<value_type>
+		{
+			if (count < mCount) {
+				size_type cull = mCount - count;
+				for (size_type i = 0; i < cull; ++i)
+					pop_front();
+			}
+			else if (count > mCount) {
+				size_type create = count - mCount;
+				for (size_type i = 0; i < create; ++i)
+					push_front(value);
+			}
+			//else if count == mCount do nothing
 		}
 
 		//ELEMENT ACCESS
@@ -160,9 +210,15 @@ namespace badEngine {
 		}
 
 		//BULLSHIT
-		std::size_t size()const {
+		size_type size()const
+		{
 			return mCount;
 		}
+		size_type max_size()const noexcept
+		{
+			return std::numeric_limits<size_type>::max() / sizeof(Element);
+		}
+
 		bool isEmpty()const
 		{
 			return mFront == nullptr;
