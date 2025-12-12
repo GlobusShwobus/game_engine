@@ -1,8 +1,15 @@
 #pragma once
 #include <memory>
+#include <optional>
 
 namespace badEngine {
+	/*
+	
+	mFront IS the sentinel. begin == before_begin++, push_front is begin and pop_back can't pop the sentinel etc...
+	deref before_begin is UB as per STL, which means i can ignore allllll the checks for regular begin...end
+	does include slightly more mem overhead but whatever
 
+	*/
 	template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
 	class SLList {
 	private:
@@ -18,7 +25,9 @@ namespace badEngine {
 			Element(std::unique_ptr<Element> next, Args&&... args)
 				:value(std::forward<Args>(args)...), next(std::move(next)) {
 			}
-			T value;
+			Element() = default;
+
+			std::optional<T> value;
 			std::unique_ptr<Element> next = nullptr;
 		};
 
@@ -36,11 +45,11 @@ namespace badEngine {
 
 			reference operator*()const
 			{
-				return mPtr->value;
+				return *mPtr->value;
 			}
 			pointer operator->()const
 			{
-				return &mPtr->value;
+				return &*mPtr->value;
 			}
 			iterator& operator++()
 			{
@@ -79,11 +88,11 @@ namespace badEngine {
 
 			reference operator*()const
 			{
-				return mPtr->value;
+				return *mPtr->value;
 			}
 			pointer operator->()const
 			{
-				return &mPtr->value;
+				return &*mPtr->value;
 			}
 			const_iterator& operator++()
 			{
@@ -108,7 +117,6 @@ namespace badEngine {
 		private:
 			Element* mPtr = nullptr;
 		};
-
 	public:
 
 		using value_type = T;
