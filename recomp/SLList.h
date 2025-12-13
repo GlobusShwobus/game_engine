@@ -1,6 +1,5 @@
 #pragma once
 #include <memory>
-#include <optional>
 
 namespace badEngine {
 	/*
@@ -10,71 +9,32 @@ namespace badEngine {
 	does include slightly more mem overhead but whatever
 
 	*/
-	template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
+	struct T {
+		int a;
+	};
+	//template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
 	class SLList {
 	private:
 
-		struct Element {
-			Element(const T& val, std::unique_ptr<Element> next)
-				:value(val), next(std::move(next)) {}
-			Element(T&& val, std::unique_ptr<Element> next)
-				:value(std::move(val)), next(std::move(next)) {
+
+		struct NodeBase {
+			std::unique_ptr<NodeBase> next = nullptr;
+		};
+		struct Node : NodeBase {
+			Node(const T& val, std::unique_ptr<NodeBase> next)
+				:NodeBase{std::move(next)}, value(val) {
+			}
+			Node(T&& val, std::unique_ptr<NodeBase> next)
+				:NodeBase{std::move(next)}, value(std::move(val)) {
 			}
 			template<typename... Args>
 				requires std::constructible_from<T, Args&&...>
-			Element(std::unique_ptr<Element> next, Args&&... args)
-				:value(std::forward<Args>(args)...), next(std::move(next)) {
+			Node(std::unique_ptr<NodeBase> next, Args&&... args)
+				: NodeBase{ std::move(next) }, value(std::forward<Args>(args)...) {
 			}
-			Element() = default;
 
-			std::optional<T> value;
-			std::unique_ptr<Element> next = nullptr;
+			T value;
 		};
-
-
-		class iterator {
-		public:
-			using iterator_category = std::forward_iterator_tag;
-			using value_type = T;
-			using difference_type = std::ptrdiff_t;
-			using pointer = T*;
-			using reference = T&;
-
-			iterator() = default;
-			iterator(Element* pElem) :mPtr(pElem) {}
-
-			reference operator*()const
-			{
-				return *mPtr->value;
-			}
-			pointer operator->()const
-			{
-				return &*mPtr->value;
-			}
-			iterator& operator++()
-			{
-				mPtr = mPtr->next.get();
-				return *this;
-			}
-			iterator operator++(int)
-			{
-				iterator tmp = *this;
-				++(*this);
-				return tmp;
-			}
-
-			bool operator==(const iterator& rhs)const
-			{
-				return mPtr == rhs.mPtr;
-			}
-			bool operator!=(const iterator& rhs)const {
-				return mPtr != rhs.mPtr;
-			}
-
-		private:
-			Element* mPtr = nullptr;
-		};
-
 		class const_iterator {
 		public:
 			using iterator_category = std::forward_iterator_tag;
@@ -84,15 +44,15 @@ namespace badEngine {
 			using reference = const T&;
 
 			const_iterator() = default;
-			const_iterator(Element* pElem) :mPtr(pElem) {}
+			explicit const_iterator(const NodeBase* pNode) :mPtr(pNode) {}
 
 			reference operator*()const
 			{
-				return *mPtr->value;
+				return static_cast<const Node*>(mPtr)->value;
 			}
 			pointer operator->()const
 			{
-				return &*mPtr->value;
+				return &static_cast<const Node*>(mPtr)->value;
 			}
 			const_iterator& operator++()
 			{
@@ -115,8 +75,58 @@ namespace badEngine {
 			}
 
 		private:
-			Element* mPtr = nullptr;
+			const NodeBase* mPtr = nullptr;
 		};
+
+
+		class iterator {
+		public:
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = T;
+			using difference_type = std::ptrdiff_t;
+			using pointer = T*;
+			using reference = T&;
+
+			iterator() = default;
+			explicit iterator(NodeBase* pNode) :mPtr(pNode) {}
+
+			reference operator*()const
+			{
+				return static_cast<Node*>(mPtr)->value;
+			}
+			pointer operator->()const
+			{
+				return &static_cast<Node*>(mPtr)->value;
+			}
+			iterator& operator++()
+			{
+				mPtr = mPtr->next.get();
+				return *this;
+			}
+			iterator operator++(int)
+			{
+				iterator tmp = *this;
+				++(*this);
+				return tmp;
+			}
+
+			bool operator==(const iterator& rhs)const
+			{
+				return mPtr == rhs.mPtr;
+			}
+			bool operator!=(const iterator& rhs)const {
+				return mPtr != rhs.mPtr;
+			}
+			//conersion to const iterator
+
+			operator class const_iterator()const {
+				return const_iterator(mPtr);
+			}
+
+		private:
+			NodeBase* mPtr = nullptr;
+		};
+
 	public:
 
 		using value_type = T;
@@ -132,7 +142,49 @@ namespace badEngine {
 	public:
 		SLList() = default;
 		//MODIFIERS
-		void push_front(const_reference val)
+		
+
+		//ELEMENT ACCESS
+		iterator begin()noexcept {
+			return iterator(mSentinel.next.get());
+		}
+		const_iterator begin()const noexcept {
+			return const_iterator(mSentinel.next.get());
+		}
+		const_iterator cbegin()const noexcept {
+			return const_iterator(mSentinel.next.get());
+		}
+		iterator end()noexcept {
+			return iterator(nullptr);
+		}
+		const_iterator end()const noexcept {
+			return const_iterator(nullptr);
+		}
+		const_iterator cend()const noexcept {
+			return const_iterator(nullptr);
+		}
+
+		iterator before_begin()noexcept {
+			return iterator(&mSentinel);
+		}
+		const_iterator before_begin()const noexcept {
+			return const_iterator(&mSentinel);
+		}
+		const_iterator cbefore_begin()const noexcept {
+			return const_iterator(&mSentinel);
+		}
+
+	private:
+
+	private:
+
+		std::size_t mCount = 0;
+		NodeBase mSentinel;
+	};
+
+
+	/*
+	void push_front(const_reference val)
 		{
 			mFront = std::make_unique<Element>(val, std::move(mFront));
 			++mCount;
@@ -193,28 +245,7 @@ namespace badEngine {
 			std::swap(mCount, other.mCount);
 		}
 
-		//ELEMENT ACCESS
-		iterator begin()noexcept {
-			return iterator(mFront.get());
-		}
-		const_iterator begin()const noexcept {
-			return const_iterator(mFront.get());
-		}
-		const_iterator cbegin()const noexcept {
-			return const_iterator(mFront.get());
-		}
-		iterator end()noexcept {
-			return iterator(nullptr);
-		}
-		const_iterator end()const noexcept {
-			return const_iterator(nullptr);
-		}
-		const_iterator cend()const noexcept {
-			return const_iterator(nullptr);
-		}
-
-		//BULLSHIT
-		size_type size()const
+				size_type size()const
 		{
 			return mCount;
 		}
@@ -228,9 +259,7 @@ namespace badEngine {
 			return mFront == nullptr;
 		}
 
-	private:
-
-		void resize_shrink_impl(size_type targetSize)
+				void resize_shrink_impl(size_type targetSize)
 		{
 			size_type cull = mCount - targetSize;
 			while (cull--)
@@ -248,14 +277,7 @@ namespace badEngine {
 			while (createCount--)
 				push_front(value);
 		}
-
-	private:
-		std::unique_ptr<Element> mFront = nullptr;
-		std::size_t mCount = 0;
-	};
-
-
-
+	*/
 
 
 
