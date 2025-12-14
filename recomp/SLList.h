@@ -20,6 +20,7 @@ namespace badEngine {
 			NodeBase() = default;
 			explicit NodeBase(std::unique_ptr<NodeBase> n) :next(std::move(n)) {}
 			std::unique_ptr<NodeBase> next = nullptr;
+			virtual ~NodeBase() = default;
 		};
 		struct Node : NodeBase {
 			Node(const T& val, std::unique_ptr<NodeBase> next)
@@ -94,7 +95,7 @@ namespace badEngine {
 
 			const_iterator() = default;
 			explicit const_iterator(NodeBase* pNode) :mPtr(pNode) {}
-			explicit const_iterator(const iterator& it) :mPtr(it.mPtr) {}
+			const_iterator(const iterator& it) :mPtr(it.mPtr) {}
 
 			reference operator*()const
 			{
