@@ -9,10 +9,10 @@ namespace badEngine {
 	does include slightly more mem overhead but whatever
 
 	*/
-	struct T {
-		int a;
-	};
-	//template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
+	//struct T {
+		//int a;
+	//};
+	template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
 	class SLList {
 	private:
 
@@ -23,16 +23,19 @@ namespace badEngine {
 			virtual ~NodeBase() = default;
 		};
 		struct Node : NodeBase {
-			Node(const T& val, std::unique_ptr<NodeBase> next)
-				:NodeBase{std::move(next)}, value(val) {
+			Node(std::unique_ptr<NodeBase> next, const T& val)
+				:NodeBase{ std::move(next) }, value(val)
+			{
 			}
-			Node(T&& val, std::unique_ptr<NodeBase> next)
-				:NodeBase{std::move(next)}, value(std::move(val)) {
+			Node(std::unique_ptr<NodeBase> next, T&& val)
+				:NodeBase{ std::move(next) }, value(std::move(val))
+			{
 			}
 			template<typename... Args>
 				requires std::constructible_from<T, Args&&...>
 			Node(std::unique_ptr<NodeBase> next, Args&&... args)
-				: NodeBase{ std::move(next) }, value(std::forward<Args>(args)...) {
+				: NodeBase{ std::move(next) }, value(std::forward<Args>(args)...)
+			{
 			}
 
 			T value;
@@ -146,7 +149,7 @@ namespace badEngine {
 	public:
 		SLList() = default;
 		//MODIFIERS
-		
+
 
 		//ELEMENT ACCESS
 		iterator begin()noexcept {
@@ -183,20 +186,41 @@ namespace badEngine {
 			mSentinel.next.reset();
 			mCount = 0;
 		}
-		iterator insert_after(const_iterator pos, const_reference value)
+		template<typename... Args>
+		iterator empalce_after(const_iterator pos, Args&&...args)
+			requires std::constructible_from<value_type, Args&&...>
 		{
+			//TODO::check for range [before_begin -> end] validity
+			//TODO:: if an exception is thrown (likely make_unique, structure should remain unchanged)
+
 			NodeBase* given = pos.mPtr;
 			//new node that sits in the middle of nodes points to whatever given->next is, data is saved or nullptr
-			auto middleNode = std::make_unique<Node>(value, std::move(given->next));
-
-			//get return value raw before moving obj
-			NodeBase* baseRet = middleNode.get();
-			//communicate with given his new next
-			given->next = std::move(middleNode);
+			given->next = std::make_unique<Node>(std::move(given->next), std::forward<Args>(args)...);
 			//incr
 			++mCount;
+			NodeBase* ret = given->next.get();
+			return iterator(ret);
+		}
+		iterator insert_after(const_iterator pos, const_reference value)
+			requires std::copyable<value_type>
+		{
+			return empalce_after(pos, value);
+		}
+		iterator insert_after(const_iterator pos, value_type&& value)
+			requires std::movable<value_type>
+		{
+			return empalce_after(pos, value);
+		}
+		iterator insert_after(const_iterator pos, size_type count, const_reference value)
+			requires std::copyable<value_type>
+		{
+			iterator ret = iterator(pos.mPtr);
 
-			return iterator(baseRet);
+			while (count-- > 0) {
+				ret = empalce_after(ret, value);
+			}
+
+			return iterator(ret);
 		}
 
 	private:
