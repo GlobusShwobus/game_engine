@@ -16,8 +16,9 @@ namespace badEngine {
 	class SLList {
 	private:
 
-
 		struct NodeBase {
+			NodeBase() = default;
+			explicit NodeBase(std::unique_ptr<NodeBase> n) :next(std::move(n)) {}
 			std::unique_ptr<NodeBase> next = nullptr;
 		};
 		struct Node : NodeBase {
@@ -35,49 +36,8 @@ namespace badEngine {
 
 			T value;
 		};
-		class const_iterator {
-		public:
-			using iterator_category = std::forward_iterator_tag;
-			using value_type = T;
-			using difference_type = std::ptrdiff_t;
-			using pointer = const T*;
-			using reference = const T&;
 
-			const_iterator() = default;
-			explicit const_iterator(const NodeBase* pNode) :mPtr(pNode) {}
-
-			reference operator*()const
-			{
-				return static_cast<const Node*>(mPtr)->value;
-			}
-			pointer operator->()const
-			{
-				return &static_cast<const Node*>(mPtr)->value;
-			}
-			const_iterator& operator++()
-			{
-				mPtr = mPtr->next.get();
-				return *this;
-			}
-			const_iterator operator++(int)
-			{
-				const_iterator tmp = *this;
-				++(*this);
-				return tmp;
-			}
-
-			bool operator==(const const_iterator& rhs)const
-			{
-				return mPtr == rhs.mPtr;
-			}
-			bool operator!=(const const_iterator& rhs)const {
-				return mPtr != rhs.mPtr;
-			}
-
-		private:
-			const NodeBase* mPtr = nullptr;
-		};
-
+		class const_iterator;
 
 		class iterator {
 		public:
@@ -117,15 +77,58 @@ namespace badEngine {
 			bool operator!=(const iterator& rhs)const {
 				return mPtr != rhs.mPtr;
 			}
-			//conersion to const iterator
 
-			operator class const_iterator()const {
-				return const_iterator(mPtr);
+		private:
+			friend class const_iterator;
+			friend class SLList;
+			NodeBase* mPtr = nullptr;
+		};
+
+		class const_iterator {
+		public:
+			using iterator_category = std::forward_iterator_tag;
+			using value_type = T;
+			using difference_type = std::ptrdiff_t;
+			using pointer = const T*;
+			using reference = const T&;
+
+			const_iterator() = default;
+			explicit const_iterator(NodeBase* pNode) :mPtr(pNode) {}
+			explicit const_iterator(const iterator& it) :mPtr(it.mPtr) {}
+
+			reference operator*()const
+			{
+				return static_cast<const Node*>(mPtr)->value;
+			}
+			pointer operator->()const
+			{
+				return &static_cast<const Node*>(mPtr)->value;
+			}
+			const_iterator& operator++()
+			{
+				mPtr = mPtr->next.get();
+				return *this;
+			}
+			const_iterator operator++(int)
+			{
+				const_iterator tmp = *this;
+				++(*this);
+				return tmp;
+			}
+
+			bool operator==(const const_iterator& rhs)const
+			{
+				return mPtr == rhs.mPtr;
+			}
+			bool operator!=(const const_iterator& rhs)const {
+				return mPtr != rhs.mPtr;
 			}
 
 		private:
+			friend class SLList;
 			NodeBase* mPtr = nullptr;
 		};
+
 
 	public:
 
@@ -163,7 +166,6 @@ namespace badEngine {
 		const_iterator cend()const noexcept {
 			return const_iterator(nullptr);
 		}
-
 		iterator before_begin()noexcept {
 			return iterator(&mSentinel);
 		}
@@ -173,13 +175,35 @@ namespace badEngine {
 		const_iterator cbefore_begin()const noexcept {
 			return const_iterator(&mSentinel);
 		}
+		//MODIFY
+
+		void clear()noexcept
+		{
+			mSentinel.next.reset();
+			mCount = 0;
+		}
+		iterator insert_after(const_iterator pos, const_reference value)
+		{
+			NodeBase* given = pos.mPtr;
+			//new node that sits in the middle of nodes points to whatever given->next is, data is saved or nullptr
+			auto middleNode = std::make_unique<Node>(value, std::move(given->next));
+
+			//get return value raw before moving obj
+			NodeBase* baseRet = middleNode.get();
+			//communicate with given his new next
+			given->next = std::move(middleNode);
+			//incr
+			++mCount;
+
+			return iterator(baseRet);
+		}
 
 	private:
 
 	private:
 
 		std::size_t mCount = 0;
-		NodeBase mSentinel;
+		mutable NodeBase mSentinel;
 	};
 
 
