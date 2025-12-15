@@ -239,6 +239,16 @@ namespace badEngine {
 			return insert_after(pos, std::ranges::begin(rg), std::ranges::end(rg));
 		}
 
+		iterator erase_after(const_iterator pos)//UB if not deref it
+		{
+			NodeBase* given = pos.mPtr;
+			//basically just a swap
+			auto removedNode = std::move(given->next);
+			given->next = std::move(removedNode->next);
+
+			return iterator(given->next.get());
+		}
+
 	private:
 
 	private:
