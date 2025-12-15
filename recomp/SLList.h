@@ -187,7 +187,7 @@ namespace badEngine {
 			mCount = 0;
 		}
 		template<typename... Args>
-		iterator empalce_after(const_iterator pos, Args&&...args)
+		iterator emplace_after(const_iterator pos, Args&&...args)
 			requires std::constructible_from<value_type, Args&&...>
 		{
 			//TODO::check for range [before_begin -> end] validity
@@ -204,23 +204,34 @@ namespace badEngine {
 		iterator insert_after(const_iterator pos, const_reference value)
 			requires std::copyable<value_type>
 		{
-			return empalce_after(pos, value);
+			return emplace_after(pos, value);
 		}
 		iterator insert_after(const_iterator pos, value_type&& value)
 			requires std::movable<value_type>
 		{
-			return empalce_after(pos, value);
+			return emplace_after(pos, value);
 		}
 		iterator insert_after(const_iterator pos, size_type count, const_reference value)
 			requires std::copyable<value_type>
 		{
 			iterator ret = iterator(pos.mPtr);
-
 			while (count-- > 0) {
-				ret = empalce_after(ret, value);
+				ret = emplace_after(ret, value);
 			}
-
 			return iterator(ret);
+		}
+		template<std::input_iterator InputIt>
+		iterator insert_after(const_iterator pos, InputIt first, InputIt last)
+		{
+			iterator ret = iterator(pos.mPtr);
+			for (; first != last; ++first) {
+				ret = emplace_after(ret, *first);
+			}
+			return iterator(ret);
+		}
+		iterator insert_after(const_iterator pos, std::initializer_list<value_type> ilist)
+		{
+			return insert_after(pos, ilist.begin), ilist.end());
 		}
 
 	private:
