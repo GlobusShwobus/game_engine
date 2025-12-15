@@ -231,7 +231,12 @@ namespace badEngine {
 		}
 		iterator insert_after(const_iterator pos, std::initializer_list<value_type> ilist)
 		{
-			return insert_after(pos, ilist.begin), ilist.end());
+			return insert_after(pos, ilist.begin(), ilist.end());
+		}
+		template<std::ranges::input_range R>
+		iterator insert_range_after(const_iterator pos, R&& rg)//ranges is gigachad wtf
+		{
+			return insert_after(pos, std::ranges::begin(rg), std::ranges::end(rg));
 		}
 
 	private:
