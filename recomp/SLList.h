@@ -2,13 +2,6 @@
 #include <memory>
 
 namespace badEngine {
-	/*
-
-	mFront IS the sentinel. begin == before_begin++, push_front is begin and pop_back can't pop the sentinel etc...
-	deref before_begin is UB as per STL, which means i can ignore allllll the checks for regular begin...end
-	does include slightly more mem overhead but whatever
-
-	*/
 	//struct T {
 		//int a;
 	//};
@@ -315,20 +308,32 @@ namespace badEngine {
 		}
 
 		//OPERATIONS
+		void splice_after(const_iterator pos, SLList& other)
+		{
+			//find the end point of other
+			auto otherEnd = other.begin();
+
+			for (auto oit = other.begin(); ; ++oit) {
+				if (oit == other.end()) {
+					break;
+				}
+				otherEnd = oit;
+			}
+
+			NodeBase* given = pos.mPtr;
+
+			auto currentTail = std::move(given->next);
+
+			given->next = std::move(other.mSentinel.next);
+
+			NodeBase* givenEnd = otherEnd.mPtr;
+			givenEnd->next = std::move(currentTail);
+		}
 
 	private:
 		mutable NodeBase mSentinel;
 	};
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -359,4 +364,3 @@ namespace badEngine {
 		std::vector<Node*> mHashHeads;
 	};
 	*/
-}
