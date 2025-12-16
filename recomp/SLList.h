@@ -3,7 +3,7 @@
 
 namespace badEngine {
 	/*
-	
+
 	mFront IS the sentinel. begin == before_begin++, push_front is begin and pop_back can't pop the sentinel etc...
 	deref before_begin is UB as per STL, which means i can ignore allllll the checks for regular begin...end
 	does include slightly more mem overhead but whatever
@@ -148,43 +148,58 @@ namespace badEngine {
 
 	public:
 		SLList() = default;
-		//MODIFIERS
-
 
 		//ELEMENT ACCESS
-		iterator begin()noexcept {
+		iterator begin()noexcept
+		{
 			return iterator(mSentinel.next.get());
 		}
-		const_iterator begin()const noexcept {
+		const_iterator begin()const noexcept
+		{
 			return const_iterator(mSentinel.next.get());
 		}
-		const_iterator cbegin()const noexcept {
+		const_iterator cbegin()const noexcept
+		{
 			return const_iterator(mSentinel.next.get());
 		}
-		iterator end()noexcept {
+		iterator end()noexcept
+		{
 			return iterator(nullptr);
 		}
-		const_iterator end()const noexcept {
+		const_iterator end()const noexcept
+		{
 			return const_iterator(nullptr);
 		}
-		const_iterator cend()const noexcept {
+		const_iterator cend()const noexcept
+		{
 			return const_iterator(nullptr);
 		}
-		iterator before_begin()noexcept {
+		iterator before_begin()noexcept
+		{
 			return iterator(&mSentinel);
 		}
-		const_iterator before_begin()const noexcept {
+		const_iterator before_begin()const noexcept
+		{
 			return const_iterator(&mSentinel);
 		}
-		const_iterator cbefore_begin()const noexcept {
+		const_iterator cbefore_begin()const noexcept
+		{
 			return const_iterator(&mSentinel);
+		}
+
+		reference front()
+		{
+			return *begin();
+		}
+		const_reference front()const
+		{
+			return *begin();
 		}
 		//MODIFY
 
 		void clear()noexcept
 		{
 			mSentinel.next.reset();
-			mCount = 0;
 		}
 		template<typename... Args>
 		iterator emplace_after(const_iterator pos, Args&&...args)
@@ -196,9 +211,10 @@ namespace badEngine {
 			NodeBase* given = pos.mPtr;
 			//new node that sits in the middle of nodes points to whatever given->next is, data is saved or nullptr
 			given->next = std::make_unique<Node>(std::move(given->next), std::forward<Args>(args)...);
-			//incr
-			++mCount;
+			//return val
 			NodeBase* ret = given->next.get();
+
+			//incr
 			return iterator(ret);
 		}
 		iterator insert_after(const_iterator pos, const_reference value)
@@ -234,9 +250,9 @@ namespace badEngine {
 			return insert_after(pos, ilist.begin(), ilist.end());
 		}
 		template<std::ranges::input_range R>
-		iterator insert_range_after(const_iterator pos, R&& rg)//ranges is gigachad wtf
+		iterator insert_range_after(const_iterator pos, R&& range)//ranges is gigachad wtf
 		{
-			return insert_after(pos, std::ranges::begin(rg), std::ranges::end(rg));
+			return insert_after(pos, std::ranges::begin(range), std::ranges::end(range));
 		}
 
 		iterator erase_after(const_iterator pos)//UB if not deref it
@@ -245,114 +261,65 @@ namespace badEngine {
 			//basically just a swap
 			auto removedNode = std::move(given->next);
 			given->next = std::move(removedNode->next);
-
 			return iterator(given->next.get());
 		}
-
-	private:
-
-	private:
-
-		std::size_t mCount = 0;
-		mutable NodeBase mSentinel;
-	};
-
-
-	/*
-	void push_front(const_reference val)
+		iterator erase_after(const_iterator first, const_iterator last)
 		{
-			mFront = std::make_unique<Element>(val, std::move(mFront));
-			++mCount;
+			NodeBase* b = first.mPtr;
+			NodeBase* e = last.mPtr;
+			//so close yet so far from perfect, is linear compelxity
+			if (b && b != e) {
+
+				auto curr = std::move(b->next);
+
+				while (curr && curr.get() != e) {
+					curr = std::move(curr->next);
+				}
+
+				b->next = std::move(curr);
+
+			}
+			return iterator(e);
+		}
+
+		void push_front(const_reference value)
+			requires std::copyable<value_type>
+		{
+			emplace_after(before_begin(), value);
 		}
 		void push_front(value_type&& value)
+			requires std::movable<value_type>
 		{
-			mFront = std::make_unique<Element>(std::move(value), std::move(mFront));
-			++mCount;
+			emplace_after(before_begin(), std::move(value));
 		}
-		template <typename... Args>
-		reference emplace_front(Args&&... args)		
-			requires std::constructible_from<T, Args&&...>
+		template<std::ranges::input_range R>
+		void push_front_range(R&& range)
 		{
-			mFront = std::make_unique<Element>(std::move(mFront), std::forward<Args>(args)...);
-			++mCount;
-			return mFront->value;
+			insert_range_after(before_begin(), std::forward<R>(range));
 		}
 		void pop_front()
 		{
-			if (mFront) {
-				mFront = std::move(mFront->next);
-				--mCount;
-			}
-
-		}
-		void clear()noexcept
-		{
-			mFront.reset();
-			mCount = 0;
-		}
-
-		void resize(size_type count)
-			requires std::default_initializable<value_type>
-		{
-			//if current is larger than count, cut
-			if (count < mCount) {
-				resize_shrink_impl(count;)
-			}
-			else if (count > mCount) {//if count is larget than current, create
-				resize_grow_def_impl(count);
-			}
-			//else if count == mCount do nothing
-		}
-		void resize(size_type count, const value_type& value)
-			requires std::copyable<value_type>
-		{
-			if (count < mCount) {
-				resize_shrink_impl(count;)
-			}
-			else if (count > mCount) {
-				resize_grow_copy_impl(count, value);
-			}
-			//else if count == mCount do nothing
+			erase_after(before_begin());
 		}
 		void swap(SLList& other)noexcept
 		{
-			std::swap(mFront, other.mFront);
-			std::swap(mCount, other.mCount);
+			auto temp = std::move(mSentinel.next);
+			mSentinel.next = std::move(other.mSentinel.next);
+			other.mSentinel.next = std::move(temp);
 		}
 
-				size_type size()const
+		//INFO
+		bool is_empty()const noexcept
 		{
-			return mCount;
-		}
-		size_type max_size()const noexcept
-		{
-			return std::numeric_limits<size_type>::max() / sizeof(Element);
+			return mSentinel.next.get();
 		}
 
-		bool isEmpty()const
-		{
-			return mFront == nullptr;
-		}
+		//OPERATIONS
 
-				void resize_shrink_impl(size_type targetSize)
-		{
-			size_type cull = mCount - targetSize;
-			while (cull--)
-				pop_front();
-		}
-		void resize_grow_def_impl(size_type targetSize)
-		{
-			size_type createCount = targetSize - mCount;
-			while (createCount--)
-				emplace_front(value_type{});
-		}
-		void resize_grow_copy_impl(size_type targetSize, const value_type& value)
-		{
-			size_type createCount = targetSize - mCount;
-			while (createCount--)
-				push_front(value);
-		}
-	*/
+	private:
+		mutable NodeBase mSentinel;
+	};
+}
 
 
 
