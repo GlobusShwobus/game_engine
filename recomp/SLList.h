@@ -308,26 +308,56 @@ namespace badEngine {
 		}
 
 		//OPERATIONS
-		void splice_after(const_iterator pos, SLList& other)
+		UNDEFINED BEHAVIOR CONDITIONS :
+		if pos is not in the range of* this[before_begin - > end]
+			if this == &other
+				* /
+				void splice_after(const_iterator pos, SLList & other)
+			{
+				splice_after(pos, other, other.before_begin(), other.end());
+			}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if pos is not in the range of *this [before_begin - > end]
+			if this == &other but pos is within [before_first - > end]
+		*/
+		void splice_after(const_iterator pos, SLList & other, const_iterator before_first)
 		{
-			//find the end point of other
-			auto otherEnd = other.begin();
+			splice_after(pos, other, before_first, other.end());
+		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS
+			if pos is not in the range of *this [before_begin - > end]
+			if [before_first - > last] is not in the range of [other.before_begin - > other.end]
+			if any iterator in others range is not dereferenceable (concurrency outcomes)
+			if this == &other but pos is within [before_first - > last]
+		*/
+		void splice_after(const_iterator pos, SLList & other, const_iterator before_first, const_iterator last)
+		{
+			NodeBase* posNode = pos.mPtr;
+			NodeBase* beforeFirst = before_first.mPtr;
+			NodeBase* endNode = last.mPtr;
 
-			for (auto oit = other.begin(); ; ++oit) {
-				if (oit == other.end()) {
-					break;
-				}
-				otherEnd = oit;
+			//EMPTY RANGE
+			if (beforeFirst->next.get() == endNode) {
+				return;
+			}
+			//FIND ONE BEFORE LAST NODE
+			NodeBase* oneBeforeEnd = beforeFirst->next.get();
+			while (oneBeforeEnd->next.get() != endNode) {
+				oneBeforeEnd = oneBeforeEnd->next.get();
 			}
 
-			NodeBase* given = pos.mPtr;
-
-			auto currentTail = std::move(given->next);
-
-			given->next = std::move(other.mSentinel.next);
-
-			NodeBase* givenEnd = otherEnd.mPtr;
-			givenEnd->next = std::move(currentTail);
+			//detach this tail
+			auto currentTail = std::move(posNode->next);
+			//attach full range of other
+			posNode->next = std::move(beforeFirst->next);
+			//detach other tail
+			auto otherTail = std::move(oneBeforeEnd->next);
+			//reattach current tail
+			oneBeforeEnd->next = std::move(currentTail);
+			//reattach other tail
+			beforeFirst->next = std::move(otherTail);
 		}
 
 	private:
