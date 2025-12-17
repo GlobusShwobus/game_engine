@@ -308,20 +308,21 @@ namespace badEngine {
 		}
 
 		//OPERATIONS
-		UNDEFINED BEHAVIOR CONDITIONS :
-		if pos is not in the range of* this[before_begin - > end]
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if pos is not in the range of *this [before_begin - > end]
 			if this == &other
-				* /
-				void splice_after(const_iterator pos, SLList & other)
-			{
-				splice_after(pos, other, other.before_begin(), other.end());
-			}
+		*/
+		void splice_after(const_iterator pos, SLList& other)
+		{
+			splice_after(pos, other, other.before_begin(), other.end());
+		}
 		/*
 		UNDEFINED BEHAVIOR CONDITIONS:
 			if pos is not in the range of *this [before_begin - > end]
 			if this == &other but pos is within [before_first - > end]
 		*/
-		void splice_after(const_iterator pos, SLList & other, const_iterator before_first)
+		void splice_after(const_iterator pos, SLList& other, const_iterator before_first)
 		{
 			splice_after(pos, other, before_first, other.end());
 		}
@@ -332,7 +333,7 @@ namespace badEngine {
 			if any iterator in others range is not dereferenceable (concurrency outcomes)
 			if this == &other but pos is within [before_first - > last]
 		*/
-		void splice_after(const_iterator pos, SLList & other, const_iterator before_first, const_iterator last)
+		void splice_after(const_iterator pos, SLList& other, const_iterator before_first, const_iterator last)
 		{
 			NodeBase* posNode = pos.mPtr;
 			NodeBase* beforeFirst = before_first.mPtr;
@@ -359,7 +360,6 @@ namespace badEngine {
 			//reattach other tail
 			beforeFirst->next = std::move(otherTail);
 		}
-
 	private:
 		mutable NodeBase mSentinel;
 	};
