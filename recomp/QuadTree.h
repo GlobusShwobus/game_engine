@@ -181,7 +181,7 @@ namespace badEngine {
 				}
 
 				//swap places with last and it and pop
-				mWorkers.remove_unpreserved_order(mWorkers.begin() + workerIndex);
+				mWorkers.swap_with_last_erase(mWorkers.begin() + workerIndex);
 
 				return handle;
 			}
@@ -356,7 +356,7 @@ namespace badEngine {
 
 				tellWorkerAboutManager.mWorkingWindow->update_manager_after_remove(stemHandle);
 			}
-			mManagers.remove_unpreserved_order(mManagers.begin() + removeIndex);
+			mManagers.swap_with_last_erase(mManagers.begin() + removeIndex);
 		}
 
 

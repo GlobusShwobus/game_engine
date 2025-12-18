@@ -9,14 +9,13 @@ then invariance WILL happen.
 #include <memory>
 #include "badUtility.h"
 #include "BadExceptions.h"
-
 namespace badEngine {
 
 	template<typename T>
 		requires IS_SEQUENCE_COMPATIBLE<T>
 	class SequenceM {
 
-		using type = SequenceM<T>;
+		//using type = SequenceM<T>;
 		using value_type = T;
 		using pointer = T*;
 		using const_pointer = const T*;
@@ -25,14 +24,20 @@ namespace badEngine {
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
-		class Iterator {
+		class const_iterator;
+
+		class iterator {
 		public:
 			using value_type = T;
 			using difference_type = std::ptrdiff_t;
 			using reference = T&;
 			using pointer = T*;
 			using iterator_category = std::random_access_iterator_tag;
-			using self_type = Iterator;
+			using self_type = iterator;
+
+			constexpr iterator() = default;
+			constexpr iterator(T* p) :ptr(p) {}
+
 			constexpr reference operator*()noexcept {
 				return *ptr;
 			}
@@ -97,22 +102,25 @@ namespace badEngine {
 				return ptr <=> rhs.ptr;
 			}
 
-			constexpr Iterator() = default;
-			constexpr Iterator(pointer p) :ptr(p) {}
-			constexpr pointer base()const noexcept {
-				return ptr;
-			}
 		private:
-			pointer ptr = nullptr;
+			friend class const_iterator;
+			friend class SequenceM;
+			T* ptr = nullptr;
 		};
-		class Const_Iterator {
+
+		class const_iterator {
 		public:
 			using value_type = T;
 			using difference_type = std::ptrdiff_t;
 			using reference = const T&;
 			using pointer = const T*;
 			using iterator_category = std::random_access_iterator_tag;
-			using self_type = Const_Iterator;
+			using self_type = const_iterator;
+
+			constexpr const_iterator() = default;
+			constexpr const_iterator(T* p) :ptr(p) {}
+			constexpr const_iterator(const iterator& rp) : ptr(rp.ptr) {}
+
 			constexpr reference operator*()const noexcept {
 				return *ptr;
 			}
@@ -167,257 +175,132 @@ namespace badEngine {
 				return ptr <=> rhs.ptr;
 			}
 
-			constexpr Const_Iterator() = default;
-			constexpr Const_Iterator(pointer p) :ptr(p) {}
-			constexpr Const_Iterator(const Iterator& rp) : ptr(rp.base()) {}
-			constexpr pointer base()const noexcept {
-				return ptr;
-			}
 		private:
-			pointer ptr = nullptr;
+			friend class SequenceM;
+			T* ptr = nullptr;
 		};
 
-	public:
-
-		using iterator = Iterator;
-		using const_iterator = Const_Iterator;
-
-		//iterator access
-		constexpr iterator begin()noexcept {
-			return  mArray;
+		//internal ptr usage
+		constexpr pointer impl_begin()const noexcept {
+			return mArray;
 		}
-		constexpr iterator end()noexcept {
-			return  mArray + mUsableSize;
-		}
-		constexpr const_iterator begin()const noexcept {
-			return  mArray;
-		}
-		constexpr const_iterator end()const noexcept {
-			return  mArray + mUsableSize;
-		}
-		constexpr const_iterator cbegin()const noexcept {
-			return  mArray; 
-		}
-		constexpr const_iterator cend()const noexcept {
-			return  mArray + mUsableSize;
+		constexpr pointer impl_end()const noexcept {
+			return mArray + mSize;
 		}
 
-		//meta access
-		constexpr pointer data() noexcept {
-			return  mArray; 
-		}
-		constexpr const_pointer data() const noexcept {
-			return  mArray; 
-		}
-
-		//basic access
-		constexpr reference front() {
-			assert(mUsableSize > 0 && "front() called on empty container");
-			return mArray[0];
-		}
-		constexpr const_reference front()const {
-			assert(mUsableSize > 0 && "front() called on empty container");
-			return mArray[0];
-		}
-		constexpr reference back() {
-			assert(mUsableSize > 0 && "back() called on empty container");
-			return mArray[mUsableSize - 1];
-		}
-		constexpr const_reference back()const {
-			assert(mUsableSize > 0 && "back() called on empty container");
-			return mArray[mUsableSize - 1];
-		}
-		constexpr reference operator[](size_type index) {
-			assert(index < mUsableSize && "operator[] access with out of range index");
-			return mArray[index];
-		}
-		constexpr const_reference operator[](size_type index)const { 
-			assert(index < mUsableSize && "operator[] access with out of range index");
-			return mArray[index]; 
-		}
-		reference at(size_type index) {
-			if (index >= mUsableSize)
-				throw BadException(__FILE__, __LINE__, "Out of Range", "at() access with out of range index");
-			return mArray[index];
-		}
-		const_reference at(size_type index)const {
-			if (index >= mUsableSize)
-				throw BadException(__FILE__, __LINE__, "Out of Range", "at() access with out of range index");
-			return mArray[index];
-		}
-
-		//meta data
-		constexpr size_type size()const noexcept { 
-			return mUsableSize;
-		}
-		constexpr size_type capacity() const noexcept {
-			return mCapacity;
-		}
-		constexpr size_type storage_left() const noexcept {
-			return mCapacity - mUsableSize;
-		}
-		constexpr bool isEmpty()const noexcept { 
-			return mUsableSize == EMPTY_GUARD;
-		}
-
-		//setters for vector growth resistors
-		constexpr void set_growth_resist_high()noexcept { 
-			mGrowthResistor = GROWTH_HIGH_RESIST;
-		}
-		constexpr void set_growth_resist_medium()noexcept {
-			mGrowthResistor = GROWTH_MEDIUM_RESIST;
-		}
-		constexpr void set_growth_resist_low()noexcept { 
-			mGrowthResistor = GROWTH_LOW_RESIST;
-		}
-		constexpr void set_growth_resist_negative() noexcept {
-			mGrowthResistor = GROWTH_NEGATIVE_RESIST;
-		}
-
-	private:
-		//implementation critical functions
-
-		//memory handlers
-		constexpr size_type max_size()const noexcept {
-			return std::numeric_limits<size_type>::max() / sizeof(value_type);
-		}
-		pointer alloc_memory(size_type count) {
-			if (count > max_size())
-				throw BadException(__FILE__, __LINE__, "Memory Limit", "max size overflow error");
+		//allocator/deallocator functions
+		pointer alloc_memory(size_type count)const noexcept {
+			assert(count < max_size() && "Memory limit reached");
 			return static_cast<pointer>(::operator new(count * sizeof(value_type)));
 		}
-		pointer free_memory(pointer mem)noexcept {
+		constexpr void free_memory(pointer& mem)noexcept {
 			::operator delete(mem);
-			return nullptr;
+			mem = nullptr;
 		}
-		void deconstruct_objects(pointer begin, pointer end)noexcept {
-			std::destroy(begin, end);
+		constexpr void destroy(pointer obj)noexcept {
+			std::destroy_at(obj);
 		}
+		constexpr void destroy_objects(pointer begin, pointer end)noexcept {
+			while (begin != end)
+				std::destroy_at(begin++);
+		}
+		/*
+		DOES NOT SET SIZE!!!!!!!!!!
+		*/
+		template<typename LambdaFunc>
+		void reConstructAllocate(size_type newSize, LambdaFunc constructor) {
+			//allocate new chunck of memory of size newSize and move [from -> to] data into it (always move) 
+			pointer thisBegin = impl_begin();
+			pointer thisEnd = impl_end();
 
-		//internal ptr usage
-		pointer pBegin_mem()noexcept {
-			return mArray; 
-		}
-		pointer pEnd_usable()noexcept {
-			return mArray + mUsableSize; 
-		}
-		pointer pEnd_constructed()noexcept {
-			return mArray + mConstructedSize;
+			pointer destination = nullptr;
+			pointer initialized = nullptr;
+
+			try {
+				destination = alloc_memory(newSize);
+				initialized = constructor(destination, newSize);
+			}
+			catch (...) {
+				destroy_objects(destination, initialized);
+				free_memory(destination);
+				throw;
+			}
+
+			//if curr, cleanup
+			if (mArray) {
+				destroy_objects(thisBegin, thisEnd);
+				free_memory(mArray);
+			}
+			mArray = destination;
+			mCapacity = newSize;
 		}
 
 		//growth math
 		constexpr size_type growthFactor(size_type seed)const noexcept {
 			return size_type(seed + (seed / mGrowthResistor) + 1);
 		}
-		//allocator method, on failure guaranteed clean up and nullptr
-		template<PtrPredicateFunc<pointer, size_type> ConstructorPred>
-		pointer alloc_and_construct(ConstructorPred constructor, size_type size) {
-			pointer destination = nullptr;
-			pointer initialized = nullptr;
 
-			try {
-				destination = alloc_memory(size);
-				initialized = constructor(destination, size);
-			}
-			catch (...) {
-				deconstruct_objects(destination, initialized);
-				destination = free_memory(destination);
-				throw;
-			}
-
-			return destination;
-		}
-		//reallocator method
-		void reallocate(size_type newSize) {
-			//allocate new chunck of memory of size newSize and move [from -> to] data into it (always move) 
-			pointer from = pBegin_mem();
-			pointer to = pEnd_usable();
-			pointer constructedMem = alloc_and_construct([from, to](pointer dest, size_type n) {
-				return std::uninitialized_move(from, to, dest);
-				}, newSize);
-			//destroy current
-			deconstruct_objects(pBegin_mem(), pEnd_constructed());
-			mArray = free_memory(mArray);
-			mArray = constructedMem;
-			mCapacity = newSize;
-
-			//reallocate should be called until usable end not constructed end, 
-			//because if reallocate, might aswell clean up and dangling shit
-			//OTHERWISE USABLE SIZE DOES NOT CHANGE
-			mConstructedSize = mUsableSize;
-		}
-		//basic setter
-		constexpr void basic_construction_setter(pointer data, size_type size) noexcept {
-			mArray = data;
-			mUsableSize = size;
-			mConstructedSize = size;
-			mCapacity = size;
-			mGrowthResistor = GROWTH_MEDIUM_RESIST;
-		}
 	public:
+
+		using iterator = SequenceM::iterator;
+		using const_iterator = SequenceM::const_iterator;
+
 		//constructors
 		constexpr SequenceM()noexcept = default;
 		SequenceM(size_type count)
 			requires std::default_initializable<value_type>
 		{
-			if (count > EMPTY_GUARD) {
-				pointer constructedMemory = alloc_and_construct([](pointer dest, size_type n) {
+			if (count > IS_ZERO) {
+				reConstructAllocate(count, [](pointer dest, size_type n) {
 					return std::uninitialized_value_construct_n(dest, n);
-					}, count);
-
-				basic_construction_setter(constructedMemory, count);
+					});
+				mSize = count;
 			}
 		}
 		SequenceM(size_type count, const_reference value)
-			requires std::copyable<value_type>	
+			requires std::copyable<value_type>
 		{
-			if (count > EMPTY_GUARD) {
-				pointer constructedMemory = alloc_and_construct([&value](pointer dest, size_type n) {
+			if (count > IS_ZERO) {
+				reConstructAllocate(count, [&value](pointer dest, size_type n) {
 					return std::uninitialized_fill_n(dest, n, value);
-					}, count);
-
-				basic_construction_setter(constructedMemory, count);
+					});
+				mSize = count;
 			}
 		}
 		SequenceM(std::initializer_list<value_type> init)
 			requires std::copyable<value_type>//initializer_list members are const, can't move
 		{
 			const size_type size = init.size();
-			if (size > EMPTY_GUARD) {
-				pointer constructedMemory = alloc_and_construct([init](pointer dest, size_type n) {
+			if (size > IS_ZERO) {
+				reConstructAllocate(size, [init](pointer dest, size_type n) {
 					return std::uninitialized_copy(init.begin(), init.end(), dest);
-					}, size);
-
-				basic_construction_setter(constructedMemory, size);
+					});
+				mSize = size;
 			}
 		}
 		SequenceM(const SequenceM& rhs)
 			requires std::copyable<value_type>
 		{
 			size_type size = rhs.size();
-			if (size > EMPTY_GUARD) {
-				pointer constructedMemory = alloc_and_construct([&rhs](pointer dest, size_type n) {
+			if (size > IS_ZERO) {
+				reConstructAllocate(size, [&rhs](pointer dest, size_type n) {
 					return std::uninitialized_copy(rhs.begin(), rhs.end(), dest);
-					}, size);
-
-				basic_construction_setter(constructedMemory, size);
+					});
+				mSize = size;
 			}
 		}
+		/*
+		NOTE: leaves rhs in UNSPECIFIED STATE
+			meaning it takes care of the memory ptr because of ownership BUT DOES NOT TOUCH OTHER MEMEBERS
+			use of rhs after moving WILL cause UB
+		*/
 		constexpr SequenceM(SequenceM&& rhs)noexcept {
-			mArray = rhs.mArray;
+			mArray = std::move(rhs.mArray);
 			rhs.mArray = nullptr;
 
-			mUsableSize = rhs.mUsableSize;
-			rhs.mUsableSize = 0;
-
-			mConstructedSize = rhs.mConstructedSize;
-			rhs.mConstructedSize = 0;
-
-			mCapacity = rhs.mCapacity;
-			rhs.mCapacity = 0;
-
-			mGrowthResistor = rhs.mGrowthResistor;
-			rhs.mGrowthResistor = GROWTH_MEDIUM_RESIST;
+			mSize = std::move(rhs.mSize);
+			mCapacity = std::move(rhs.mCapacity);
+			mGrowthResistor = std::move(rhs.mGrowthResistor);
 		}
 		SequenceM& operator=(SequenceM rhs)noexcept {
 			//using swap idiom
@@ -431,177 +314,267 @@ namespace badEngine {
 			return *this;
 		}
 		~SequenceM()noexcept {//compiler didn't implicitly add noexcept (?) it should
-			reset();
+			if (!isEmpty()) {
+				destroy_objects(impl_begin(), impl_end());
+				free_memory(mArray);
+				mSize = 0;
+				mCapacity = 0;
+			}
 		}
 		//swap
 		constexpr void swap(SequenceM& rhs)noexcept {
 			std::swap(mArray, rhs.mArray);
-			std::swap(mUsableSize, rhs.mUsableSize);
-			std::swap(mConstructedSize, rhs.mConstructedSize);
+			std::swap(mSize, rhs.mSize);
 			std::swap(mCapacity, rhs.mCapacity);
 			std::swap(mGrowthResistor, rhs.mGrowthResistor);
 		}
-		//clear does not actually clear, it moves internal counter
-		void clear()noexcept {
-			mUsableSize = 0;
+
+		//iterator access
+		constexpr iterator begin()noexcept {
+			return  iterator(impl_begin());
 		}
-		//actually clears but nukes everything
-		void reset()noexcept {
-			if (mArray) {
-				//since we save time elsewhere on deconstructing, resetting everything needs to remember to clear everything
-				deconstruct_objects(pBegin_mem(), pEnd_constructed());
-				//free mem
-				mArray = free_memory(pBegin_mem());
-				mUsableSize = 0;
-				mConstructedSize = 0;
-				mCapacity = 0;
-				mGrowthResistor = GROWTH_MEDIUM_RESIST;
+		constexpr iterator end()noexcept {
+			return  iterator(impl_end());
+		}
+		constexpr const_iterator begin()const noexcept {
+			return const_iterator(impl_begin());
+		}
+		constexpr const_iterator end()const noexcept {
+			return const_iterator(impl_end());
+		}
+		constexpr const_iterator cbegin()const noexcept {
+			return const_iterator(impl_begin());
+		}
+		constexpr const_iterator cend()const noexcept {
+			return const_iterator(impl_end());
+		}
+
+		//basic access
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if container is empty
+		*/
+		constexpr reference front() {
+			assert(mSize > 0 && "front() called on empty container");
+			return *begin();
+		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if container is empty
+		*/
+		constexpr const_reference front()const {
+			assert(mSize > 0 && "front() called on empty container");
+			return *begin();
+		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if container is empty
+		*/
+		constexpr reference back() {
+			assert(mSize > 0 && "back() called on empty container");
+			return mArray[mSize - 1];
+		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if container is empty
+		*/
+		constexpr const_reference back()const {
+			assert(mSize > 0 && "back() called on empty container");
+			return mArray[mSize - 1];
+		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if index is not in the range of [begin -> end]
+		*/
+		constexpr reference operator[](size_type index) {
+			assert(index < mSize && "operator[] access with out of range index");
+			return mArray[index];
+		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if index is not in the range of [begin -> end]
+		*/
+		constexpr const_reference operator[](size_type index)const {
+			assert(index < mSize && "operator[] access with out of range index");
+			return mArray[index];
+		}
+		/*
+		THROWS EXCEPTION:
+			if element is not in range of [begin -> end] throws type BadException
+		*/
+		reference at(size_type index) {
+			if (index >= mSize)
+				throw BadException(__FILE__, __LINE__, "Out of Range", "at() access with out of range index");
+			return mArray[index];
+		}
+		/*
+		THROWS EXCEPTION:
+			if element is not in range of [begin -> end] throws type BadException
+		*/
+		const_reference at(size_type index)const {
+			if (index >= mSize)
+				throw BadException(__FILE__, __LINE__, "Out of Range", "at() access with out of range index");
+			return mArray[index];
+		}
+
+		//meta data
+		constexpr size_type size()const noexcept {
+			return mSize;
+		}
+		constexpr size_type max_size()const noexcept {
+			return std::numeric_limits<size_type>::max() / sizeof(value_type);
+		}
+		constexpr size_type capacity() const noexcept {
+			return mCapacity;
+		}
+		constexpr bool isEmpty()const noexcept {
+			return mSize == IS_ZERO;
+		}
+
+		//setters for vector growth resistors
+		constexpr void set_growth_resist_high()noexcept {
+			mGrowthResistor = GROWTH_HIGH_RESIST;
+		}
+		constexpr void set_growth_resist_medium()noexcept {
+			mGrowthResistor = GROWTH_MEDIUM_RESIST;
+		}
+		constexpr void set_growth_resist_low()noexcept {
+			mGrowthResistor = GROWTH_LOW_RESIST;
+		}
+		constexpr void set_growth_resist_negative() noexcept {
+			mGrowthResistor = GROWTH_NEGATIVE_RESIST;
+		}
+
+		//clear, capacity unchanged
+		constexpr void clear()noexcept {
+			if (!isEmpty()) {
+				destroy_objects(impl_begin(), impl_end());
+				mSize = 0;
 			}
 		}
 		//copies elements
 		void push_back(const value_type& value)
 			requires std::copyable<value_type>
 		{
-			//if at capacity, reallocate with extra memory
-			if (mConstructedSize == mCapacity)
-				reallocate(growthFactor(mCapacity));
-			//current end point
-			pointer slot = pEnd_usable();
-
-			//if there is a constructed but depricated slot, copy assign into it
-			if (mConstructedSize > mUsableSize) {
-				*slot = value;
-			}
-			else {//if there aren't any slots remaining, need constructor
-				std::construct_at(slot, value);
-				//if we constructed a new thing, incr constructed counter
-				++mConstructedSize;
-			}
-			//in any case after adding incr usable size
-			++mUsableSize;
+			emplace_back(value);
 		}
 		//moves elements
 		void push_back(value_type&& value)
-			requires std::is_nothrow_move_assignable_v<value_type>
+			requires std::movable<value_type>
 		{
-			//if at capacity, reallocate with extra memory
-			if (mConstructedSize == mCapacity)
-				reallocate(growthFactor(mCapacity));
-			//current end point
-			pointer slot = pEnd_usable();
-			//if there is a constructed but depricated slot, move assign into it
-			if (mConstructedSize > mUsableSize) {
-				*slot = std::move(value);
-			}
-			else {//if there aren't any slots remaining, need official constructor
-				std::construct_at(slot, std::move(value));
-				//if we constructed a new thing, incr constructed counter
-				++mConstructedSize;
-			}
-			//in any case after adding incr usable size
-			++mUsableSize;
+			emplace_back(std::move(value));
 		}
 		//creates elements and or accepts moving as well
 		template<typename... Args>
 		void emplace_back(Args&&... args)
-			requires std::constructible_from<value_type, Args&&...> && std::is_nothrow_move_assignable_v<value_type>
+			requires std::constructible_from<value_type, Args&&...>
 		{
 			//if at capacity, reallocate with extra memory
-			if (mConstructedSize == mCapacity)
-				reallocate(growthFactor(mCapacity));
-			//current end point
-			pointer slot = pEnd_usable();
+			if (mSize == mCapacity) {
+				set_capacity(growthFactor(mCapacity));
+			}
 
-			//if there is a constructed assign
-			if (mConstructedSize > mUsableSize) {
-				*slot = value_type(std::forward<Args>(args)...);
-			}
-			else { //otherwise need to increment mConstructedSize bookkeeping
-				std::construct_at(slot, std::forward<Args>(args)...);
-				++mConstructedSize;
-			}
-			//incr count
-			++mUsableSize;
+			std::construct_at(impl_end(), std::forward<Args>(args)...);
+			++mSize;
 		}
 		//does nothing besides decrementing counter
 		constexpr void pop_back()noexcept {
-			if (!isEmpty())
-				--mUsableSize;
+			if (!isEmpty()) {
+				erase(end() - 1, end());
+			}
 		}
-		//basically erase
-		void remove_preserved_order(iterator pos)
+		//erase
+		void erase(const_iterator pos)
 			requires std::is_nothrow_move_assignable_v<value_type>
 		{
-			pointer target = pos.base();
-			pointer begin = pBegin_mem();
-			pointer end = pEnd_usable();
-
-			assert(target >= begin && target < end && "position out of range");
-			//from, till, into... can theoretically throw std::bad_alloc but concept requirements should protect against most faults up front
-			std::move(target + 1, end, target);
-			//reminder: constructed object counter DOES NOT CHANGE
-			--mUsableSize;
+			erase(pos, pos + 1);
 		}
-		//basically erase
-		void remove_preserved_order(iterator first, iterator last) 
+		//erase
+		/*
+		UNDEFIEND BEHAVIOR CONDITIONS:
+			if [first -> last) is not in the range of [begin -> end]
+		*/
+		void erase(const_iterator first, const_iterator last)
 			requires std::is_nothrow_move_assignable_v<value_type>
 		{
-			pointer targetBegin = first.base();
-			pointer targetEnd = last.base();
-			pointer arrayBegin = pBegin_mem();
-			pointer arrayEnd = pEnd_usable();
-			assert(arrayBegin <= targetBegin && targetBegin <= targetEnd && targetEnd <= arrayEnd && "position invalidation");
+			if (first == last)return;
 
-			//if range is 0 then there is nothing to remove (MAY BE FLAWED LOGIC)
-			if (targetBegin == targetEnd) return;
+			pointer targetBegin = first.ptr;
+			pointer targetEnd = last.ptr;
+			pointer thisBegin = impl_begin();
+			pointer thisEnd = impl_end();
 
-			//if target end is not arrays end then move the elements from targets end until arry end into target begin (cutting of the middle chunck)	
-			//otherwise, since we skip deconstruction, just skip the step
-			if (targetEnd != arrayEnd)
-				std::move(targetEnd, arrayEnd, targetBegin);
-			//depricate usable size by the amount difference of target end and begin
-			//reminder: constructed object counter DOES NOT CHANGE
-			mUsableSize -= (targetEnd - targetBegin);
+			assert(thisBegin <= targetBegin && thisEnd >= targetEnd && targetBegin <= targetEnd && "position invalidation");
+			//get distance
+			size_type destroy_size = static_cast<size_type>(targetEnd - targetBegin);
+
+			//move objects
+			for (; targetEnd != thisEnd; ++targetBegin, ++targetEnd) {
+				*targetBegin = std::move(*targetEnd);
+			}
+			mSize -= destroy_size;
+			destroy_objects(impl_end(), thisEnd);
 		}
-		//swaps last element with pos element, meaning it does not preserve order
-		void remove_unpreserved_order(iterator pos)
+		//no op if pos == end()
+		void swap_with_last_erase(const_iterator pos)
+		{
+			if (pos != end()) {
+				swap_with_last_erase(pos, pos + 1);
+			}
+		}
+		/*
+		UNDEFIEND BEHAVIOR CONDITIONS:
+			if [first -> last) is not in the range of [begin -> end]
+		*/
+		void swap_with_last_erase(const_iterator first, const_iterator last)
 			requires std::is_nothrow_move_assignable_v<value_type>
 		{
-			pointer target = pos.base();
-			pointer begin = pBegin_mem();
-			pointer end = pEnd_usable();
-			
-			assert(begin <= target && target < end && "position invalidation");
+			if (first == last)return;
+			pointer destination = first.ptr;
+			pointer targetEnd = last.ptr;
+			pointer thisEnd = impl_end();
 
-			//end is one off the end so first update the end
-			--end;
-			//move the end into target
-			*target = std::move(*end);
-			//reminder: constructed object counter DOES NOT CHANGE
-			--mUsableSize;
+			assert(impl_begin() <= destination && thisEnd >= targetEnd && destination <= targetEnd && "position invalidation");
+			//get distance
+			size_type destroy_size = static_cast<size_type>(targetEnd - destination);
+
+			pointer src = thisEnd - 1;
+
+			for (size_type i = 0; i < destroy_size; ++i) {
+				*destination++ = std::move(*src--);
+			}
+			mSize -= destroy_size;
+			destroy_objects(thisEnd - destroy_size, thisEnd);
 		}
-		//reserves more memory if condition is met
-		void reserve(size_type newCapacity) {
-			//note: when reserving, any objects between usable and constructed get destroyed, which is good
-			if (newCapacity > mCapacity)
-				reallocate(newCapacity);
+		/*
+		reserves memory
+		if however input parameter capacity is less than current capacity, it will destroy anything outside of mSize
+		*/
+		void set_capacity(size_type n)
+			requires std::is_nothrow_move_assignable_v<value_type>
+		{
+			pointer oldBegin = impl_begin();
+			size_type moveCount = bad_minV(mSize, n);
+			reConstructAllocate(n, [oldBegin, moveCount](pointer dest, size_type size) {
+				return std::uninitialized_move(oldBegin, oldBegin + moveCount, dest);
+				}
+			);
+			mSize = moveCount;
 		}
 		//shrinks to current size
 		void shrink_to_fit() {
-			if (mCapacity > mUsableSize)
-				reallocate(mUsableSize);
+			set_capacity(mSize);
 		}
 	private:
 		//member variables
 		pointer                  mArray = nullptr;
-		size_type                mUsableSize = 0;
-		size_type                mConstructedSize = 0;
+		size_type                mSize = 0;
 		size_type                mCapacity = 0;
 
 		float                    mGrowthResistor = GROWTH_MEDIUM_RESIST;
 
 		//universal variables
-		static constexpr size_type EMPTY_GUARD = 0;
+		static constexpr size_type IS_ZERO = 0;
 		static constexpr float     GROWTH_HIGH_RESIST = 4.0f;
 		static constexpr float     GROWTH_MEDIUM_RESIST = 2.0f;
 		static constexpr float     GROWTH_LOW_RESIST = 1.0f;
