@@ -331,21 +331,27 @@ namespace badEngine {
 
 		//iterator access
 		constexpr iterator begin()noexcept {
+			assert(mArray && mSize > 0 && "invalid access");
 			return  iterator(impl_begin());
 		}
 		constexpr iterator end()noexcept {
+			assert(mArray && mSize > 0 && "invalid access");
 			return  iterator(impl_end());
 		}
 		constexpr const_iterator begin()const noexcept {
+			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_begin());
 		}
 		constexpr const_iterator end()const noexcept {
+			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_end());
 		}
 		constexpr const_iterator cbegin()const noexcept {
+			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_begin());
 		}
 		constexpr const_iterator cend()const noexcept {
+			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_end());
 		}
 
@@ -464,7 +470,7 @@ namespace badEngine {
 		{
 			emplace_back(std::move(value));
 		}
-		//creates elements and or accepts moving as well
+		//creates elements in place using any constructor
 		template<typename... Args>
 		void emplace_back(Args&&... args)
 			requires std::constructible_from<value_type, Args&&...>
@@ -477,7 +483,7 @@ namespace badEngine {
 			std::construct_at(impl_end(), std::forward<Args>(args)...);
 			++mSize;
 		}
-		//does nothing besides decrementing counter
+		//pop back
 		constexpr void pop_back()noexcept {
 			if (!isEmpty()) {
 				erase(end() - 1, end());
