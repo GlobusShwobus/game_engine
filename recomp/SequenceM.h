@@ -289,18 +289,18 @@ namespace badEngine {
 				mSize = size;
 			}
 		}
-		/*
-		NOTE: leaves rhs in UNSPECIFIED STATE
-			meaning it takes care of the memory ptr because of ownership BUT DOES NOT TOUCH OTHER MEMEBERS
-			use of rhs after moving WILL cause UB
-		*/
 		constexpr SequenceM(SequenceM&& rhs)noexcept {
 			mArray = std::move(rhs.mArray);
 			rhs.mArray = nullptr;
 
 			mSize = std::move(rhs.mSize);
+			rhs.mSize = 0;
+
 			mCapacity = std::move(rhs.mCapacity);
+			rhs.mCapacity = 0;
+
 			mGrowthResistor = std::move(rhs.mGrowthResistor);
+			rhs.mGrowthResistor = GROWTH_MEDIUM_RESIST;
 		}
 		SequenceM& operator=(SequenceM rhs)noexcept {
 			//using swap idiom
@@ -314,7 +314,7 @@ namespace badEngine {
 			return *this;
 		}
 		~SequenceM()noexcept {//compiler didn't implicitly add noexcept (?) it should
-			if (!isEmpty()) {
+			if (mArray) {
 				destroy_objects(impl_begin(), impl_end());
 				free_memory(mArray);
 				mSize = 0;
