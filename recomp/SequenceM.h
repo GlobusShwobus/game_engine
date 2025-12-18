@@ -15,7 +15,7 @@ namespace badEngine {
 		requires IS_SEQUENCE_COMPATIBLE<T>
 	class SequenceM {
 
-		//using type = SequenceM<T>;
+		using type = SequenceM<T>;
 		using value_type = T;
 		using pointer = T*;
 		using const_pointer = const T*;
