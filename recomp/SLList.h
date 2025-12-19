@@ -360,6 +360,41 @@ namespace badEngine {
 			//reattach other tail
 			beforeFirst->next = std::move(otherTail);
 		}
+		template<typename Compare>
+		void merge(SLList& other, Compare comp)//default uses std::less<T>
+		{
+			if (this == &other)return;
+
+			//use pointers to unique_ptr, this helps incrementing iteration
+			std::unique_ptr<NodeBase>* dest = &mSentinel.next;
+			std::unique_ptr<NodeBase>* mine = &mSentinel.next;
+			std::unique_ptr<NodeBase>* his = &other.mSentinel.next;
+
+			while (*mine && *his) {
+				//cast from NodeBase to Node
+				Node* myVal = static_cast<Node*>(mine->get());
+				Node* hisVal = static_cast<Node*>(his->get());
+				//if his value gets truth condition
+				if (comp(hisVal->value, myVal->value)) {
+					//assign his chain to temp, then reasign the chain back except first element
+					auto temp = std::move(*his);
+					*his = std::move(temp->next);
+					//assign the dest chain to tail of temp then reattach it back with the 1 element we had up front
+					temp->next = std::move(*dest);
+					*dest = std::move(temp);
+				}
+				else {
+					//deref unique ptr and get the address of next, this is the kicker
+					dest = &(*dest)->next;
+					mine = &(*mine)->next;
+				}
+			}
+			//if his still has elements left, move over everything to the end
+			if (*his) {
+				*dest = std::move(*his);
+			}
+		}
+
 	private:
 		mutable NodeBase mSentinel;
 	};

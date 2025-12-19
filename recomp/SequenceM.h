@@ -550,7 +550,7 @@ namespace badEngine {
 				*destination++ = std::move(*src--);
 			}
 			mSize -= destroy_size;
-			destroy_objects(thisEnd - destroy_size, thisEnd);
+			destroy_objects(impl_end(), thisEnd);
 		}
 		/*
 		reserves memory
