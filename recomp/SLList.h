@@ -3,9 +3,7 @@
 #include "badUtility.h"
 
 namespace badEngine {
-	//struct T {
-		//int a;
-	//};
+	//using T = int;
 	template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
 	class SLList {
 	private:
@@ -196,8 +194,8 @@ namespace badEngine {
 			mSentinel.next.reset();
 		}
 		template<typename... Args>
-		iterator emplace_after(const_iterator pos, Args&&...args)
 			requires std::constructible_from<value_type, Args&&...>
+		iterator emplace_after(const_iterator pos, Args&&...args)
 		{
 			//TODO::check for range [before_begin -> end] validity
 			//TODO:: if an exception is thrown (likely make_unique, structure should remain unchanged)
@@ -366,9 +364,14 @@ namespace badEngine {
 		{
 			merge(other, std::less<>{});
 		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			assumes the containers are sorted with respect to comp as a precondition
+			merge does not sort nor does it check if it is sorted and it WILL produce a result unless this == &other
+		*/
 		template<typename Compare>
-		void merge(SLList& other, Compare comp)
 			requires IS_COMPARABLE<Compare, value_type>
+		void merge(SLList& other, Compare comp)
 		{
 			if (this == &other)return;
 
@@ -401,8 +404,18 @@ namespace badEngine {
 				*dest = std::move(*his);
 			}
 		}
+
 		size_type remove(const_reference value)
 			requires std::equality_comparable<value_type>
+		{
+			return remove_if([&value](const_reference other) {
+				return other == value;
+				}
+			);
+		}
+		template<typename UnaryPred>
+			requires std::predicate<UnaryPred, value_type>
+		size_type remove_if(UnaryPred p)
 		{
 			size_type count = 0;
 
@@ -411,8 +424,7 @@ namespace badEngine {
 			auto last = end();
 
 			while (cur != last) {
-
-				if (*cur == value) {
+				if (p(*cur)) {
 					cur = erase_after(prev);
 					++count;
 				}
