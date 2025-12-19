@@ -16,21 +16,20 @@ namespace badEngine {
 	template <typename T>
 	concept IS_MATHMATICAL_T = std::_Is_any_of_v<std::remove_cv_t<T>, short, unsigned short, int, unsigned int, long int, unsigned long, long long, unsigned long long, float, double, long double>;
 
-	template <typename T>
-	concept IS_LESS_THAN_COMPARABLE = requires (T a, T b) {
-		{ a < b }->std::convertible_to<bool>;
-	};
+	template<typename Compare, typename T, typename U = T>
+	concept IS_COMPARABLE = std::strict_weak_order<Compare, T, U>;
+
 	template <typename T>
 	concept IS_SEQUENCE_COMPATIBLE =
 		std::destructible<T> &&
 		std::is_nothrow_move_constructible_v<T> &&
 		!std::is_const_v<T>;
 
-	template <typename T> requires IS_LESS_THAN_COMPARABLE<T>
+	template <typename T> requires IS_COMPARABLE<std::less<>, T>
 	constexpr auto bad_maxV(const T& x, const T& y)noexcept {
 		return (x < y) ? y : x;
 	}
-	template<typename T> requires IS_LESS_THAN_COMPARABLE<T>
+	template<typename T> requires IS_COMPARABLE<std::less<>, T>
 	constexpr auto bad_minV(const T& x, const T& y)noexcept {
 		return (x < y) ? x : y;
 	}

@@ -360,8 +360,14 @@ namespace badEngine {
 			//reattach other tail
 			beforeFirst->next = std::move(otherTail);
 		}
+		void merge(SLList& other)
+			requires IS_COMPARABLE<std::less<>, value_type>
+		{
+			merge(other, std::less<>{});
+		}
 		template<typename Compare>
-		void merge(SLList& other, Compare comp)//default uses std::less<T>
+		void merge(SLList& other, Compare comp)
+			requires IS_COMPARABLE<Compare, value_type>
 		{
 			if (this == &other)return;
 
@@ -382,7 +388,7 @@ namespace badEngine {
 					//assign the dest chain to tail of temp then reattach it back with the 1 element we had up front
 					temp->next = std::move(*dest);
 					*dest = std::move(temp);
-				}
+				}//if my value gets truth condition
 				else {
 					//deref unique ptr and get the address of next, this is the kicker
 					dest = &(*dest)->next;
