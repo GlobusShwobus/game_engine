@@ -401,6 +401,29 @@ namespace badEngine {
 				*dest = std::move(*his);
 			}
 		}
+		size_type remove(const_reference value)
+			requires std::equality_comparable<value_type>
+		{
+			size_type count = 0;
+
+			auto prev = before_begin();
+			auto cur = begin();
+			auto last = end();
+
+			while (cur != last) {
+
+				if (*cur == value) {
+					cur = erase_after(prev);
+					++count;
+				}
+				else {
+					prev = cur;
+					++cur;
+				}
+			}
+
+			return count;
+		}
 
 	private:
 		mutable NodeBase mSentinel;
