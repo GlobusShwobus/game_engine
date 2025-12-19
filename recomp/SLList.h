@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include "badUtility.h"
 
 namespace badEngine {
 	//struct T {
