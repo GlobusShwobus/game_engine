@@ -472,8 +472,8 @@ namespace badEngine {
 		}
 		//creates elements in place using any constructor
 		template<typename... Args>
-		void emplace_back(Args&&... args)
 			requires std::constructible_from<value_type, Args&&...>
+		void emplace_back(Args&&... args)
 		{
 			//if at capacity, reallocate with extra memory
 			if (mSize == mCapacity) {
