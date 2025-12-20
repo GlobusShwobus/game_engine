@@ -204,13 +204,14 @@ namespace badEngine {
 			}
 			mSentinel.next = nullptr;
 		}
+		/*
+		UNDEFIEND BEHAVIOR CONDITION:
+			if pos is not in range of [begin -> end)
+		*/
 		template<typename... Args>
-			requires std::constructible_from<value_type, Args&&...>
+			requires std::constructible_from<value_type, Args...>
 		iterator emplace_after(const_iterator pos, Args&&...args)
 		{
-			//TODO::check for range [before_begin -> end] validity
-			//TODO:: if an exception is thrown (likely make_unique, structure should remain unchanged)
-
 			NodeBase* given = pos.mPtr;
 			//new node that sits in the middle of nodes points to whatever given->next is, data is saved or nullptr
 			given->next = new Node(given->next, std::forward<Args>(args)...);
@@ -218,17 +219,17 @@ namespace badEngine {
 			return iterator(given->next);
 		}
 		iterator insert_after(const_iterator pos, const_reference value)
-			requires std::copyable<value_type>
+			requires std::constructible_from<value_type, const_reference>
 		{
 			return emplace_after(pos, value);
 		}
 		iterator insert_after(const_iterator pos, value_type&& value)
-			requires std::movable<value_type>
+			requires std::constructible_from<value_type, value_type&&>
 		{
 			return emplace_after(pos, std::move(value));
 		}
 		iterator insert_after(const_iterator pos, size_type count, const_reference value)
-			requires std::copyable<value_type>
+			requires std::constructible_from<value_type, const_reference>
 		{
 			iterator ret = iterator(pos.mPtr);
 			while (count-- > 0) {
@@ -254,10 +255,14 @@ namespace badEngine {
 		{
 			return insert_after(pos, std::ranges::begin(range), std::ranges::end(range));
 		}
+		/*
+		UNDEFIEND BEHAVIOR CONDITION:
+			if pos is not in the range of [begin -> end)
+			calling it with end() will cause double delete
+		*/
 		iterator erase_after(const_iterator pos)
 		{
 			NodeBase* given = pos.mPtr;
-			//basically just a swap
 			NodeBase* removedNode = given->next;
 			given->next = removedNode->next;
 			delete removedNode;
@@ -284,12 +289,12 @@ namespace badEngine {
 		}
 
 		void push_front(const_reference value)
-			requires std::copyable<value_type>
+			requires std::constructible_from<value_type, const_reference>
 		{
 			emplace_after(before_begin(), value);
 		}
 		void push_front(value_type&& value)
-			requires std::movable<value_type>
+			requires std::constructible_from<value_type, value_type&&>
 		{
 			emplace_after(before_begin(), std::move(value));
 		}
@@ -369,7 +374,7 @@ namespace badEngine {
 			beforeFirst->next = otherTail;
 		}
 		void merge(SLList& other)
-			requires IS_COMPARABLE<std::less<>, value_type>
+			requires std::strict_weak_order<std::less<>, value_type, value_type>
 		{
 			merge(other, std::less<>{});
 		}
@@ -379,7 +384,7 @@ namespace badEngine {
 			merge does not sort nor does it check if it is sorted and it WILL produce a result unless this == &other
 		*/
 		template<typename Compare>
-			requires IS_COMPARABLE<Compare, value_type>
+			requires std::strict_weak_order<Compare&, value_type, value_type>
 		void merge(SLList& other, Compare comp)
 		{
 			if (this == &other)return;
@@ -417,7 +422,7 @@ namespace badEngine {
 		}
 
 		size_type remove(const_reference value)
-			requires std::equality_comparable<value_type>
+			requires std::equality_comparable_with<value_type, value_type>
 		{
 			return remove_if([&value](const_reference other) {
 				return other == value;
@@ -425,7 +430,7 @@ namespace badEngine {
 			);
 		}
 		template<typename UnaryPred>
-			requires std::predicate<UnaryPred, value_type>
+			requires std::predicate<UnaryPred&, const_reference>
 		size_type remove_if(UnaryPred p)
 		{
 			size_type count = 0;
@@ -461,7 +466,42 @@ namespace badEngine {
 
 			mSentinel.next = prev;
 		}
+		size_type unique()
+			requires std::equality_comparable_with<value_type, value_type>
+		{
+			return unique(std::equal_to<>{});
+		}
+		/*
+		UNDEFIEND BEHAVIOR CONDITION:
+			if p does not establih an equivalance relation, the behavior is undefined
+		*/
+		template<typename BinaryPred>
+			requires std::predicate<BinaryPred&, const_reference, const_reference>
+		size_type unique(BinaryPred p)
+		{
+			size_type count = 0;
 
+			auto prev = begin();
+			auto last = end();
+
+			if (prev == last) {
+				return;
+			}
+
+			auto cur = std::next(prev);
+
+			while (cur != last) {
+				if (p(*prev, *cur)) {
+					cur = erase_after(prev);
+					++count;
+				}
+				else {
+					prev = cur;
+					++cur;
+				}
+			}
+			return count;
+		}
 	private:
 		mutable NodeBase mSentinel;
 	};

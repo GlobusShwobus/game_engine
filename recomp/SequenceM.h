@@ -258,7 +258,7 @@ namespace badEngine {
 			}
 		}
 		SequenceM(size_type count, const_reference value)
-			requires std::copyable<value_type>
+			requires std::constructible_from<value_type, const_reference>
 		{
 			if (count > IS_ZERO) {
 				reConstructAllocate(count, [&value](pointer dest, size_type n) {
@@ -268,7 +268,7 @@ namespace badEngine {
 			}
 		}
 		SequenceM(std::initializer_list<value_type> init)
-			requires std::copyable<value_type>//initializer_list members are const, can't move
+			requires std::constructible_from<value_type, const_reference>//initializer_list members are const, can't move
 		{
 			const size_type size = init.size();
 			if (size > IS_ZERO) {
@@ -279,7 +279,7 @@ namespace badEngine {
 			}
 		}
 		SequenceM(const SequenceM& rhs)
-			requires std::copyable<value_type>
+			requires std::constructible_from<value_type, const_reference>
 		{
 			size_type size = rhs.size();
 			if (size > IS_ZERO) {
@@ -460,19 +460,19 @@ namespace badEngine {
 		}
 		//copies elements
 		void push_back(const value_type& value)
-			requires std::copyable<value_type>
+			requires std::constructible_from<value_type, const_reference>
 		{
 			emplace_back(value);
 		}
 		//moves elements
 		void push_back(value_type&& value)
-			requires std::movable<value_type>
+			requires std::constructible_from<value_type, value_type&&>
 		{
 			emplace_back(std::move(value));
 		}
 		//creates elements in place using any constructor
 		template<typename... Args>
-			requires std::constructible_from<value_type, Args&&...>
+			requires std::constructible_from<value_type, Args...>
 		void emplace_back(Args&&... args)
 		{
 			//if at capacity, reallocate with extra memory
