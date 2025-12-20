@@ -141,6 +141,13 @@ namespace badEngine {
 	public:
 		SLList() = default;
 
+		~SLList()
+		{
+			while (mSentinel.next) {
+				mSentinel.next = std::move(mSentinel.next->next);
+			}
+		}
+
 		//ELEMENT ACCESS
 		iterator begin()noexcept
 		{
