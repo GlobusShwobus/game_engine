@@ -443,6 +443,20 @@ namespace badEngine {
 
 			return count;
 		}
+		void reverse()noexcept
+		{
+			std::unique_ptr<NodeBase> prev = nullptr;
+			std::unique_ptr<NodeBase> curr = std::move(mSentinel.next);
+
+			while (curr) {
+				std::unique_ptr<NodeBase> next = std::move(curr->next);
+				curr->next = std::move(prev);
+				prev = std::move(curr);
+				curr = std::move(next);
+			}
+
+			mSentinel.next = std::move(prev);
+		}
 
 	private:
 		mutable NodeBase mSentinel;

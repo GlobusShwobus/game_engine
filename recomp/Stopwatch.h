@@ -46,7 +46,8 @@ namespace badEngine {
 	};
 
 
-
+	/*
+	* DEPRICATED, FUNCTION IS NOT COMPLETE
 	auto timeMyFunction = [](auto&& func, auto&&... args)->float {
 		Stopwatch timer;
 
@@ -55,4 +56,5 @@ namespace badEngine {
 			);
 		return timer.dt_float();
 		};
+		*/
 }
