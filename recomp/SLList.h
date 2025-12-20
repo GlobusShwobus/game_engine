@@ -10,23 +10,23 @@ namespace badEngine {
 
 		struct NodeBase {
 			NodeBase() = default;
-			explicit NodeBase(std::unique_ptr<NodeBase> n) :next(std::move(n)) {}
-			std::unique_ptr<NodeBase> next = nullptr;
+			NodeBase(NodeBase* next) :next(next) {}
+			NodeBase* next = nullptr;
 			virtual ~NodeBase() = default;
 		};
 		struct Node : NodeBase {
-			Node(std::unique_ptr<NodeBase> next, const T& val)
-				:NodeBase{ std::move(next) }, value(val)
+			Node(NodeBase* next, const T& val)
+				:NodeBase{ next }, value(val)
 			{
 			}
-			Node(std::unique_ptr<NodeBase> next, T&& val)
-				:NodeBase{ std::move(next) }, value(std::move(val))
+			Node(NodeBase* next, T&& val)
+				:NodeBase{ next }, value(std::move(val))
 			{
 			}
 			template<typename... Args>
 				requires std::constructible_from<T, Args&&...>
-			Node(std::unique_ptr<NodeBase> next, Args&&... args)
-				: NodeBase{ std::move(next) }, value(std::forward<Args>(args)...)
+			Node(NodeBase* next, Args&&... args)
+				: NodeBase{ next }, value(std::forward<Args>(args)...)
 			{
 			}
 
@@ -56,7 +56,7 @@ namespace badEngine {
 			}
 			iterator& operator++()
 			{
-				mPtr = mPtr->next.get();
+				mPtr = mPtr->next;
 				return *this;
 			}
 			iterator operator++(int)
@@ -102,7 +102,7 @@ namespace badEngine {
 			}
 			const_iterator& operator++()
 			{
-				mPtr = mPtr->next.get();
+				mPtr = mPtr->next;
 				return *this;
 			}
 			const_iterator operator++(int)
@@ -141,25 +141,23 @@ namespace badEngine {
 	public:
 		SLList() = default;
 
-		~SLList()
+		~SLList()noexcept
 		{
-			while (mSentinel.next) {
-				mSentinel.next = std::move(mSentinel.next->next);
-			}
+			clear();
 		}
 
 		//ELEMENT ACCESS
 		iterator begin()noexcept
 		{
-			return iterator(mSentinel.next.get());
+			return iterator(mSentinel.next);
 		}
 		const_iterator begin()const noexcept
 		{
-			return const_iterator(mSentinel.next.get());
+			return const_iterator(mSentinel.next);
 		}
 		const_iterator cbegin()const noexcept
 		{
-			return const_iterator(mSentinel.next.get());
+			return const_iterator(mSentinel.next);
 		}
 		iterator end()noexcept
 		{
@@ -198,7 +196,13 @@ namespace badEngine {
 
 		void clear()noexcept
 		{
-			mSentinel.next.reset();
+			NodeBase* curr = mSentinel.next;
+			while (curr) {
+				NodeBase* temp = curr->next;
+				delete curr;
+				curr = temp;
+			}
+			mSentinel.next = nullptr;
 		}
 		template<typename... Args>
 			requires std::constructible_from<value_type, Args&&...>
@@ -209,12 +213,9 @@ namespace badEngine {
 
 			NodeBase* given = pos.mPtr;
 			//new node that sits in the middle of nodes points to whatever given->next is, data is saved or nullptr
-			given->next = std::make_unique<Node>(std::move(given->next), std::forward<Args>(args)...);
-			//return val
-			NodeBase* ret = given->next.get();
+			given->next = new Node(given->next, std::forward<Args>(args)...);
 
-			//incr
-			return iterator(ret);
+			return iterator(given->next);
 		}
 		iterator insert_after(const_iterator pos, const_reference value)
 			requires std::copyable<value_type>
@@ -224,7 +225,7 @@ namespace badEngine {
 		iterator insert_after(const_iterator pos, value_type&& value)
 			requires std::movable<value_type>
 		{
-			return emplace_after(pos, value);
+			return emplace_after(pos, std::move(value));
 		}
 		iterator insert_after(const_iterator pos, size_type count, const_reference value)
 			requires std::copyable<value_type>
@@ -233,7 +234,7 @@ namespace badEngine {
 			while (count-- > 0) {
 				ret = emplace_after(ret, value);
 			}
-			return iterator(ret);
+			return ret;
 		}
 		template<std::input_iterator InputIt>
 		iterator insert_after(const_iterator pos, InputIt first, InputIt last)
@@ -242,7 +243,7 @@ namespace badEngine {
 			for (; first != last; ++first) {
 				ret = emplace_after(ret, *first);
 			}
-			return iterator(ret);
+			return ret;
 		}
 		iterator insert_after(const_iterator pos, std::initializer_list<value_type> ilist)
 		{
@@ -253,14 +254,14 @@ namespace badEngine {
 		{
 			return insert_after(pos, std::ranges::begin(range), std::ranges::end(range));
 		}
-
-		iterator erase_after(const_iterator pos)//UB if not deref it
+		iterator erase_after(const_iterator pos)
 		{
 			NodeBase* given = pos.mPtr;
 			//basically just a swap
-			auto removedNode = std::move(given->next);
-			given->next = std::move(removedNode->next);
-			return iterator(given->next.get());
+			NodeBase* removedNode = given->next;
+			given->next = removedNode->next;
+			delete removedNode;
+			return iterator(given->next);
 		}
 		iterator erase_after(const_iterator first, const_iterator last)
 		{
@@ -269,14 +270,15 @@ namespace badEngine {
 			//so close yet so far from perfect, is linear compelxity
 			if (b && b != e) {
 
-				auto curr = std::move(b->next);
+				NodeBase* curr = b->next;
 
-				while (curr && curr.get() != e) {
-					curr = std::move(curr->next);
+				while (curr && curr != e) {
+					NodeBase* temp = curr->next;
+					delete curr;
+					curr = temp;
 				}
 
-				b->next = std::move(curr);
-
+				b->next = curr;
 			}
 			return iterator(e);
 		}
@@ -302,15 +304,15 @@ namespace badEngine {
 		}
 		void swap(SLList& other)noexcept
 		{
-			auto temp = std::move(mSentinel.next);
-			mSentinel.next = std::move(other.mSentinel.next);
-			other.mSentinel.next = std::move(temp);
+			NodeBase* temp = mSentinel.next;
+			mSentinel.next = other.mSentinel.next;
+			other.mSentinel.next = temp;
 		}
 
 		//INFO
 		bool is_empty()const noexcept
 		{
-			return mSentinel.next.get();
+			return mSentinel.next == nullptr;
 		}
 
 		//OPERATIONS
@@ -346,25 +348,25 @@ namespace badEngine {
 			NodeBase* endNode = last.mPtr;
 
 			//EMPTY RANGE
-			if (beforeFirst->next.get() == endNode) {
+			if (beforeFirst->next == endNode) {
 				return;
 			}
 			//FIND ONE BEFORE LAST NODE
-			NodeBase* oneBeforeEnd = beforeFirst->next.get();
-			while (oneBeforeEnd->next.get() != endNode) {
-				oneBeforeEnd = oneBeforeEnd->next.get();
+			NodeBase* oneBeforeEnd = beforeFirst->next;
+			while (oneBeforeEnd->next != endNode) {
+				oneBeforeEnd = oneBeforeEnd->next;
 			}
 
 			//detach this tail
-			auto currentTail = std::move(posNode->next);
+			NodeBase* currentTail = posNode->next;
 			//attach full range of other
-			posNode->next = std::move(beforeFirst->next);
+			posNode->next = beforeFirst->next;
 			//detach other tail
-			auto otherTail = std::move(oneBeforeEnd->next);
+			NodeBase* otherTail = oneBeforeEnd->next;
 			//reattach current tail
-			oneBeforeEnd->next = std::move(currentTail);
+			oneBeforeEnd->next = currentTail;
 			//reattach other tail
-			beforeFirst->next = std::move(otherTail);
+			beforeFirst->next = otherTail;
 		}
 		void merge(SLList& other)
 			requires IS_COMPARABLE<std::less<>, value_type>
@@ -383,22 +385,22 @@ namespace badEngine {
 			if (this == &other)return;
 
 			//use pointers to unique_ptr, this helps incrementing iteration
-			std::unique_ptr<NodeBase>* dest = &mSentinel.next;
-			std::unique_ptr<NodeBase>* mine = &mSentinel.next;
-			std::unique_ptr<NodeBase>* his = &other.mSentinel.next;
+			NodeBase** dest = &mSentinel.next;
+			NodeBase** mine = &mSentinel.next;
+			NodeBase* his = other.mSentinel.next;
 
 			while (*mine && *his) {
 				//cast from NodeBase to Node
-				Node* myVal = static_cast<Node*>(mine->get());
-				Node* hisVal = static_cast<Node*>(his->get());
+				Node* myVal = static_cast<Node*>(*mine);
+				Node* hisVal = static_cast<Node*>(*his);
 				//if his value gets truth condition
 				if (comp(hisVal->value, myVal->value)) {
 					//assign his chain to temp, then reasign the chain back except first element
-					auto temp = std::move(*his);
-					*his = std::move(temp->next);
+					NodeBase* temp = his;
+					his = temp->next;
 					//assign the dest chain to tail of temp then reattach it back with the 1 element we had up front
-					temp->next = std::move(*dest);
-					*dest = std::move(temp);
+					temp->next = *dest;
+					*dest = temp;
 				}//if my value gets truth condition
 				else {
 					//deref unique ptr and get the address of next, this is the kicker
@@ -407,9 +409,11 @@ namespace badEngine {
 				}
 			}
 			//if his still has elements left, move over everything to the end
-			if (*his) {
-				*dest = std::move(*his);
+			if (his) {
+				*dest = his;
 			}
+			//other sentinel non owning
+			other.mSentinel.next = nullptr;
 		}
 
 		size_type remove(const_reference value)
@@ -445,17 +449,17 @@ namespace badEngine {
 		}
 		void reverse()noexcept
 		{
-			std::unique_ptr<NodeBase> prev = nullptr;
-			std::unique_ptr<NodeBase> curr = std::move(mSentinel.next);
+			NodeBase* prev = nullptr;
+			NodeBase* curr = mSentinel.next;
 
 			while (curr) {
-				std::unique_ptr<NodeBase> next = std::move(curr->next);
-				curr->next = std::move(prev);
-				prev = std::move(curr);
-				curr = std::move(next);
+				NodeBase* next = curr->next;
+				curr->next = prev;
+				prev = curr;
+				curr = next;
 			}
 
-			mSentinel.next = std::move(prev);
+			mSentinel.next = prev;
 		}
 
 	private:
