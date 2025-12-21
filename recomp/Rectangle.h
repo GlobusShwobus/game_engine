@@ -5,7 +5,7 @@
 namespace badEngine {
 
 	template<typename T> 
-		requires IS_MATHMATICAL_VECTOR_T<T>
+		requires VECTOR_TYPE<T>
 	class Rectangle {
 	public:
 		//CONSTRUCTORS

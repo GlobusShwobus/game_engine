@@ -331,27 +331,21 @@ namespace badEngine {
 
 		//iterator access
 		constexpr iterator begin()noexcept {
-			assert(mArray && mSize > 0 && "invalid access");
 			return  iterator(impl_begin());
 		}
 		constexpr iterator end()noexcept {
-			assert(mArray && mSize > 0 && "invalid access");
 			return  iterator(impl_end());
 		}
 		constexpr const_iterator begin()const noexcept {
-			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_begin());
 		}
 		constexpr const_iterator end()const noexcept {
-			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_end());
 		}
 		constexpr const_iterator cbegin()const noexcept {
-			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_begin());
 		}
 		constexpr const_iterator cend()const noexcept {
-			assert(mArray && mSize > 0 && "invalid access");
 			return const_iterator(impl_end());
 		}
 
@@ -423,16 +417,19 @@ namespace badEngine {
 			return mArray[index];
 		}
 
-		//meta data
+		//number of initalized members
 		constexpr size_type size()const noexcept {
 			return mSize;
 		}
+		//number of maximum initalizable members for the system
 		constexpr size_type max_size()const noexcept {
 			return std::numeric_limits<size_type>::max() / sizeof(value_type);
 		}
+		//number of objects that can be initalized before reallocation
 		constexpr size_type capacity() const noexcept {
 			return mCapacity;
 		}
+		//returns true if size is zero
 		constexpr bool isEmpty()const noexcept {
 			return mSize == IS_ZERO;
 		}
@@ -459,7 +456,7 @@ namespace badEngine {
 			}
 		}
 		//copies elements
-		void push_back(const value_type& value)
+		void push_back(const_reference value)
 			requires std::constructible_from<value_type, const_reference>
 		{
 			emplace_back(value);
@@ -483,20 +480,20 @@ namespace badEngine {
 			std::construct_at(impl_end(), std::forward<Args>(args)...);
 			++mSize;
 		}
-		//pop back
+		//pop back, overload of erase(first, last)
 		constexpr void pop_back()noexcept {
 			if (!isEmpty()) {
 				erase(end() - 1, end());
 			}
 		}
-		//erase
+		//erase, overlaod of erase(first, last)
 		void erase(const_iterator pos)
 			requires std::is_nothrow_move_assignable_v<value_type>
 		{
 			erase(pos, pos + 1);
 		}
-		//erase
 		/*
+		erases elements
 		UNDEFIEND BEHAVIOR CONDITIONS:
 			if [first -> last) is not in the range of [begin -> end]
 		*/
@@ -521,7 +518,7 @@ namespace badEngine {
 			mSize -= destroy_size;
 			destroy_objects(impl_end(), thisEnd);
 		}
-		//no op if pos == end()
+		//swaps elements and pops, overlaod of swap_with_last_erase(first, last)
 		void swap_with_last_erase(const_iterator pos)
 		{
 			if (pos != end()) {
@@ -529,6 +526,7 @@ namespace badEngine {
 			}
 		}
 		/*
+		swaps last element with pos element then pops
 		UNDEFIEND BEHAVIOR CONDITIONS:
 			if [first -> last) is not in the range of [begin -> end]
 		*/
