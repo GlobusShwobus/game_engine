@@ -206,6 +206,8 @@ namespace badEngine {
 		}
 		/*
 		DOES NOT SET SIZE!!!!!!!!!!
+		must return type pointer and take arguments pointer and size_type
+		later check out  std::function<pointer(pointer, size_type)> constructor...
 		*/
 		template<typename LambdaFunc>
 		void reConstructAllocate(size_type newSize, LambdaFunc constructor) {
@@ -477,7 +479,7 @@ namespace badEngine {
 				set_capacity(growthFactor(mCapacity));
 			}
 
-			std::construct_at(impl_end(), std::forward<Args>(args)...);
+			new(mArray + mSize)value_type(std::forward<Args>(args)...);
 			++mSize;
 		}
 		//pop back, overload of erase(first, last)
