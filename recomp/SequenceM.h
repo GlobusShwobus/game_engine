@@ -198,11 +198,11 @@ namespace badEngine {
 			mem = nullptr;
 		}
 		constexpr void destroy(pointer obj)noexcept {
-			std::destroy_at(obj);
+			obj->~T();
 		}
 		constexpr void destroy_objects(pointer begin, pointer end)noexcept {
 			while (begin != end)
-				std::destroy_at(begin++);
+				begin++->~T();
 		}
 		/*
 		DOES NOT SET SIZE!!!!!!!!!!
@@ -478,7 +478,6 @@ namespace badEngine {
 			if (mSize == mCapacity) {
 				set_capacity(growthFactor(mCapacity));
 			}
-
 			new(mArray + mSize)value_type(std::forward<Args>(args)...);
 			++mSize;
 		}

@@ -97,7 +97,7 @@ int main() {
         Stopwatch UPDATE_DELTA_TIMER;
         bool GAME_RUNNING = true;
         SDL_Event EVENT;
-
+        //this whole main loop is badly bad but engine class in the future so fuck it for now
         while (GAME_RUNNING) {
             static float accumulatedTime = 0;
             static const float frameTime = 0.008f;
