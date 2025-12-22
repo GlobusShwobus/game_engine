@@ -3,8 +3,8 @@
 #include "badUtility.h"
 
 namespace badEngine {
-	//using T = int;
-	template <typename T>//basic restriction should be basically just deletable, and probably can't be a const/volatile obj?
+	template <typename T>
+		requires IS_SLLIST_COMPATIBLE<T>
 	class SLList {
 	private:
 
@@ -140,6 +140,73 @@ namespace badEngine {
 
 	public:
 		SLList() = default;
+		explicit SLList(size_type count)
+			requires std::default_initializable<value_type>
+		{
+			for (size_type i = 0; i < count; ++i) {
+				emplace_after(before_begin(), value_type{});
+			}
+		}
+		SLList(size_type count, const_reference value)
+			requires std::constructible_from<value_type, const_reference>
+		{
+			for (size_type i = 0; i < count; ++i) {
+				emplace_after(before_begin(), value);
+			}
+		}
+		template<std::input_iterator InputIt>
+			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>
+		SLList(InputIt first, InputIt last)
+		{
+			insert_after(before_begin(), first, last);
+		}
+		template<std::ranges::input_range R>
+			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>
+		SLList(R&& range)
+		{
+			insert_range_after(before_begin(), std::move(range))
+		}
+		SLList(const SLList& other)
+			requires std::constructible_from<value_type, const_reference>
+		{
+			auto curr = before_begin();
+			for (const auto& v : other)
+			{
+				curr = emplace_after(curr, v);
+			}
+		}
+		SLList(SLList&& other)noexcept
+		{
+			mSentinel.next = other.mSentinel.next;
+			other.mSentinel.next = nullptr;
+		}
+		SLList(std::initializer_list<value_type> init)
+			requires std::constructible_from<value_type, const_reference>
+		{
+			auto curr = before_begin();
+			for (const auto& v : init)
+			{
+				curr = emplace_after(curr, v);
+			}
+		}
+		SLList& operator=(SLList other) noexcept
+		{
+			this->swap(other);
+			return *this;
+		}
+		SLList& operator=(std::initializer_list<value_type> list)
+		{
+			SLList temp(list);
+			this->swap(temp);
+			return *this;
+		}
+		void swap(SLList& other)noexcept
+		{
+			NodeBase* temp = mSentinel.next;
+			mSentinel.next = other.mSentinel.next;
+			other.mSentinel.next = temp;
+		}
+
 
 		~SLList()noexcept
 		{
@@ -238,6 +305,7 @@ namespace badEngine {
 			return ret;
 		}
 		template<std::input_iterator InputIt>
+			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>
 		iterator insert_after(const_iterator pos, InputIt first, InputIt last)
 		{
 			iterator ret = iterator(pos.mPtr);
@@ -251,6 +319,7 @@ namespace badEngine {
 			return insert_after(pos, ilist.begin(), ilist.end());
 		}
 		template<std::ranges::input_range R>
+			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>
 		iterator insert_range_after(const_iterator pos, R&& range)//ranges is gigachad wtf
 		{
 			return insert_after(pos, std::ranges::begin(range), std::ranges::end(range));
@@ -307,13 +376,6 @@ namespace badEngine {
 		{
 			erase_after(before_begin());
 		}
-		void swap(SLList& other)noexcept
-		{
-			NodeBase* temp = mSentinel.next;
-			mSentinel.next = other.mSentinel.next;
-			other.mSentinel.next = temp;
-		}
-
 		//INFO
 		bool is_empty()const noexcept
 		{
@@ -384,7 +446,7 @@ namespace badEngine {
 			merge does not sort nor does it check if it is sorted and it WILL produce a result unless this == &other
 		*/
 		template<typename Compare>
-			requires std::strict_weak_order<Compare&, value_type, value_type>
+			requires std::strict_weak_order<Compare&, value_type, value_type>// maybe also match bool comp(cosnt&, const&)?
 		void merge(SLList& other, Compare comp)
 		{
 			if (this == &other)return;
@@ -502,37 +564,75 @@ namespace badEngine {
 			}
 			return count;
 		}
+		void sort()
+		{
+			sort(std::less<>());
+		}
+		template<typename Compare>
+			requires std::strict_weak_order<Compare&, value_type, value_type> // maybe also match bool comp(cosnt&, const&)?
+		void sort(Compare comp)
+		{
+			mSentinel.next = setup_merge_sort(mSentinel.next, comp);
+		}
+	private:
+
+		template<typename Compare>
+			requires std::strict_weak_order<Compare&, value_type, value_type>
+		NodeBase* setup_merge_sort(NodeBase* head, Compare comp)
+		{
+			//base case
+			if (!head || !head->next) {
+				return head;
+			}
+			//find middle point by going +1 and +2
+			NodeBase* slow = head;
+			NodeBase* fast = head->next;
+
+			while (fast && fast->next) {
+				slow = slow->next;
+				fast = fast->next->next;
+			}
+
+			NodeBase* second = slow->next;
+			//assign end point of half
+			slow->next = nullptr;
+
+			head = setup_merge_sort(head, comp);
+			second = setup_merge_sort(second, comp);
+
+			return merge_sort(head, second, comp);
+		}
+		template<typename Compare>
+			requires std::strict_weak_order<Compare&, value_type, value_type>
+		NodeBase* merge_sort(NodeBase* a, NodeBase* b, Compare comp)
+		{
+			NodeBase dummy;
+			NodeBase* tail = &dummy;
+
+			while (a && b)
+			{
+				Node* val1 = static_cast<Node*>(a);
+				Node* val2 = static_cast<Node*>(b);
+
+				if (comp(val1->value, val2->value))
+				{
+					tail->next = a;
+					a = a->next;
+				}
+				else
+				{
+					tail->next = b;
+					b = b->next;
+				}
+				tail = tail->next;
+			}
+
+			tail->next = a ? a : b;
+			return dummy.next;
+		}
+
+
 	private:
 		mutable NodeBase mSentinel;
 	};
 }
-
-
-
-	/*
-	HASH TABLE STUFF, BUT LATER...
-	template<typename T>
-	void hash_combine(std::size_t& seed, const T& v)
-	{
-		std::hash<T> hasher;
-		seed ^= hasher(v) + 0x9e37779b9 + (seed << 6) + (seed >> 2);
-	}
-
-
-	template<typename Key, typename T, typename Hash=std::hash<Key>>
-	class HashTable {
-
-		struct Node {
-			Key key;
-			T value;
-			Node* next;
-		};
-
-	public:
-
-		HashTable() = default;
-
-
-		std::vector<Node*> mHashHeads;
-	};
-	*/

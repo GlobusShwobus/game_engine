@@ -32,10 +32,10 @@ namespace badEngine {
 	};
 
 	template <typename T>
-	concept IS_SEQUENCE_COMPATIBLE =
-		std::destructible<T> &&
-		std::is_nothrow_move_constructible_v<T> &&
-		BY_VALUE_TYPE<T>;
+	concept IS_SEQUENCE_COMPATIBLE = std::destructible<T> && std::is_nothrow_move_constructible_v<T> && BY_VALUE_TYPE<T>;
+
+	template<typename T>
+	concept IS_SLLIST_COMPATIBLE = std::destructible<T> && BY_VALUE_TYPE<T>;
 
 	template <typename T, typename U> requires LESS_THAN_COMPARE<T>
 	constexpr auto bad_maxV(const T& x, const U& y)noexcept {
