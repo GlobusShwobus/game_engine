@@ -155,16 +155,16 @@ namespace badEngine {
 			}
 		}
 		template<std::input_iterator InputIt>
-			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>
+			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>//NOTE, if ref_t can be used to construct T, being the same exact type is not required
 		SLList(InputIt first, InputIt last)
 		{
 			insert_after(before_begin(), first, last);
 		}
 		template<std::ranges::input_range R>
-			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>
+			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>//NOTE, if ref_t can be used to construct T, being the same exact type is not required
 		SLList(R&& range)
 		{
-			insert_range_after(before_begin(), std::move(range))
+			insert_range_after(before_begin(), std::move(range));
 		}
 		SLList(const SLList& other)
 			requires std::constructible_from<value_type, const_reference>
