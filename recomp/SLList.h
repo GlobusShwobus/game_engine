@@ -12,17 +12,8 @@ namespace badEngine {
 			NodeBase() = default;
 			NodeBase(NodeBase* next) :next(next) {}
 			NodeBase* next = nullptr;
-			virtual ~NodeBase() = default;
 		};
 		struct Node : NodeBase {
-			Node(NodeBase* next, const T& val)
-				:NodeBase{ next }, value(val)
-			{
-			}
-			Node(NodeBase* next, T&& val)
-				:NodeBase{ next }, value(std::move(val))
-			{
-			}
 			template<typename... Args>
 				requires std::constructible_from<T, Args&&...>
 			Node(NodeBase* next, Args&&... args)
@@ -155,13 +146,13 @@ namespace badEngine {
 			}
 		}
 		template<std::input_iterator InputIt>
-			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>//NOTE, if ref_t can be used to construct T, being the same exact type is not required
+			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>
 		SLList(InputIt first, InputIt last)
 		{
 			insert_after(before_begin(), first, last);
 		}
 		template<std::ranges::input_range R>
-			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>//NOTE, if ref_t can be used to construct T, being the same exact type is not required
+			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>//NOTE, if range_ref_t can be used to construct T, being the same exact type is not required
 		SLList(R&& range)
 		{
 			insert_range_after(before_begin(), std::move(range));
@@ -456,10 +447,10 @@ namespace badEngine {
 			NodeBase** mine = &mSentinel.next;
 			NodeBase* his = other.mSentinel.next;
 
-			while (*mine && *his) {
+			while (*mine && his) {
 				//cast from NodeBase to Node
 				Node* myVal = static_cast<Node*>(*mine);
-				Node* hisVal = static_cast<Node*>(*his);
+				Node* hisVal = static_cast<Node*>(his);
 				//if his value gets truth condition
 				if (comp(hisVal->value, myVal->value)) {
 					//assign his chain to temp, then reasign the chain back except first element
@@ -547,7 +538,7 @@ namespace badEngine {
 			auto last = end();
 
 			if (prev == last) {
-				return;
+				return count;
 			}
 
 			auto cur = std::next(prev);
@@ -577,7 +568,6 @@ namespace badEngine {
 	private:
 
 		template<typename Compare>
-			requires std::strict_weak_order<Compare&, value_type, value_type>
 		NodeBase* setup_merge_sort(NodeBase* head, Compare comp)
 		{
 			//base case
