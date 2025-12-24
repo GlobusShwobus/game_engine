@@ -61,6 +61,8 @@ int main() {
         bool mouseHeld = false;
         bool plzDeleteArea = false;
 
+
+        Stopwatch insertionTime;
         for (int i = 0; i < 10000; i++) {
             //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
             float boxWidth = rng.random_float(1, 10);
@@ -75,7 +77,8 @@ int main() {
 
             myObjsQuad.insert(box, std::move(item));
         }
-
+        std::size_t time = insertionTime.dt_nanosec();
+        std::cout << "time: " << time << "\n";
 
         renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
