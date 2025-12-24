@@ -10,119 +10,7 @@ TODO: recheck extras
 
 namespace badEngine {
 
-	static constexpr std::size_t MAX_DEPTH = 6;
-	static constexpr uint32_t WINDOW4 = 4;
-	static constexpr std::size_t DEFAULT_WINDOW_RESERVE = 4;
-
-	//using T = int;
-	// later becoems templated, but i need compilers help here for now
-	template<typename T>
-	class SpatialQuadTree
-	{
-
-		class BranchNode;
-
-		struct Entity {
-	 		T mEntity;                         //payload
-			rectF mBounds;                     //bounds
-			BranchNode* mStoredAt = nullptr;   //what container it is stored in
-			uint32_t mIndexNode;               //what index in the container
-
-			template<typename... Args>
-				requires std::constructible_from<T, Args...>
-			Entity(const rectF& bounds, Args&&... args)
-				:mBounds(bounds), mEntity(std::forward<Args>(args)...)
-			{
-			}
-		};
-
-		class BranchNode {
-		public:
-
-			BranchNode(const rectF& window, std::size_t depth)noexcept
-				:mArea(window), mDepth(depth)
-			{
-				const float width = window.w / 2.0f;
-				const float height = window.h / 2.0f;
-
-				mChildAreas[0] = rectF(window.x, window.y, width, height);
-				mChildAreas[1] = rectF(window.x + width, window.y, width, height);
-				mChildAreas[2] = rectF(window.x, window.y + height, width, height);
-				mChildAreas[3] = rectF(window.x + width, window.y + height, width, height);
-			}
-			~BranchNode()noexcept {
-				clear();
-			}
-
-			void clear()noexcept {
-				mEntities.clear();
-			
-				for (auto& child : mChildren) {
-					if (child) {
-						child->clear();
-						child.reset();
-					}
-				}
-			}
-			void insert(const uint32_t entity_index, Entity& entity)
-			{
-				//first, check structures depth limit, if going deeper is fine, try going deeper
-				if (mDepth + 1 < MAX_DEPTH) {
-
-					//first check if entity fits into existing children
-					for (int i = 0; i < WINDOW4; ++i) {
-						const auto& childArea = mChildAreas[i];
-						auto& child = mChildren[i];
-						if (!childArea.contains(entity.mBounds)) continue;
-
-						if (!child)
-							child = std::make_unique<BranchNode>(childArea, mDepth + 1);
-
-						child->insert(entity_index, entity);
-						return;
-					}
-				}
-
-				entity.mStoredAt = this;
-				entity.mIndexNode = mEntities.size();
-				mEntities.push_back(entity_index);
-			}
-
-		public:
-			rectF mArea;
-			SequenceM<uint32_t> mEntities;
-			std::array<std::unique_ptr<BranchNode>, WINDOW4> mChildren;
-			std::array<rectF, WINDOW4> mChildAreas;
-			std::size_t mDepth = 0;
-		};
-
-	public:
-		SpatialQuadTree(const rectF& window) :mRoot(window, 0) {}
-		/*
-		RETURNS FALSE IF ITEM_SIZE DOES NOT FIT ROOT SIZE
-		*/
-		template<typename... Args>
-			requires std::constructible_from<T, Args...>
-		bool insert(const rectF& item_size, Args&&... args) {
-			//return false if entity does not fit top level
-			if (!mRoot.mArea.contains(item_size)) {
-				return false;
-			}
-
-			//forward the data, node data is invalid here
-			const uint32_t entityIndex = mAllEntities.size();
-			//create entity
-			mAllEntities.emplace_back(item_size, std::forward<Args>(args)...);
-			//insert and fill out entity data
-			Entity& e = mAllEntities.back();
-			mRoot.insert(entityIndex, e);
-			return true;
-		}
-
-	private:
-		BranchNode mRoot;
-		SequenceM<Entity> mAllEntities;
-	};
+	
 }
 
 /*
@@ -499,9 +387,16 @@ namespace badEngine {
 	};
 */
 
+
+
 /*
-	using T = int;
+static constexpr std::size_t MAX_DEPTH = 6;
+	static constexpr uint32_t WINDOW4 = 4;
+	static constexpr std::size_t DEFAULT_WINDOW_RESERVE = 4;
+
+	//using T = int;
 	// later becoems templated, but i need compilers help here for now
+	template<typename T>
 	class SpatialQuadTree
 	{
 
@@ -512,23 +407,99 @@ namespace badEngine {
 			rectF mBounds;                     //bounds
 			BranchNode* mStoredAt = nullptr;   //what container it is stored in
 			uint32_t mIndexNode;               //what index in the container
+
+			template<typename... Args>
+				requires std::constructible_from<T, Args...>
+			Entity(const rectF& bounds, Args&&... args)
+				:mBounds(bounds), mEntity(std::forward<Args>(args)...)
+			{
+			}
 		};
 
 		class BranchNode {
+		public:
+
+			BranchNode(const rectF& window, std::size_t depth)noexcept
+				:mArea(window), mDepth(depth)
+			{
+				const float width = window.w / 2.0f;
+				const float height = window.h / 2.0f;
+
+				mChildAreas[0] = rectF(window.x, window.y, width, height);
+				mChildAreas[1] = rectF(window.x + width, window.y, width, height);
+				mChildAreas[2] = rectF(window.x, window.y + height, width, height);
+				mChildAreas[3] = rectF(window.x + width, window.y + height, width, height);
+				mEntities.set_additive(4);
+			}
+			~BranchNode()noexcept {
+				clear();
+			}
+
+			void clear()noexcept {
+				mEntities.clear();
+
+				for (auto& child : mChildren) {
+					if (child) {
+						child->clear();
+						child.reset();
+					}
+				}
+			}
+			void insert(const uint32_t entity_index, Entity& entity)
+			{
+				//first, check structures depth limit, if going deeper is fine, try going deeper
+				if (mDepth + 1 < MAX_DEPTH) {
+
+					//first check if entity fits into existing children
+					for (int i = 0; i < WINDOW4; ++i) {
+						const auto& childArea = mChildAreas[i];
+						auto& child = mChildren[i];
+						if (!childArea.contains(entity.mBounds)) continue;
+
+						if (!child)
+							child = std::make_unique<BranchNode>(childArea, mDepth + 1);
+
+						child->insert(entity_index, entity);
+						return;
+					}
+				}
+
+				entity.mStoredAt = this;
+				entity.mIndexNode = mEntities.size();
+				mEntities.emplace_back(entity_index);
+			}
 
 		public:
-			rectF mWindow;
+			std::array<rectF, WINDOW4> mChildAreas;
+			std::array<std::unique_ptr<BranchNode>, WINDOW4> mChildren;
 			SequenceM<uint32_t> mEntities;
-			std::array<std::unique_ptr<BranchNode>, 4> mChildren;
+			rectF mArea;
 			std::size_t mDepth = 0;
 		};
 
 	public:
+		SpatialQuadTree(const rectF& window) :mRoot(window, 0) {}
 
+		template<typename... Args>
+			requires std::constructible_from<T, Args...>
+		bool insert(const rectF& item_size, Args&&... args) {
+			//return false if entity does not fit top level
+			if (!mRoot.mArea.contains(item_size)) {
+				return false;
+			}
+
+			//forward the data, node data is invalid here
+			const uint32_t entityIndex = mAllEntities.size();
+			//create entity
+			mAllEntities.emplace_back(item_size, std::forward<Args>(args)...);
+			//insert and fill out entity data
+			Entity& e = mAllEntities.back();
+			mRoot.insert(entityIndex, e);
+			return true;
+		}
 
 	private:
 		BranchNode mRoot;
 		SequenceM<Entity> mAllEntities;
 	};
-
 */

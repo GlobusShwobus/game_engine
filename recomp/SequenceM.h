@@ -10,7 +10,6 @@ then invariance WILL happen.
 #include "badUtility.h"
 #include "BadExceptions.h"
 namespace badEngine {
-
 	template<typename T>
 		requires IS_SEQUENCE_COMPATIBLE<T>
 	class SequenceM {
@@ -239,7 +238,7 @@ namespace badEngine {
 
 		//growth math
 		constexpr size_type growthFactor(size_type seed)const noexcept {
-			return size_type(seed + (seed / mGrowthResistor) + 1);
+			return size_type(seed + (seed / 0.5f) + mAdditive);
 		}
 
 	public:
@@ -301,8 +300,8 @@ namespace badEngine {
 			mCapacity = std::move(rhs.mCapacity);
 			rhs.mCapacity = 0;
 
-			mGrowthResistor = std::move(rhs.mGrowthResistor);
-			rhs.mGrowthResistor = GROWTH_MEDIUM_RESIST;
+			mAdditive = std::move(rhs.mAdditive);
+			rhs.mAdditive = 1;
 		}
 		SequenceM& operator=(SequenceM rhs)noexcept {
 			//using swap idiom
@@ -328,7 +327,7 @@ namespace badEngine {
 			std::swap(mArray, rhs.mArray);
 			std::swap(mSize, rhs.mSize);
 			std::swap(mCapacity, rhs.mCapacity);
-			std::swap(mGrowthResistor, rhs.mGrowthResistor);
+			std::swap(mAdditive, rhs.mAdditive);
 		}
 
 		//iterator access
@@ -436,18 +435,10 @@ namespace badEngine {
 			return mSize == IS_ZERO;
 		}
 
-		//setters for vector growth resistors
-		constexpr void set_growth_resist_high()noexcept {
-			mGrowthResistor = GROWTH_HIGH_RESIST;
-		}
-		constexpr void set_growth_resist_medium()noexcept {
-			mGrowthResistor = GROWTH_MEDIUM_RESIST;
-		}
-		constexpr void set_growth_resist_low()noexcept {
-			mGrowthResistor = GROWTH_LOW_RESIST;
-		}
-		constexpr void set_growth_resist_negative() noexcept {
-			mGrowthResistor = GROWTH_NEGATIVE_RESIST;
+		//set addative for growth calculation, can't go lower than 1
+		constexpr void set_additive(size_type additive)noexcept {
+			assert(additive >= 1 && "additive can not be less than 1");
+			mAdditive = additive;
 		}
 
 		//clear, capacity unchanged
@@ -576,13 +567,8 @@ namespace badEngine {
 		size_type                mSize = 0;
 		size_type                mCapacity = 0;
 
-		float                    mGrowthResistor = GROWTH_MEDIUM_RESIST;
-
+		size_type                mAdditive = 1;
 		//universal variables
 		static constexpr size_type IS_ZERO = 0;
-		static constexpr float     GROWTH_HIGH_RESIST = 4.0f;
-		static constexpr float     GROWTH_MEDIUM_RESIST = 2.0f;
-		static constexpr float     GROWTH_LOW_RESIST = 1.0f;
-		static constexpr float     GROWTH_NEGATIVE_RESIST = 0.80f;
 	};
 }
