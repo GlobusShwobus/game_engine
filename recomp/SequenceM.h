@@ -238,7 +238,7 @@ namespace badEngine {
 
 		//growth math
 		constexpr size_type growthFactor(size_type seed)const noexcept {
-			return size_type(seed + (seed / 0.5f) + mAdditive);
+			return size_type(seed + (seed * 0.5f) + mAdditive);
 		}
 
 	public:
