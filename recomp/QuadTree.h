@@ -40,8 +40,15 @@ namespace badEngine {
 		public:
 
 			BranchNode(const rectF& window, std::size_t depth)noexcept
-				:mWindow(window), mDepth(depth)
+				:mArea(window), mDepth(depth)
 			{
+				const float width = window.w / 2.0f;
+				const float height = window.h / 2.0f;
+
+				mChildAreas[0] = rectF(window.x, window.y, width, height);
+				mChildAreas[1] = rectF(window.x + width, window.y, width, height);
+				mChildAreas[2] = rectF(window.x, window.y + height, width, height);
+				mChildAreas[3] = rectF(window.x + width, window.y + height, width, height);
 			}
 			~BranchNode()noexcept {
 				clear();
@@ -63,28 +70,15 @@ namespace badEngine {
 				if (mDepth + 1 < MAX_DEPTH) {
 
 					//first check if entity fits into existing children
-					for (auto& child : mChildren) {
-						if (!child) {
-							continue;
-						}
-
-						if (child->mWindow.contains(entity.mBounds)) {
-							child->insert(entity_index, entity);
-							return;
-						}
-					}
-					//if above failed, create a child and insert
 					for (int i = 0; i < WINDOW4; ++i) {
-						rectF childArea = compute_child_area(i);
+						const auto& childArea = mChildAreas[i];
+						auto& child = mChildren[i];
+						if (!childArea.contains(entity.mBounds)) continue;
 
-						if (!childArea.contains(entity.mBounds)) {
-							continue;
-						}
+						if (!child)
+							child = std::make_unique<BranchNode>(childArea, mDepth + 1);
 
-						if (!mChildren[i])
-							mChildren[i] = std::make_unique<BranchNode>(childArea, mDepth + 1);
-
-						mChildren[i]->insert(entity_index, entity);
+						child->insert(entity_index, entity);
 						return;
 					}
 				}
@@ -93,26 +87,12 @@ namespace badEngine {
 				entity.mIndexNode = mEntities.size();
 				mEntities.push_back(entity_index);
 			}
-		private:
-			rectF compute_child_area(int i) const
-			{
-				assert(i < WINDOW4 && "out of bounds index");
 
-				float hw = mWindow.w * 0.5f;
-				float hh = mWindow.h * 0.5f;
-
-				switch (i) {
-				case 0: return { mWindow.x,        mWindow.y,        hw, hh };
-				case 1: return { mWindow.x + hw,   mWindow.y,        hw, hh };
-				case 2: return { mWindow.x,        mWindow.y + hh,   hw, hh };
-				case 3: return { mWindow.x + hw,   mWindow.y + hh,   hw, hh };
-				}
-				return {};
-			}
 		public:
-			rectF mWindow;
+			rectF mArea;
 			SequenceM<uint32_t> mEntities;
-			std::array<std::unique_ptr<BranchNode>, 4> mChildren;
+			std::array<std::unique_ptr<BranchNode>, WINDOW4> mChildren;
+			std::array<rectF, WINDOW4> mChildAreas;
 			std::size_t mDepth = 0;
 		};
 
@@ -125,7 +105,7 @@ namespace badEngine {
 			requires std::constructible_from<T, Args...>
 		bool insert(const rectF& item_size, Args&&... args) {
 			//return false if entity does not fit top level
-			if (!mRoot.mWindow.contains(item_size)) {
+			if (!mRoot.mArea.contains(item_size)) {
 				return false;
 			}
 
