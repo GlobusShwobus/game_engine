@@ -12,6 +12,7 @@ namespace badEngine {
 
 	static constexpr std::size_t MAX_DEPTH = 6;
 	static constexpr uint32_t WINDOW4 = 4;
+	static constexpr std::size_t DEFAULT_WINDOW_RESERVE = 4;
 
 	//using T = int;
 	// later becoems templated, but i need compilers help here for now
@@ -48,7 +49,7 @@ namespace badEngine {
 
 			void clear()noexcept {
 				mEntities.clear();
-
+			
 				for (auto& child : mChildren) {
 					if (child) {
 						child->clear();
@@ -87,6 +88,10 @@ namespace badEngine {
 						return;
 					}
 				}
+
+				entity.mStoredAt = this;
+				entity.mIndexNode = mEntities.size();
+				mEntities.push_back(entity_index);
 			}
 		private:
 			rectF compute_child_area(int i) const
