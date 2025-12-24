@@ -54,7 +54,7 @@ int main() {
         const float windowWidth = 960;
         const float windowHeight = 540;
         const rectI window(0, 0, windowWidth, windowHeight);
-        QuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
+        SpatialQuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
         Camera2D camera(960, 540);
 
         const float mouseBoxSize = 50.0f;
@@ -73,7 +73,7 @@ int main() {
                 Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
             );
 
-            myObjsQuad.insert(std::move(item), box);
+            myObjsQuad.insert(box, std::move(item));
         }
 
 
@@ -110,92 +110,92 @@ int main() {
             }
 
             //////TEST CODE        
-            Stopwatch HOW_LONG_THIS_SHIT_TAKES;
-
-
-            rectF cameraSpace = camera.get_view_rect();
-            std::size_t objectsCount = 0;
-            //draw
-            auto foundObjects = myObjsQuad.search_area(cameraSpace);
-            for (const auto& each : foundObjects) {
-                //first draw
-                auto& obj = myObjsQuad[each];
-                rectF cameraAdjusted = camera.world_to_screen(obj.rect);
-                renManager.fill_area_with(cameraAdjusted, obj.col);
-                objectsCount++;
-            }
-            //ONLY MOVE THE OBJECTS ON THE SCREEN
-            for (auto& each : foundObjects) {
-                auto& object = myObjsQuad[each];
-                rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
-
-                //myObjsQuad.relocate(each, newPos);
-                //object.rect = newPos;
-            }
-
-            //BOUNCHE OFF WINDOW EDGES TO KEEP THINGS IN VIEW, ALSO THIS IS HOW COLLISIONS GET COLLECTED
-            SequenceM<std::pair<std::size_t, rectF>> relocations;
-            for (std::size_t i = 0; i < myObjsQuad.size(); ++i) {
-                auto& obj = myObjsQuad[i];
-                rectF newBox = obj.rect;
-                vec2f newVel = obj.vel;
-                newBox.move_by(newVel);
-
-                if (newBox.x < 0) {
-                    newBox.x = 0;
-                    newVel.x = -newVel.x;
-                }
-                else if (newBox.x + newBox.w >= 960) {
-                    newBox.x = 960 - newBox.w;
-                    newVel.x = -newVel.x;
-                }
-
-                if (newBox.y < 0) {
-                    newBox.y = 0;
-                    newVel.y = -newVel.y;
-                }
-                else if (newBox.y + newBox.h >= 540) {
-                    newBox.y = 540 - newBox.h;
-                    newVel.y = -newVel.y;
-                }
-                obj.rect = newBox;
-                obj.vel = newVel;
-                relocations.emplace_back(i, std::move(newBox));
-            }
-
-            //SEARCH FOR COLLIDERS, NO RESOLUTION
-            auto colliders = myObjsQuad.search_collisions();
-
-            myObjsQuad.relocate(relocations);
-
-            //remove dead cells every frame
-            myObjsQuad.remove_dead_cells();
-
-            //DRAW MOUSE BOX AND IF DELETE AREA
-            vec2f mouseScreenPos;
-            SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
-            vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
-            rectF rectAroundMouse = rectF(
-                screenPos.x - mouseBoxSize / 2,
-                screenPos.y - mouseBoxSize / 2,
-                mouseBoxSize, mouseBoxSize
-            );
-            rectF  cameraAdjustedMouse = camera.world_to_screen(rectAroundMouse);
-
-            if (plzDeleteArea) {
-                myObjsQuad.remove_area(rectAroundMouse);
-            }
-
-            Color mouseCol = Colors::Magenta;
-            mouseCol.set_alpha(125u);
-            renManager.fill_area_with(cameraAdjustedMouse, mouseCol);
-
-            time += HOW_LONG_THIS_SHIT_TAKES.dt_float();
-            frames++;
-
-            if (frames == frame_target) {
-                GAME_RUNNING = false;
-            }
+            //Stopwatch HOW_LONG_THIS_SHIT_TAKES;
+            //
+            //
+            //rectF cameraSpace = camera.get_view_rect();
+            //std::size_t objectsCount = 0;
+            ////draw
+            //auto foundObjects = myObjsQuad.search_area(cameraSpace);
+            //for (const auto& each : foundObjects) {
+            //    //first draw
+            //    auto& obj = myObjsQuad[each];
+            //    rectF cameraAdjusted = camera.world_to_screen(obj.rect);
+            //    renManager.fill_area_with(cameraAdjusted, obj.col);
+            //    objectsCount++;
+            //}
+            ////ONLY MOVE THE OBJECTS ON THE SCREEN
+            //for (auto& each : foundObjects) {
+            //    auto& object = myObjsQuad[each];
+            //    rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
+            //
+            //    //myObjsQuad.relocate(each, newPos);
+            //    //object.rect = newPos;
+            //}
+            //
+            ////BOUNCHE OFF WINDOW EDGES TO KEEP THINGS IN VIEW, ALSO THIS IS HOW COLLISIONS GET COLLECTED
+            //SequenceM<std::pair<std::size_t, rectF>> relocations;
+            //for (std::size_t i = 0; i < myObjsQuad.size(); ++i) {
+            //    auto& obj = myObjsQuad[i];
+            //    rectF newBox = obj.rect;
+            //    vec2f newVel = obj.vel;
+            //    newBox.move_by(newVel);
+            //
+            //    if (newBox.x < 0) {
+            //        newBox.x = 0;
+            //        newVel.x = -newVel.x;
+            //    }
+            //    else if (newBox.x + newBox.w >= 960) {
+            //        newBox.x = 960 - newBox.w;
+            //        newVel.x = -newVel.x;
+            //    }
+            //
+            //    if (newBox.y < 0) {
+            //        newBox.y = 0;
+            //        newVel.y = -newVel.y;
+            //    }
+            //    else if (newBox.y + newBox.h >= 540) {
+            //        newBox.y = 540 - newBox.h;
+            //        newVel.y = -newVel.y;
+            //    }
+            //    obj.rect = newBox;
+            //    obj.vel = newVel;
+            //    relocations.emplace_back(i, std::move(newBox));
+            //}
+            //
+            ////SEARCH FOR COLLIDERS, NO RESOLUTION
+            //auto colliders = myObjsQuad.search_collisions();
+            //
+            //myObjsQuad.relocate(relocations);
+            //
+            ////remove dead cells every frame
+            //myObjsQuad.remove_dead_cells();
+            //
+            ////DRAW MOUSE BOX AND IF DELETE AREA
+            //vec2f mouseScreenPos;
+            //SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
+            //vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
+            //rectF rectAroundMouse = rectF(
+            //    screenPos.x - mouseBoxSize / 2,
+            //    screenPos.y - mouseBoxSize / 2,
+            //    mouseBoxSize, mouseBoxSize
+            //);
+            //rectF  cameraAdjustedMouse = camera.world_to_screen(rectAroundMouse);
+            //
+            //if (plzDeleteArea) {
+            //    myObjsQuad.remove_area(rectAroundMouse);
+            //}
+            //
+            //Color mouseCol = Colors::Magenta;
+            //mouseCol.set_alpha(125u);
+            //renManager.fill_area_with(cameraAdjustedMouse, mouseCol);
+            //
+            //time += HOW_LONG_THIS_SHIT_TAKES.dt_float();
+            //frames++;
+            //
+            //if (frames == frame_target) {
+            //    GAME_RUNNING = false;
+            //}
             //////########################################################
 
             //PRESENT
@@ -204,6 +204,7 @@ int main() {
 
         std::cout << "average time: " << time / frames << '\n';
         //OLD   0.00827729    0.00803674     0.00808599 -->> just about 60 FPS just doing quadtree stuff with 5k objects... sweaty
+        //    
     }
     _CrtDumpMemoryLeaks();
     return 0;

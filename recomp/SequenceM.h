@@ -248,7 +248,7 @@ namespace badEngine {
 		using const_iterator = SequenceM::const_iterator;
 
 		//constructors
-		constexpr SequenceM()noexcept = default;
+		constexpr SequenceM()noexcept { set_capacity(10); };
 		SequenceM(size_type count)
 			requires std::default_initializable<value_type>
 		{

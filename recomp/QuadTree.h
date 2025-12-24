@@ -9,9 +9,138 @@ TODO: recheck extras
 */
 
 namespace badEngine {
-	//struct OBJECT_TYPE {
-		//int aaa;
-	//};
+
+	static constexpr std::size_t MAX_DEPTH = 6;
+	static constexpr uint32_t WINDOW4 = 4;
+
+	//using T = int;
+	// later becoems templated, but i need compilers help here for now
+	template<typename T>
+	class SpatialQuadTree
+	{
+
+		class BranchNode;
+
+		struct Entity {
+	 		T mEntity;                         //payload
+			rectF mBounds;                     //bounds
+			BranchNode* mStoredAt = nullptr;   //what container it is stored in
+			uint32_t mIndexNode;               //what index in the container
+
+			template<typename... Args>
+				requires std::constructible_from<T, Args...>
+			Entity(const rectF& bounds, Args&&... args)
+				:mBounds(bounds), mEntity(std::forward<Args>(args)...)
+			{
+			}
+		};
+
+		class BranchNode {
+		public:
+
+			BranchNode(const rectF& window, std::size_t depth)noexcept
+				:mWindow(window), mDepth(depth)
+			{
+			}
+			~BranchNode()noexcept {
+				clear();
+			}
+
+			void clear()noexcept {
+				mEntities.clear();
+
+				for (auto& child : mChildren) {
+					if (child) {
+						child->clear();
+						child.reset();
+					}
+				}
+			}
+			void insert(const uint32_t entity_index, Entity& entity)
+			{
+				//first, check structures depth limit, if going deeper is fine, try going deeper
+				if (mDepth + 1 < MAX_DEPTH) {
+
+					//first check if entity fits into existing children
+					for (auto& child : mChildren) {
+						if (!child) {
+							continue;
+						}
+
+						if (child->mWindow.contains(entity.mBounds)) {
+							child->insert(entity_index, entity);
+							return;
+						}
+					}
+					//if above failed, create a child and insert
+					for (int i = 0; i < WINDOW4; ++i) {
+						rectF childArea = compute_child_area(i);
+
+						if (!childArea.contains(entity.mBounds)) {
+							continue;
+						}
+
+						if (!mChildren[i])
+							mChildren[i] = std::make_unique<BranchNode>(childArea, mDepth + 1);
+
+						mChildren[i]->insert(entity_index, entity);
+						return;
+					}
+				}
+			}
+		private:
+			rectF compute_child_area(int i) const
+			{
+				assert(i < WINDOW4 && "out of bounds index");
+
+				float hw = mWindow.w * 0.5f;
+				float hh = mWindow.h * 0.5f;
+
+				switch (i) {
+				case 0: return { mWindow.x,        mWindow.y,        hw, hh };
+				case 1: return { mWindow.x + hw,   mWindow.y,        hw, hh };
+				case 2: return { mWindow.x,        mWindow.y + hh,   hw, hh };
+				case 3: return { mWindow.x + hw,   mWindow.y + hh,   hw, hh };
+				}
+				return {};
+			}
+		public:
+			rectF mWindow;
+			SequenceM<uint32_t> mEntities;
+			std::array<std::unique_ptr<BranchNode>, 4> mChildren;
+			std::size_t mDepth = 0;
+		};
+
+	public:
+		SpatialQuadTree(const rectF& window) :mRoot(window, 0) {}
+		/*
+		RETURNS FALSE IF ITEM_SIZE DOES NOT FIT ROOT SIZE
+		*/
+		template<typename... Args>
+			requires std::constructible_from<T, Args...>
+		bool insert(const rectF& item_size, Args&&... args) {
+			//return false if entity does not fit top level
+			if (!mRoot.mWindow.contains(item_size)) {
+				return false;
+			}
+
+			//forward the data, node data is invalid here
+			const uint32_t entityIndex = mAllEntities.size();
+			//create entity
+			mAllEntities.emplace_back(item_size, std::forward<Args>(args)...);
+			//insert and fill out entity data
+			Entity& e = mAllEntities.back();
+			mRoot.insert(entityIndex, e);
+			return true;
+		}
+
+	private:
+		BranchNode mRoot;
+		SequenceM<Entity> mAllEntities;
+	};
+}
+
+/*
 	template <typename OBJECT_TYPE>
 		requires IS_SEQUENCE_COMPATIBLE<OBJECT_TYPE>
 	class QuadTree {
@@ -190,7 +319,7 @@ namespace badEngine {
 					mWorkers[handle.mWorkerIndex].mManagerIndex = handle.mManagerIndex;
 				}
 			}
-		
+
 			void collect_collisions(SequenceM<std::pair<std::size_t, std::size_t>>& collisions) const noexcept {
 				//check all local workers against each other
 				const std::size_t workerCount = mWorkers.size();
@@ -361,7 +490,7 @@ namespace badEngine {
 
 
 		void relocate(SequenceM<std::pair<std::size_t, rectF>>& pendingRelocations) {
-		
+
 			for (std::size_t i = 0; i < pendingRelocations.size(); ++i) {
 				//cache info
 				auto& pender = pendingRelocations[i];
@@ -374,13 +503,47 @@ namespace badEngine {
 				if (tellManagerAboutWorker.confirmBookKeeping) {
 					mManagers[tellManagerAboutWorker.mManagerIndex].second.mWorkerIndex = tellManagerAboutWorker.mWorkerIndex;
 				}
-		
+
 				auto NEW_NODE = ifKnowLocation? RELOCATE_NODE.mWorkingWindow->insert(pender.second, pender.first) : mRoot.insert(pender.second, pender.first);
-		
+
 				RELOCATE_NODE.mWorkingWindow = NEW_NODE.mWorkingWindow;
 				RELOCATE_NODE.mWorkerIndex = NEW_NODE.mWorkerIndex;
 			}
 		}
 
 	};
-}
+*/
+
+/*
+	using T = int;
+	// later becoems templated, but i need compilers help here for now
+	class SpatialQuadTree
+	{
+
+		class BranchNode;
+
+		struct Entity {
+			T mEntity;                         //payload
+			rectF mBounds;                     //bounds
+			BranchNode* mStoredAt = nullptr;   //what container it is stored in
+			uint32_t mIndexNode;               //what index in the container
+		};
+
+		class BranchNode {
+
+		public:
+			rectF mWindow;
+			SequenceM<uint32_t> mEntities;
+			std::array<std::unique_ptr<BranchNode>, 4> mChildren;
+			std::size_t mDepth = 0;
+		};
+
+	public:
+
+
+	private:
+		BranchNode mRoot;
+		SequenceM<Entity> mAllEntities;
+	};
+
+*/
