@@ -16,7 +16,7 @@ namespace badEngine {
 			:mBox(rectangle) {}
 
 		void update_position()noexcept {
-			mBox.increment_pos(mCurrVelocity);
+			mBox.move_by(mCurrVelocity);
 		}
 		void reset_velocity()noexcept {
 			mCurrVelocity = mVelocity;

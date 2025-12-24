@@ -593,7 +593,6 @@ namespace badEngine {
 			return merge_sort(head, second, comp);
 		}
 		template<typename Compare>
-			requires std::strict_weak_order<Compare&, value_type, value_type>
 		NodeBase* merge_sort(NodeBase* a, NodeBase* b, Compare comp)
 		{
 			NodeBase dummy;

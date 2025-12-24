@@ -63,7 +63,7 @@ namespace badEngine {
 			x = pos.x;
 			y = pos.y;
 		}
-		constexpr void increment_pos(const Vec2M<T>& incr)noexcept {
+		constexpr void move_by(const Vec2M<T>& incr)noexcept {
 			x += incr.x;
 			y += incr.y;
 		}
