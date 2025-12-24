@@ -77,8 +77,8 @@ int main() {
 
             myObjsQuad.insert(box, std::move(item));
         }
-        std::size_t time = insertionTime.dt_nanosec();
-        std::cout << "time: " << time << "\n";
+        std::size_t insertTime = insertionTime.dt_nanosec();
+        std::cout << "time: " << insertTime << "\n";
 
         renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
