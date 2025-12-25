@@ -367,6 +367,17 @@ namespace badEngine {
 		{
 			erase_after(before_begin());
 		}
+		/*
+		UNDEFINED BEHAVIOR CONDITIONS:
+			if list is empty
+		*/
+		value_type pop_front_return()
+			requires std::constructible_from<value_type, value_type&&>
+		{
+			value_type value = std::move(front());
+			pop_front();
+			return value;
+		}
 		//INFO
 		bool is_empty()const noexcept
 		{

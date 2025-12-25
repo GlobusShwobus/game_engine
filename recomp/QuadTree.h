@@ -5,12 +5,133 @@
 #include <memory>
 #include <array>
 /*
-TODO: recheck extras
+TODO:: add copyright info in the future referencing box2d and alterations
 */
 
 namespace badEngine {
 
+	class DynamicAABBTree {
+
+		static constexpr int nullnode = -1;
+		static constexpr int freenode = -1;
+		static constexpr int leafnode = 0;
+
+		static constexpr float aabbExtension = 0.1f;
+
+		struct Node {
+			rectF fatBox;
+			std::size_t user_index;
+
+			union {
+				int parent;
+				int next;
+			};
+
+			int child1;
+			int child2;
+
+			int height = freenode;//leaf = leafnode, free node = freenode
+
+			bool is_leaf()const {
+				return child1 == nullnode;
+			}
+		};
 	
+	public:
+
+		DynamicAABBTree() {
+			mRoot = nullnode;
+
+			mNodeCapacity = 16;
+			mNodeCount = 0;
+
+			mNodes.set_capacity(mNodeCapacity);
+			mNodes.resize(mNodeCapacity);
+
+			//build a linked list for the free list
+			for (int i = 0; i < mNodeCapacity - 1; ++i) {
+				mNodes[i].next = i + 1;
+				mNodes[i].height = nullnode;
+			}
+			//set the tail end
+			mNodes[mNodeCapacity - 1].next = nullnode;
+			mNodes[mNodeCapacity - 1].height = freenode;
+			mFreeList = 0;
+			mPath = 0;
+			mInsertCount = 0;
+		}
+		~DynamicAABBTree() = default;
+
+		//type of user is not relevant and user should be stored in some list and accessing it via given index user_origin
+		std::size_t create_proxy(const rectF& aabb, std::size_t user_origin) {
+			std::size_t proxyID = build_node();
+
+			Node& node = mNodes[proxyID];
+			auto& box = node.fatBox;
+			box = aabb;
+			box.x -= aabbExtension;
+			box.y -= aabbExtension;
+			box.w += 2*aabbExtension;
+			box.h += 2*aabbExtension;
+			node.user_index = user_origin;
+			node.height = leafnode;
+
+			insert_leaf(proxyID);
+
+			return proxyID;
+		}
+
+	private:
+
+		std::size_t build_node() {
+			if (mFreeList == nullnode) {
+				assert(mNodeCount == mNodeCapacity);
+				//free list is empty, reallocate more mem and size
+				mNodeCapacity *= 2;
+				mNodes.set_capacity(mNodeCapacity);
+				mNodes.resize(mNodeCapacity);
+
+				//build a linked list for the free list for the new members
+				for (int i = mNodeCount; i < mNodeCapacity - 1; ++i) {
+					mNodes[i].next = i + 1;
+					mNodes[i].height = nullnode;
+				}
+				//set tail end
+				mNodes[mNodeCapacity - 1].next = nullnode;
+				mNodes[mNodeCapacity - 1].height = freenode;
+				mFreeList = mNodeCount;
+			}
+
+			//get a node off freelist
+			std::size_t nodeID = mFreeList;
+			Node& node = mNodes[nodeID];
+			mFreeList = node.next;
+			node.parent = nullnode;
+			node.child1 = nullnode;
+			node.child2 = nullnode;
+			node.height = leafnode;
+			node.user_index = NULL;
+			++mNodeCount;
+			return nodeID;
+		}
+		void insert_leaf(std::size_t proxyID) {
+
+		}
+
+	private:
+
+		SequenceM<Node> mNodes;
+
+		int mRoot;
+		int mNodeCount;
+		int mNodeCapacity;
+		int mFreeList;
+
+		/// This is used to incrementally traverse the tree for re-balancing.
+		int mPath;
+
+		int mInsertCount;
+	};
 }
 
 /*

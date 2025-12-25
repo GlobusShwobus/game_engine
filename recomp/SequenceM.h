@@ -557,6 +557,25 @@ namespace badEngine {
 			);
 			mSize = moveCount;
 		}
+		constexpr void resize(size_type count)
+			requires std::default_initializable<value_type>
+		{
+			resize(count, value_type{});
+		}
+		constexpr void resize(size_type count, const_reference value)
+			requires std::constructible_from<value_type, const_reference>
+		{
+			if (count < mSize) {
+				erase(begin() + count, end());
+			}
+			else {
+				size_type amount = mSize - count;
+				while (amount--) {
+					emplace_back(value);
+				}
+			}
+		}
+
 		//shrinks to current size
 		void shrink_to_fit() {
 			set_capacity(mSize);
