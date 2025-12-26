@@ -4,6 +4,10 @@
 
 #include <memory>
 #include <array>
+
+/*
+TODO:: credit box2d and also changes?
+*/
 namespace badEngine {
 
 	class DynamicAABBTree {
@@ -118,6 +122,16 @@ namespace badEngine {
 			++mNodeCount;
 			return nodeID;
 		}
+		/*
+			NOTE:
+				the tree structure is binary. each entry is either a node or a leaf, a node can hold a leaf or a node to another branch etc etc
+				the way BHV works is creating unions of rectangles where the surface area of the node branch is the union of its two leaf nodes
+				if the node has a leaf and another node with 2 leafs, then the size is the union of [A union (B union C)] and so on
+				importantly inserting a new rectangle, the function must find the a place for it where it will create the least amount of change
+				which makes sense because close rectangles should also be close in the tree creating a union
+				to do it though it is required to compare the areas of child1 and child2 to determine the cheapest route
+				once the route is chosen it must then communicate backwards updating the union of the parent chain
+		*/
 		void insert_leaf(std::size_t proxyID) {
 			++mInsertCount;
 			//we are the start of the tree set root node
@@ -126,19 +140,65 @@ namespace badEngine {
 				mNodes[mRoot].parent = nullnode; //top has no parent
 				return;
 			}
-			//find the best sibling for this node
+			//find the best sibling for this node == finding a sibling that adds the least surface area to the tree
 			rectF leafAABB = mNodes[proxyID].aabb;
 			int index = mRoot;                      //start from the top of the tree
 			while (!mNodes[index].is_leaf()) {
-				auto& node = mNodes[index];
+				//nodes
+				auto& parent = mNodes[index];
+				auto& child1 = mNodes[parent.child1];
+				auto& child2 = mNodes[parent.child2];
 
-				int child1 = node.child1;
-				int child2 = node.child2;
+				float area = parent.aabb.perimeter();
+				rectF unionAABB = Rectangle<float>::union_rect(parent.aabb, leafAABB);
+				float unionArea = unionAABB.perimeter();
 
-				float area = node.aabb.perimeter();
+				//cost of creating a new parent for this node and the new leaf
+				float cost = 2.0f * unionArea;
 
-				rectF combinedAABB
+				//minimum cost of pushing the leaf further down the tree
+				float inheritanceCost = 2.0f * (unionArea - area);
+
+				//cost of decending into child1
+				float cost1;
+				if (child1.is_leaf()) {
+					rectF aabb = Rectangle<float>::union_rect(child1.aabb, leafAABB);
+					cost1 = aabb.perimeter() + inheritanceCost;
+				}
+				else {
+					rectF aabb = Rectangle<float>::union_rect(child1.aabb, leafAABB);
+					float oldArea = child1.aabb.perimeter();
+					float newArea = aabb.perimeter();
+					cost1 = (newArea - oldArea) + inheritanceCost;
+				}
+				//cost of decending into child2
+				float cost2;
+				if (child2.is_leaf()) {
+					rectF aabb = Rectangle<float>::union_rect(child2.aabb, leafAABB);
+					cost2 = aabb.perimeter() + inheritanceCost;
+				}
+				else {
+					rectF aabb = Rectangle<float>::union_rect(child2.aabb, leafAABB);
+					float oldArea = child2.aabb.perimeter();
+					float newArea = aabb.perimeter();
+					cost2 = (newArea - oldArea) + inheritanceCost;
+				}
+				//descend according to the minimum cost
+				//if its not worth it to go further down
+				if (cost < cost1 && cost < cost2) {
+					break;
+				}
+
+				//descend
+				if (cost1 < cost2) {
+					index = parent.child1;
+				}
+				else {
+					index = parent.child2;
+				}
 			}
+			//SETTERS
+
 
 		}
 
