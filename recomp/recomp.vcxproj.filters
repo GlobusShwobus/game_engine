@@ -64,7 +64,7 @@
     <ClInclude Include="Entity_Factory.h">
       <Filter>Entity</Filter>
     </ClInclude>
-    <ClInclude Include="QuadTree.h">
+    <ClInclude Include="DynamicAABBTree.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
     <ClInclude Include="Scripts.h">
