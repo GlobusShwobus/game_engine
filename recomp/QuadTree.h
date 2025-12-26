@@ -4,161 +4,119 @@
 
 #include <memory>
 #include <array>
-/*
-TODO:: add copyright info in the future referencing box2d and alterations
-*/
-
 namespace badEngine {
 
-	class DynamicAABBTree {
+	static constexpr std::size_t MAX_DEPTH = 6;
+	static constexpr uint32_t WINDOW4 = 4;
+	static constexpr std::size_t DEFAULT_WINDOW_RESERVE = 4;
 
-		static constexpr int nullnode = -1;
-		static constexpr float aabbExtension = 0.1f;
+	//using T = int;
+	// later becoems templated, but i need compilers help here for now
+	template<typename T>
+	class SpatialQuadTree
+	{
 
-		struct Node {
-			rectF aabb;
-			void* user_data;//later T*
+		class BranchNode;
 
-			union {
-				int parent;
-				int next;
-			};
+		struct Entity {
+			T mEntity;                         //payload
+			rectF mBounds;                     //bounds
+			BranchNode* mStoredAt = nullptr;   //what container it is stored in
+			uint32_t mIndexNode;               //what index in the container
 
-			int child1;
-			int child2;
-
-			int height;//leaf = 0, free node = -1
-
-			bool is_leaf()const {
-				return child1 == nullnode;
+			template<typename... Args>
+				requires std::constructible_from<T, Args...>
+			Entity(const rectF& bounds, Args&&... args)
+				:mBounds(bounds), mEntity(std::forward<Args>(args)...)
+			{
 			}
 		};
-	
-	public:
 
-		DynamicAABBTree() {
-			mRoot = nullnode;
+		class BranchNode {
+		public:
 
-			mNodeCapacity = 16;
-			mNodeCount = 0;
+			BranchNode(const rectF& window, std::size_t depth)noexcept
+				:mArea(window), mDepth(depth)
+			{
+				const float width = window.w / 2.0f;
+				const float height = window.h / 2.0f;
 
-			mNodes.set_capacity(mNodeCapacity);
-			mNodes.resize(mNodeCapacity);
-
-			//build a linked list for the free list
-			for (int i = 0; i < mNodeCapacity - 1; ++i) {
-				mNodes[i].next = i + 1;
-				mNodes[i].height = -1;
+				mChildAreas[0] = rectF(window.x, window.y, width, height);
+				mChildAreas[1] = rectF(window.x + width, window.y, width, height);
+				mChildAreas[2] = rectF(window.x, window.y + height, width, height);
+				mChildAreas[3] = rectF(window.x + width, window.y + height, width, height);
+				mEntities.set_additive(4);
 			}
-			//set the tail end
-			mNodes[mNodeCapacity - 1].next = nullnode;
-			mNodes[mNodeCapacity - 1].height = -1;
-			mFreeList = 0;
-			mPath = 0;
-			mInsertCount = 0;
-		}
-		~DynamicAABBTree() = default;
+			~BranchNode()noexcept {
+				clear();
+			}
 
-		/*
-		NOTE:
-			fat aabb is an optimization. margin of 0.1f is pretty good and will work nicely
-			with correct on user update/on user render loop working with delta time instead of frame counting
-			fat aabb is a threshhold from when to rebalance(?) the tree
-		*/
-		std::size_t create_proxy(const rectF& aabb, void* user_data) {
-			std::size_t proxyID = allocate_node();
+			void clear()noexcept {
+				mEntities.clear();
 
-			Node& node = mNodes[proxyID];
-			auto& fatbox = node.aabb;
-			fatbox = aabb;
-			fatbox.x -= aabbExtension;
-			fatbox.y -= aabbExtension;
-			fatbox.w += 2*aabbExtension;
-			fatbox.h += 2*aabbExtension;
-			node.user_data = user_data;
-			node.height = 0;
-
-			insert_leaf(proxyID);
-
-			return proxyID;
-		}
-
-	private:
-		/*
-		NOTE:
-			freelist is assigned to node count but it actually has to make sure not to go over the real bounds
-			assigning node count to it reads correct index but only upto the point of previous reallocation
-			for example starts at 16, goes to 0. reallocate to 32 and now should go from 32 to 16 (more or less)
-		*/
-		std::size_t allocate_node() {
-			//check if we're out of capacity
-			if (mFreeList == nullnode) {
-				assert(mNodeCount == mNodeCapacity);
-				//free list is empty, reallocate more mem and size
-				mNodeCapacity *= 2;
-				mNodes.set_capacity(mNodeCapacity);
-				mNodes.resize(mNodeCapacity);
-
-				//build a linked list for the free list for the new members
-				for (int i = mNodeCount; i < mNodeCapacity - 1; ++i) {
-					mNodes[i].next = i + 1;
-					mNodes[i].height = -1;
+				for (auto& child : mChildren) {
+					if (child) {
+						child->clear();
+						child.reset();
+					}
 				}
-				//set tail end
-				mNodes[mNodeCapacity - 1].next = nullnode;
-				mNodes[mNodeCapacity - 1].height = -1;
-				mFreeList = mNodeCount;
+			}
+			void insert(const uint32_t entity_index, Entity& entity)
+			{
+				//first, check structures depth limit, if going deeper is fine, try going deeper
+				if (mDepth + 1 < MAX_DEPTH) {
+
+					//first check if entity fits into existing children
+					for (int i = 0; i < WINDOW4; ++i) {
+						const auto& childArea = mChildAreas[i];
+						auto& child = mChildren[i];
+						if (!childArea.contains(entity.mBounds)) continue;
+
+						if (!child)
+							child = std::make_unique<BranchNode>(childArea, mDepth + 1);
+
+						child->insert(entity_index, entity);
+						return;
+					}
+				}
+
+				entity.mStoredAt = this;
+				entity.mIndexNode = mEntities.size();
+				mEntities.emplace_back(entity_index);
 			}
 
-			//get a node off freelist
-			std::size_t nodeID = mFreeList;
-			Node& node = mNodes[nodeID];
-			mFreeList = node.next;
-			node.parent = nullnode;
-			node.child1 = nullnode;
-			node.child2 = nullnode;
-			node.height = 0;
-			node.user_data = nullptr;
-			++mNodeCount;
-			return nodeID;
-		}
-		void insert_leaf(std::size_t proxyID) {
-			++mInsertCount;
-			//we are the start of the tree set root node
-			if (mRoot == nullnode) {
-				mRoot = proxyID;
-				mNodes[mRoot].parent = nullnode; //top has no parent
-				return;
-			}
-			//find the best sibling for this node
-			rectF leafAABB = mNodes[proxyID].aabb;
-			int index = mRoot;                      //start from the top of the tree
-			while (!mNodes[index].is_leaf()) {
-				auto& node = mNodes[index];
+		public:
+			std::array<rectF, WINDOW4> mChildAreas;
+			std::array<std::unique_ptr<BranchNode>, WINDOW4> mChildren;
+			SequenceM<uint32_t> mEntities;
+			rectF mArea;
+			std::size_t mDepth = 0;
+		};
 
-				int child1 = node.child1;
-				int child2 = node.child2;
+	public:
+		SpatialQuadTree(const rectF& window) :mRoot(window, 0) {}
 
-				float area = node.aabb.perimeter();
-
-				rectF combinedAABB
+		template<typename... Args>
+			requires std::constructible_from<T, Args...>
+		bool insert(const rectF& item_size, Args&&... args) {
+			//return false if entity does not fit top level
+			if (!mRoot.mArea.contains(item_size)) {
+				return false;
 			}
 
+			//forward the data, node data is invalid here
+			const uint32_t entityIndex = mAllEntities.size();
+			//create entity
+			mAllEntities.emplace_back(item_size, std::forward<Args>(args)...);
+			//insert and fill out entity data
+			Entity& e = mAllEntities.back();
+			mRoot.insert(entityIndex, e);
+			return true;
 		}
 
 	private:
-
-		SequenceM<Node> mNodes;
-
-		int mRoot;
-		int mNodeCount;
-		int mNodeCapacity;
-		int mFreeList;
-
-		/// This is used to incrementally traverse the tree for re-balancing.
-		int mPath;
-
-		int mInsertCount;
+		BranchNode mRoot;
+		SequenceM<Entity> mAllEntities;
 	};
 }
 
@@ -533,122 +491,5 @@ namespace badEngine {
 			}
 		}
 
-	};
-*/
-
-
-
-/*
-static constexpr std::size_t MAX_DEPTH = 6;
-	static constexpr uint32_t WINDOW4 = 4;
-	static constexpr std::size_t DEFAULT_WINDOW_RESERVE = 4;
-
-	//using T = int;
-	// later becoems templated, but i need compilers help here for now
-	template<typename T>
-	class SpatialQuadTree
-	{
-
-		class BranchNode;
-
-		struct Entity {
-			T mEntity;                         //payload
-			rectF mBounds;                     //bounds
-			BranchNode* mStoredAt = nullptr;   //what container it is stored in
-			uint32_t mIndexNode;               //what index in the container
-
-			template<typename... Args>
-				requires std::constructible_from<T, Args...>
-			Entity(const rectF& bounds, Args&&... args)
-				:mBounds(bounds), mEntity(std::forward<Args>(args)...)
-			{
-			}
-		};
-
-		class BranchNode {
-		public:
-
-			BranchNode(const rectF& window, std::size_t depth)noexcept
-				:mArea(window), mDepth(depth)
-			{
-				const float width = window.w / 2.0f;
-				const float height = window.h / 2.0f;
-
-				mChildAreas[0] = rectF(window.x, window.y, width, height);
-				mChildAreas[1] = rectF(window.x + width, window.y, width, height);
-				mChildAreas[2] = rectF(window.x, window.y + height, width, height);
-				mChildAreas[3] = rectF(window.x + width, window.y + height, width, height);
-				mEntities.set_additive(4);
-			}
-			~BranchNode()noexcept {
-				clear();
-			}
-
-			void clear()noexcept {
-				mEntities.clear();
-
-				for (auto& child : mChildren) {
-					if (child) {
-						child->clear();
-						child.reset();
-					}
-				}
-			}
-			void insert(const uint32_t entity_index, Entity& entity)
-			{
-				//first, check structures depth limit, if going deeper is fine, try going deeper
-				if (mDepth + 1 < MAX_DEPTH) {
-
-					//first check if entity fits into existing children
-					for (int i = 0; i < WINDOW4; ++i) {
-						const auto& childArea = mChildAreas[i];
-						auto& child = mChildren[i];
-						if (!childArea.contains(entity.mBounds)) continue;
-
-						if (!child)
-							child = std::make_unique<BranchNode>(childArea, mDepth + 1);
-
-						child->insert(entity_index, entity);
-						return;
-					}
-				}
-
-				entity.mStoredAt = this;
-				entity.mIndexNode = mEntities.size();
-				mEntities.emplace_back(entity_index);
-			}
-
-		public:
-			std::array<rectF, WINDOW4> mChildAreas;
-			std::array<std::unique_ptr<BranchNode>, WINDOW4> mChildren;
-			SequenceM<uint32_t> mEntities;
-			rectF mArea;
-			std::size_t mDepth = 0;
-		};
-
-	public:
-		SpatialQuadTree(const rectF& window) :mRoot(window, 0) {}
-
-		template<typename... Args>
-			requires std::constructible_from<T, Args...>
-		bool insert(const rectF& item_size, Args&&... args) {
-			//return false if entity does not fit top level
-			if (!mRoot.mArea.contains(item_size)) {
-				return false;
-			}
-
-			//forward the data, node data is invalid here
-			const uint32_t entityIndex = mAllEntities.size();
-			//create entity
-			mAllEntities.emplace_back(item_size, std::forward<Args>(args)...);
-			//insert and fill out entity data
-			Entity& e = mAllEntities.back();
-			mRoot.insert(entityIndex, e);
-			return true;
-		}
-
-	private:
-		BranchNode mRoot;
-		SequenceM<Entity> mAllEntities;
 	};
 */
