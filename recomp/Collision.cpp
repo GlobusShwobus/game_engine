@@ -1,7 +1,7 @@
 #include "Collision.h"
 
 namespace badEngine {
-	bool sweptAABB_static(const vec2f& ray_origin, const vec2f& ray_dir, const rectF& target, float& t_hit_near, vec2i* contact_normal)noexcept
+	bool sweptAABB_static(const vec2f& ray_origin, const vec2f& ray_dir, const rectF& target, float& t_hit_near, vec2i* contact_normal, vec2f* contact_point)noexcept
 	{
 		// Cache vals
 		auto targetPos = target.get_pos();
@@ -42,7 +42,9 @@ namespace badEngine {
 		// Reject if ray direction is pointing away from object
 		if (t_hit_far < 0)
 			return false;
-
+		if (contact_point) {
+			*contact_point = ray_origin + t_hit_near * ray_dir;
+		}
 		if (contact_normal) {
 			if (t_near.x > t_near.y)
 				if (invdir.x < 0)
@@ -60,7 +62,7 @@ namespace badEngine {
 		// considered a hit, the resolver wont change anything.
 		return true;
 	}
-	bool sweptAABB_dynamic(const Transform& dynamic, const Transform& stationary, float& collisionTime, vec2i* contact_normal) noexcept 
+	bool sweptAABB_dynamic(const Transform& dynamic, const Transform& stationary, float& collisionTime, vec2i* contact_normal, vec2f* contact_point) noexcept
 	{
 		//if stationary (maybe should omit it, maybe not, depending on scripting)
 		if (dynamic.mCurrVelocity.x == 0 && dynamic.mCurrVelocity.y == 0)
@@ -72,7 +74,7 @@ namespace badEngine {
 		);
 
 		//get contact time of collision, default should be 1.0f which means no collision in the span of the current frame
-		if (sweptAABB_static(dynamic.mBox.get_center_point(), dynamic.mCurrVelocity, expandedA, collisionTime, contact_normal))
+		if (sweptAABB_static(dynamic.mBox.get_center_point(), dynamic.mCurrVelocity, expandedA, collisionTime, contact_normal, contact_point))
 			return (collisionTime >= 0.0f && collisionTime < 1.0f);
 
 		else

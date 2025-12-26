@@ -1,5 +1,5 @@
 #pragma once
-
+#include "badUtility.h"
 #include "Vec2M.h"
 
 namespace badEngine {
@@ -26,10 +26,22 @@ namespace badEngine {
 			return *this;
 		}
 
+		template<typename U>
+		static constexpr  Rectangle<U> union_rect(const Rectangle<U>& A, const Rectangle<U>& B)noexcept {
+			const U minx = bad_minV(A.x, B.x);
+			const U miny = bad_minV(A.y, B.y);
+			const U maxx = bad_maxV(A.x + A.w, B.x + B.w);
+			const U maxy = bad_maxV(A.y + A.h, B.y + B.h);
 
-		template<typename S>
-		constexpr bool is_same_size(const Rectangle<S>& rhs)const noexcept {
-			return w == rhs.w && h == rhs.h;
+			return Rectangle<U>(minx, miny, maxx - minx, maxy - miny);
+		}
+		template<typename U>
+		constexpr Rectangle<U> union_rect(const Rectangle<U>& other)noexcept {
+			return Rectangle::union_rect(*this, other);
+		}
+
+		constexpr float perimeter()const noexcept {
+			return 2.0f * (w + h);
 		}
 
 		template <typename S>
@@ -59,6 +71,20 @@ namespace badEngine {
 				y + h > rhs.y;
 		}
 
+		template<typename S>
+		constexpr bool is_same_size(const Rectangle<S>& rhs)const noexcept {
+			return w == rhs.w && h == rhs.h;
+		}
+		constexpr vec2f get_center_point()const noexcept {
+			return vec2f(
+				x + (w * 0.5f),
+				y + (h * 0.5f)
+			);
+		}
+		constexpr vec2f get_half_size()const noexcept {
+			return vec2f(w * 0.5f, h * 0.5f);
+		}
+		//REVIST THESE, SINCE WE PUBLIC, MAYBE DON'T NEED IT
 		constexpr void set_pos(const Vec2M<T>& pos)noexcept {
 			x = pos.x;
 			y = pos.y;
@@ -78,17 +104,7 @@ namespace badEngine {
 		constexpr Vec2M<T> get_size()const noexcept {
 			return Vec2M<T>(w, h);
 		}
-		constexpr vec2f get_center_point()const noexcept {
-			return vec2f(
-				x + (w * 0.5f),
-				y + (h * 0.5f)
-			);
-		}
-		constexpr vec2f get_half_size()const noexcept {
-			return vec2f(w * 0.5f, h * 0.5f);
-		}
-
-
+		//##########################################################
 	public:
 		T x = 0;
 		T y = 0;

@@ -1,5 +1,5 @@
 #pragma once
-
+#include <iterator>
 #include "Rectangle.h"
 #include "Transform.h"
 
@@ -10,8 +10,26 @@ namespace badEngine {
 	//ASSUMES ONE OBJECT IS DYNAMIC, OTHER STATIONARY
 
 	//######################################################################################################################
-	bool sweptAABB_static(const vec2f& ray_origin, const vec2f& ray_dir, const rectF& target, float& t_hit_near, vec2i* contact_normal = nullptr) noexcept;
-	bool sweptAABB_dynamic(const Transform& dynamic, const Transform& stationary, float& collisionTime, vec2i* contact_normal = nullptr) noexcept;
+	bool sweptAABB_static(const vec2f& ray_origin, const vec2f& ray_dir, const rectF& target, float& t_hit_near, vec2i* contact_normal = nullptr, vec2f* contact_point = nullptr) noexcept;
+	bool sweptAABB_dynamic(const Transform& dynamic, const Transform& stationary, float& collisionTime, vec2i* contact_normal = nullptr, vec2f* contact_point = nullptr) noexcept;
+	
+	template<std::input_iterator InputIt>
+		requires std::same_as<Transform, std::iter_reference_t<InputIt>>//remove const cv_ref?
+	bool sweptAABB_brute_force(InputIt first, InputIt last, const Transform& against) {
+		for (; first != last; ++first) {
+			
+			if (*first.intersects(against) == false) {
+				continue;
+			}
+			
+			float time = 0;
+			bool hit = sweptAABB_static(*first, against, time);
+			if (hit) {
+				return true;
+			}
+		}
+		return false;
+	}
 	//######################################################################################################################
 
 	
