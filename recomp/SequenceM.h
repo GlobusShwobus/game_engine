@@ -569,7 +569,7 @@ namespace badEngine {
 				erase(begin() + count, end());
 			}
 			else {
-				size_type amount = mSize - count;
+				size_type amount = count - mSize;
 				while (amount--) {
 					emplace_back(value);
 				}
