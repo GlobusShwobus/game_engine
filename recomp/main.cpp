@@ -54,31 +54,36 @@ int main() {
         const float windowWidth = 960;
         const float windowHeight = 540;
         const rectI window(0, 0, windowWidth, windowHeight);
-        SpatialQuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
-        Camera2D camera(960, 540);
 
-        const float mouseBoxSize = 50.0f;
-        bool mouseHeld = false;
-        bool plzDeleteArea = false;
+        SequenceM<std::unique_ptr<SomeObjWithArea>> myObjsStore;
+        myObjsStore.set_capacity(10000);
+        DynamicAABBTree tree;
 
-
-        Stopwatch insertionTime;
+        Stopwatch insertionTimeVector;
         for (int i = 0; i < 10000; i++) {
             //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
             float boxWidth = rng.random_float(1, 10);
             float boxHeight = rng.random_float(1, 10);
 
             rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
-            SomeObjWithArea item = SomeObjWithArea(
+
+
+            myObjsStore.emplace_back(std::make_unique<SomeObjWithArea>(
                 box,
                 vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
-                Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
+                Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255))
             );
-
-            myObjsQuad.insert(box, std::move(item));
         }
-        std::size_t insertTime = insertionTime.dt_nanosec();
-        std::cout << "time: " << insertTime << "\n";
+        std::size_t vectorInsertionTime = insertionTimeVector.dt_nanosec();
+
+        Stopwatch insertionTimeQuadtree;
+        for (auto it = myObjsStore.begin(); it != myObjsStore.end(); ++it) {
+            SomeObjWithArea* p = it->get();
+            auto id = tree.create_proxy(p->rect, p);
+        }
+        std::size_t quadtreeInsertionTime = insertionTimeQuadtree.dt_nanosec();
+
+        std::cout << "insertion into vector: " << vectorInsertionTime << "\ninserting into quadtree: " << quadtreeInsertionTime << "\ntotal: " << vectorInsertionTime + quadtreeInsertionTime << "\n";
 
         renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
@@ -103,13 +108,6 @@ int main() {
                     GAME_RUNNING = false;
                     continue;
                 }
-                if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN && EVENT.button.button == SDL_BUTTON_LEFT) {
-                    plzDeleteArea = true;
-                }
-                if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-                    plzDeleteArea = false;
-                }
-                script_handle_camera_mouse(EVENT, camera);
             }
 
             //////TEST CODE        

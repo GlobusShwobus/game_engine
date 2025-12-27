@@ -388,7 +388,7 @@ namespace badEngine {
 			if index is not in the range of [begin -> end]
 		*/
 		constexpr reference operator[](size_type index) {
-			assert(index < mSize && "operator[] access with out of range index");
+			//assert(index < mSize && "operator[] access with out of range index");
 			return mArray[index];
 		}
 		/*
@@ -569,7 +569,7 @@ namespace badEngine {
 				erase(begin() + count, end());
 			}
 			else {
-				size_type amount = mSize - count;
+				size_type amount = count - mSize;
 				while (amount--) {
 					emplace_back(value);
 				}
