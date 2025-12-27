@@ -19,6 +19,7 @@
 
 #include <iostream>
 /*
+PRIORITY: constexpr for SLList and then correct signatures for quad/BHV tree
 
 1) do a hash map data structure for reasons
 2) get back to quad tree reenvigorated
