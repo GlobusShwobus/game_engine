@@ -59,7 +59,7 @@ namespace badEngine {
 		//on fail call SDL_GetError()
 		bool set_render_draw_color(Color color)noexcept;
 
-		
+		//TODO:: add docs
 		void fill_area_with(const rectF& area, Color color)const noexcept;
 		void fill_area_with(const rectF& outer, const rectF& inner, Color color)const noexcept;
 

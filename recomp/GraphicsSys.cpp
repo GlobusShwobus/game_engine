@@ -79,14 +79,16 @@ namespace badEngine {
 	}
 	void GraphicsSys::fill_area_with(const rectF& outer, const rectF& inner, Color color)const noexcept
 	{
-		SDL_Renderer* ren = mRenderer.get();
-		SDL_SetRenderDrawColor(ren, color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
-		SDL_FRect sdlOuter = SDL_FRect(outer.x, outer.y, outer.w, outer.h);
-		SDL_FRect sdlInner = SDL_FRect(inner.x, inner.y, inner.w, inner.h);
+		if (outer.contains(inner)) {
+			SDL_Renderer* ren = mRenderer.get();
+			SDL_SetRenderDrawColor(ren, color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+			SDL_FRect sdlOuter = SDL_FRect(outer.x, outer.y, outer.w, outer.h);
+			SDL_FRect sdlInner = SDL_FRect(inner.x, inner.y, inner.w, inner.h);
 
-		SDL_RenderFillRect(ren, &sdlOuter);
-		SDL_SetRenderDrawColor(ren, mDrawColor.get_red(), mDrawColor.get_green(), mDrawColor.get_blue(), mDrawColor.get_alpha());
-		SDL_RenderFillRect(ren, &sdlInner);
+			SDL_RenderFillRect(ren, &sdlOuter);
+			SDL_SetRenderDrawColor(ren, mDrawColor.get_red(), mDrawColor.get_green(), mDrawColor.get_blue(), mDrawColor.get_alpha());
+			SDL_RenderFillRect(ren, &sdlInner);
+		}
 	}
 	bool GraphicsSys::set_render_target(SDL_Texture* target)const noexcept
 	{

@@ -56,7 +56,7 @@ int main() {
         const float windowHeight = 540.f;
         const rectI window(0, 0, windowWidth, windowHeight);
         SequenceM<std::unique_ptr<MyTester>> myObjsStore;
-        myObjsStore.set_capacity(100);
+        myObjsStore.set_capacity(10);
 
         BVHTree<MyTester> tree(myObjsStore.capacity());
 
@@ -67,7 +67,7 @@ int main() {
         float boxWidth = width + spacing;
         float boxHeight = height + spacing;
 
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 10; ++i) {
            //CREATING A WORST CASE SCENARIO OF A LINKED LIST BVH
             //rectF rect(
             //    i* boxWidth, // x-position increases linearly
@@ -226,6 +226,19 @@ int main() {
                     camAdjusted.h - 2 * inset
                 };
                 renManager.fill_area_with(camAdjusted, inner, Colors::Green);
+            }
+            for (const auto& each : tree.myNodes()) {
+                if (each.user_data != nullptr) {
+                    static const float inset = 2.0f; // thickness of the hollow frame
+                    auto camLeaf = camera.world_to_screen(each.user_data->rect);
+                    rectF inner{
+                        camLeaf.x + inset,
+                        camLeaf.y + inset,
+                        camLeaf.w - 2 * inset,
+                        camLeaf.h - 2 * inset
+                    };
+                    renManager.fill_area_with(camLeaf, inner, Colors::Red);
+                }
             }
 
             //PRESENT
