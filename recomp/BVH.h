@@ -17,7 +17,8 @@ namespace badEngine {
 	static constexpr float aabbExtension = 0.1f;
 	static constexpr int nullnode = -1;
 
-	using T = int;//later tempalte
+	//using T = int;//later tempalte
+	template<typename T>
 	class BVHTree {
 
 		struct Node {
@@ -33,15 +34,17 @@ namespace badEngine {
 			int nextFreeNode = nullnode;
 
 			constexpr bool is_leaf()const noexcept {
-				return height == 0;
+				return child1 == nullnode;//probably simpler instead of using height
 			}
 			//used in BHVTree constructor to only set the list, rest by default
 			Node(int next) :nextFreeNode(next) {}
 		};
 
 	public:
-
-		BVHTree()
+		/*
+				template<std::input_iterator InputIt>
+			requires std::same_as<T, std::iter_reference_t<InputIt>>
+		BVHTree(InputIt begin, InputIt end, std::size_t element_count)
 		{
 			mRoot = nullnode;
 
@@ -50,6 +53,21 @@ namespace badEngine {
 
 			//create a chain on nodes, except set last manually
 			for (std::size_t i = 0; i < inital_capacity - 1; ++i) {
+				mNodes.emplace_back(static_cast<int>(i+1));
+			}
+			mNodes.emplace_back(static_cast<int>(nullnode));
+			//iterating the freelist starts from 0
+			mFreeList = 0;
+		}
+		*/
+		BVHTree(std::size_t inital_size)
+		{
+			mRoot = nullnode;
+
+			mNodes.set_capacity(inital_size);
+
+			//create a chain on nodes, except set last manually
+			for (std::size_t i = 0; i < inital_size - 1; ++i) {
 				mNodes.emplace_back(static_cast<int>(i+1));
 			}
 			mNodes.emplace_back(static_cast<int>(nullnode));
@@ -146,10 +164,68 @@ namespace badEngine {
 				bestSibling = (child1Cost < child2Cost) ? node.child1 : node.child2;
 			}
 
-			//stage 2: creating a new parent
-			//each leaf node must have a brother, that is because each parent must have 2 children
+			//stage 2: creating and building a new set of node and leaves
+			//each internal node must have 2 leaf nodes, a leaf node may not have any children, thus the leaf nodes children are denoted as nullnodes
+			//in this implementation a leaf node stores only 1 primitive, not a bucket
 			//the most reasonable way to achieve this is by creating a new parent node which is attached to the previous parent
+			//however if input is sorted this will break down and cause the creation of a linked list due to SAH "failing"
+			//this requires rebalancing the tree later
 			
+			//previous leaf will become an internal node, thus the leaf will have to move
+			std::size_t oldParent = mNodes[bestSibling].parent;
+			//build a new parent
+			std::size_t newParent = build_node();
+			//cache nodes for setting immediate data about the node set
+			auto& child1 = mNodes[bestSibling];
+			auto& child2 = mNodes[proxyID];
+			auto& newParentNode = mNodes[newParent];
+			//set new parent info
+			newParentNode.parent = oldParent;
+			newParentNode.child1 = bestSibling;
+			newParentNode.child2 = proxyID;
+			newParentNode.height = child1.height + 1;
+			newParentNode.aabb = Rectangle<float>::union_rect(child1.aabb, child2.aabb);
+			//link up children and new parent
+			child1.parent = newParent;
+			child2.parent = newParent;
+
+			//link new parent and old parent, or set as root if old parent was nullnode
+			if (oldParent != nullnode) {
+				auto& oldParentNode = mNodes[oldParent];
+				//determine which side to attach to
+				if (oldParentNode.child1 == bestSibling) {
+					oldParentNode.child1 = newParent;
+				}
+				else {
+					oldParentNode.child2 = newParent;
+				}
+			}
+			else {
+				mRoot = newParent;
+			}
+
+			//stage 3: walking back up from point of creation of a new parent and resizing all parent node AABBs
+
+			std::size_t currentNode = newParent;
+			while (currentNode != nullnode) {
+
+				//balance here? idk that's explained way later so no balance currently
+				//####################################################################
+				
+				auto& node_at = mNodes[currentNode];
+
+				assert(node_at.child1 != nullnode);
+				assert(node_at.child2 != nullnode);
+
+				auto& child1_at = mNodes[node_at.child1];
+				auto& child2_at = mNodes[node_at.child2];
+				//height is most importantly used for rebalancing 
+				node_at.height = 1 + bad_maxV(child1_at.height, child2_at.height);
+				//set SAH
+				node_at.aabb = Rectangle<float>::union_rect(child1_at.aabb, child2_at.aabb);
+
+				currentNode = node_at.parent;
+			}
 		}
 
 	private:

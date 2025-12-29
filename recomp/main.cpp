@@ -15,7 +15,7 @@
 #include "Color.h"
 #include "Camera.h"
 #include "Scripts.h"
-#include "DynamicAABBTree.h"
+#include "BVH.h"
 
 #include <iostream>
 /*
@@ -57,7 +57,7 @@ int main() {
 
         SequenceM<std::unique_ptr<SomeObjWithArea>> myObjsStore;
         myObjsStore.set_capacity(10000);
-        DynamicAABBTree tree;
+        BVHTree<SomeObjWithArea> tree(myObjsStore.capacity());
 
         Stopwatch insertionTimeVector;
         for (int i = 0; i < 10000; i++) {
@@ -76,15 +76,16 @@ int main() {
         }
         std::size_t vectorInsertionTime = insertionTimeVector.dt_nanosec();
 
-        Stopwatch insertionTimeQuadtree;
+        Stopwatch insertionTimeBVH;
         for (auto it = myObjsStore.begin(); it != myObjsStore.end(); ++it) {
             SomeObjWithArea* p = it->get();
             auto id = tree.create_proxy(p->rect, p);
         }
-        std::size_t quadtreeInsertionTime = insertionTimeQuadtree.dt_nanosec();
+        std::size_t BVHInsertionTime = insertionTimeBVH.dt_nanosec();
 
-        std::cout << "insertion into vector: " << vectorInsertionTime << "\ninserting into quadtree: " << quadtreeInsertionTime << "\ntotal: " << vectorInsertionTime + quadtreeInsertionTime << "\n";
+        std::cout << "insertion into vector: " << vectorInsertionTime << "\ninserting into quadtree: " << BVHInsertionTime << "\ntotal: " << vectorInsertionTime + BVHInsertionTime << "\n";
 
+        return 420;
         renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
 
