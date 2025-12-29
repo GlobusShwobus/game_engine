@@ -29,18 +29,19 @@ namespace badEngine {
 			int child1 = nullnode;
 			int child2 = nullnode;
 
-			int height = 0;//leaf = 0; internal = max(child)+1
+			int height = -1;//leaf = 0; internal = max(child)+1
 
 			int nextFreeNode = nullnode;
 
 			constexpr bool is_leaf()const noexcept {
-				return child1 == nullnode;//probably simpler instead of using height
+				return height == 0;
 			}
 			//used in BHVTree constructor to only set the list, rest by default
 			Node(int next) :nextFreeNode(next) {}
 		};
 
 	public:
+
 		BVHTree(std::size_t inital_size)
 		{
 			mRoot = nullnode;
@@ -73,10 +74,6 @@ namespace badEngine {
 			return proxyID;
 		}
 
-		const SequenceM<Node>& myNodes()const {
-			return mNodes;
-		}
-
 		~BVHTree() = default;
 
 	private:
@@ -106,6 +103,8 @@ namespace badEngine {
 			mFreeList = node.nextFreeNode;
 			//set height to leaf
 			node.height = 0;
+
+			nodeCount++;
 			return nodeId;
 		}
 
@@ -127,20 +126,42 @@ namespace badEngine {
 				//cahce node
 				auto& node = mNodes[bestSibling];
 				//get the surface area of the the union of the entire section of the tree
-				float structureArea = node.aabb.perimeter();
+				float currentNodeArea = node.aabb.perimeter();
 				//combine leaf and the current structure and get the SA of the union
-				const rectF combinedAABB = Rectangle<float>::union_rect(leafAABB, node.aabb);
-				float combinedArea = combinedAABB.perimeter();
+				const rectF newBounds = Rectangle<float>::union_rect(leafAABB, node.aabb);
+				float combinedArea = newBounds.perimeter();
 
 				//get the cost of staying on this level as it may be true that going deeper is not worth it
 				//2x multiplier is a SAH math bullshit. im regular cases it doesn't matter, but in some it basically says "this layer is better than children"
+				//importantly if the child node is not a leaf then the cost is the difference between new and old because to go down that path would mean creating a new node child pairs
+				//where the original child is still the same size
 				float directCost = 2.0f * combinedArea;
 				//the minimum possible cost of going down
-				float inheritedCost = 2.0f * (combinedArea - structureArea);
+				float inheritedCost = 2.0f * (combinedArea - currentNodeArea);
 				//get the cost of children
-				float child1Cost = child_cost(node.child1, inheritedCost, leafAABB);
-				float child2Cost = child_cost(node.child2, inheritedCost, leafAABB);
+				float child1Cost;
+				if (mNodes[node.child1].is_leaf()) {
+					rectF path1 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child1].aabb);
+					child1Cost = path1.perimeter() + inheritedCost;
+				}
+				else {
+					rectF path1 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child1].aabb);
+					float oldArea = mNodes[node.child1].aabb.perimeter();
+					float newArea = path1.perimeter();
+					child1Cost = (newArea - oldArea) + inheritedCost;
+				}
 
+				float child2Cost;
+				if (mNodes[node.child2].is_leaf()) {
+					rectF path2 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child2].aabb);
+					child2Cost = path2.perimeter() + inheritedCost;
+				}
+				else {
+					rectF path2 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child2].aabb);
+					float oldArea = mNodes[node.child2].aabb.perimeter();
+					float newArea = path2.perimeter();
+					child2Cost = (newArea - oldArea) + inheritedCost;
+				}
 				//if cost of adding here is less than into either child, stop
 				if (directCost < child1Cost && directCost < child2Cost) {
 					break;
@@ -190,7 +211,6 @@ namespace badEngine {
 			}
 
 			//stage 3: walking back up from point of creation of a new parent and resizing all parent node AABBs
-
 			std::size_t currentNode = newParent;
 			while (currentNode != nullnode) {
 
@@ -219,23 +239,16 @@ namespace badEngine {
 		int mRoot = nullnode;
 		int mFreeList = nullnode;
 
-	private:
-		//garbag, later maybe inline into functions
-		float child_cost(std::size_t index, float inheritedCost, const rectF& insertedAABB) {
-			float cost;
-			auto& child = mNodes[index];
-			rectF combined = Rectangle<float>::union_rect(insertedAABB, child.aabb);
-
-			if (child.is_leaf()) {
-				cost = combined.perimeter() + inheritedCost;
-			}
-			else {
-				float oldArea = child.aabb.perimeter();
-				float newArea = combined.perimeter();
-				cost = (newArea - oldArea) + inheritedCost;
-			}
-			return cost;
+	public:
+		//just for testing and such
+		const SequenceM<Node>& myNodes()const {
+			return mNodes;
 		}
+
+		int node_count()const {
+			return nodeCount;
+		}
+		int nodeCount = 0;
 	};
 }
 
