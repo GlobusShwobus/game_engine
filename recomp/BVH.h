@@ -41,25 +41,6 @@ namespace badEngine {
 		};
 
 	public:
-		/*
-				template<std::input_iterator InputIt>
-			requires std::same_as<T, std::iter_reference_t<InputIt>>
-		BVHTree(InputIt begin, InputIt end, std::size_t element_count)
-		{
-			mRoot = nullnode;
-
-			const std::size_t inital_capacity = 16;
-			mNodes.set_capacity(inital_capacity);
-
-			//create a chain on nodes, except set last manually
-			for (std::size_t i = 0; i < inital_capacity - 1; ++i) {
-				mNodes.emplace_back(static_cast<int>(i+1));
-			}
-			mNodes.emplace_back(static_cast<int>(nullnode));
-			//iterating the freelist starts from 0
-			mFreeList = 0;
-		}
-		*/
 		BVHTree(std::size_t inital_size)
 		{
 			mRoot = nullnode;
@@ -90,6 +71,10 @@ namespace badEngine {
 			insert_leaf(proxyID);
 
 			return proxyID;
+		}
+
+		const SequenceM<Node>& myNodes()const {
+			return mNodes;
 		}
 
 		~BVHTree() = default;
@@ -227,7 +212,6 @@ namespace badEngine {
 				currentNode = node_at.parent;
 			}
 		}
-
 	private:
 
 		SequenceM<Node> mNodes;
@@ -254,3 +238,24 @@ namespace badEngine {
 		}
 	};
 }
+
+		/*
+				template<std::input_iterator InputIt>
+			requires std::same_as<T, std::iter_reference_t<InputIt>>
+		BVHTree(InputIt begin, InputIt end, std::size_t element_count)
+		{
+			mRoot = nullnode;
+
+			const std::size_t inital_capacity = 16;
+			mNodes.set_capacity(inital_capacity);
+
+			//create a chain on nodes, except set last manually
+			for (std::size_t i = 0; i < inital_capacity - 1; ++i) {
+				mNodes.emplace_back(static_cast<int>(i+1));
+			}
+			mNodes.emplace_back(static_cast<int>(nullnode));
+			//iterating the freelist starts from 0
+			mFreeList = 0;
+		}
+		*/
+

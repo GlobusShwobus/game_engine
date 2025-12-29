@@ -45,53 +45,67 @@ int main() {
         GraphicsSys renManager(windowConfig.get());
 
         ////// TEST CODE
-        struct SomeObjWithArea {
+        struct MyTester {
             rectF rect;
-            vec2f vel;
             Color col;
+            MyTester(const rectF& r, Color col) :rect(r), col(col) {}
         };
         NumberGenerator rng;
-        const float windowWidth = 960;
-        const float windowHeight = 540;
-        const rectI window(0, 0, windowWidth, windowHeight);
 
-        SequenceM<std::unique_ptr<SomeObjWithArea>> myObjsStore;
-        myObjsStore.set_capacity(10000);
-        BVHTree<SomeObjWithArea> tree(myObjsStore.capacity());
+        const float windowWidth = 960.f;
+        const float windowHeight = 540.f;
+        const rectI window(0, 0, windowWidth, windowHeight);
+        SequenceM<std::unique_ptr<MyTester>> myObjsStore;
+        myObjsStore.set_capacity(100);
+
+        BVHTree<MyTester> tree(myObjsStore.capacity());
 
         Stopwatch insertionTimeVector;
-        for (int i = 0; i < 10000; i++) {
-            //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
-            float boxWidth = rng.random_float(1, 10);
-            float boxHeight = rng.random_float(1, 10);
+        const float spacing = 10;
+        const float width = 10;
+        const float height = 10;
+        float boxWidth = width + spacing;
+        float boxHeight = height + spacing;
 
-            rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
+        for (int i = 0; i < 100; ++i) {
+           //CREATING A WORST CASE SCENARIO OF A LINKED LIST BVH
+            //rectF rect(
+            //    i* boxWidth, // x-position increases linearly
+            //    0,            // all boxes at the same y
+            //    boxWidth,
+            //    boxHeight
+            //);
 
-
-            myObjsStore.emplace_back(std::make_unique<SomeObjWithArea>(
-                box,
-                vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
-                Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255))
+            //CREATING A RANDOM CASE
+            rectF rect(
+                rng.random_float(0, windowWidth),
+                rng.random_float(0, windowHeight),
+                rng.random_float(1, 100),
+                rng.random_float(1, 100)
             );
+
+            myObjsStore.emplace_back(std::make_unique<MyTester>(rect, Colors::Green));
         }
+
         std::size_t vectorInsertionTime = insertionTimeVector.dt_nanosec();
 
         Stopwatch insertionTimeBVH;
         for (auto it = myObjsStore.begin(); it != myObjsStore.end(); ++it) {
-            SomeObjWithArea* p = it->get();
+            MyTester* p = it->get();
             auto id = tree.create_proxy(p->rect, p);
         }
         std::size_t BVHInsertionTime = insertionTimeBVH.dt_nanosec();
 
         std::cout << "insertion into vector: " << vectorInsertionTime << "\ninserting into quadtree: " << BVHInsertionTime << "\ntotal: " << vectorInsertionTime + BVHInsertionTime << "\n";
+        
 
-        return 420;
         renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
 
         long double time = 0;
         std::size_t frames = 0;
         const std::size_t frame_target = 2000;
+        Camera2D camera(windowWidth, windowHeight);
         //////#######################################################
 
         //main loop
@@ -109,6 +123,7 @@ int main() {
                     GAME_RUNNING = false;
                     continue;
                 }
+                script_handle_camera_mouse(EVENT, camera);
             }
 
             //////TEST CODE        
@@ -199,6 +214,19 @@ int main() {
             //    GAME_RUNNING = false;
             //}
             //////########################################################
+
+            for (const auto& each : tree.myNodes()) {
+                auto camAdjusted = camera.world_to_screen(each.aabb);
+
+                static const float inset = 2.0f; // thickness of the hollow frame
+                rectF inner{
+                    camAdjusted.x + inset,
+                    camAdjusted.y + inset,
+                    camAdjusted.w - 2 * inset,
+                    camAdjusted.h - 2 * inset
+                };
+                renManager.fill_area_with(camAdjusted, inner, Colors::Green);
+            }
 
             //PRESENT
             renManager.renderer_present();

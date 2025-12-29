@@ -61,6 +61,7 @@ namespace badEngine {
 
 		
 		void fill_area_with(const rectF& area, Color color)const noexcept;
+		void fill_area_with(const rectF& outer, const rectF& inner, Color color)const noexcept;
 
 		//overrides location that is being drawn on. 
 		//Texture will be permanently overwritten in memory, so make a copy or just keep in mind to reload a clean slate
