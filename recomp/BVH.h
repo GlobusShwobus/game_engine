@@ -17,8 +17,8 @@ namespace badEngine {
 	static constexpr float aabbExtension = 0.1f;
 	static constexpr int nullnode = -1;
 
-	//using T = int;//later tempalte
-	template<typename T>
+	using T = int;//later tempalte
+	//template<typename T>
 	class BVHTree {
 
 		struct Node {
@@ -57,8 +57,8 @@ namespace badEngine {
 			mFreeList = 0;
 		}
 
-		std::size_t create_proxy(const rectF& aabb, T* user_data) {
-
+		std::size_t create_proxy(const rectF& aabb, T* user_data) 
+		{
 			auto proxyID = build_node();
 			Node& node = mNodes[proxyID];
 			auto& fatbox = node.aabb;
@@ -78,8 +78,8 @@ namespace badEngine {
 
 	private:
 
-		std::size_t build_node() {
-
+		std::size_t build_node()
+		{
 			//if free list is out of nexts
 			if (mFreeList == nullnode) {
 
@@ -108,7 +108,8 @@ namespace badEngine {
 			return nodeId;
 		}
 
-		void insert_leaf(const std::size_t proxyID) {
+		void insert_leaf(const std::size_t proxyID)
+		{
 			//the case of the very first leaf
 			if (mRoot == nullnode) {
 				mRoot = proxyID;
@@ -214,8 +215,7 @@ namespace badEngine {
 			std::size_t currentNode = newParent;
 			while (currentNode != nullnode) {
 
-				//balance here? idk that's explained way later so no balance currently
-				//####################################################################
+				currentNode = rotate(currentNode);
 				
 				auto& node_at = mNodes[currentNode];
 
@@ -231,6 +231,93 @@ namespace badEngine {
 
 				currentNode = node_at.parent;
 			}
+		}
+		/*
+		RULES:
+			a internal node cannot be swapped with another internal node
+			a leaf node cannot be swapped with another leaf node
+			a parent cannot be swapped with its own leaf nodes
+			ONLY an internal node <- -> leaf node from another subtree is swappable
+
+			rotations purpose is not changing heights, its for reorganization spatial groups to reduce SAH costs
+			this means promoting smaller volumes upward, larger volumes downward
+			leaf height = 0, internal height = max(of children) + 1
+			leaf nodes children are -1 height (default set)
+		*/
+		std::size_t rotate(std::size_t index)
+		{
+			auto iA = index;
+			auto& A = mNodes[index];
+			//as per rules of rotation, node can not be a leaf nor a parent with 2 leafs
+			if (A.height < 2) {
+				return index;
+			}
+			auto iB = A.child1;
+			auto iC = A.child2;
+			auto& B = mNodes[A.child1];
+			auto& C = mNodes[A.child2];
+
+			int balance = B.height - C.height;
+			//if balance > 0 == child1 is taller
+			//if balance < 0 == child2 is taller
+			//if |balance| <= 1 == perfectly balanced NO OP
+			//same rule applies as before except because of math it can now be +-1 and difference of 1 should be ignored
+			//that's why comparisons exclude 1 and -1
+
+			//promote child1 up
+			if (balance > 1) {
+				//children of B
+				auto iD = B.child1;
+				auto iE = B.child2;
+				auto& D = mNodes[iD];
+				auto& E = mNodes[iE];
+				// 
+				//       A	  
+				//      / \	  
+				//     B   C  
+				//    / \	  
+				//   D   E	  
+
+				//B's parent becomes A's parent and A's parent becomes B
+				B.parent = A.parent;
+				A.parent = iB;
+				B.child1 = iA;
+			    // 
+				//       B	  
+				//      / \	  
+				//     A   ?  
+				//    / \	  
+				//   ?   ?	  
+
+
+				//fix original parent of A to point to B
+				if (B.parent != nullnode) {
+					auto& root = mNodes[B.parent];
+					//if roots child 1 or child 2 pointed to iA
+					if (root.child1 == iA) 
+						root.child1 = iB;
+					else 
+						root.child2 = iB;
+				}
+				else {
+					mRoot = iB;
+				}
+
+				//rotate
+				if (D.height > E.height) {
+
+				}
+				else {
+
+				}
+				return iB;
+			}
+			//promote child2 up
+			else if (balance < -1) {
+
+			}
+
+			return index;
 		}
 	private:
 
