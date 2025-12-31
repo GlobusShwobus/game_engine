@@ -183,6 +183,10 @@ namespace badEngine {
 		}
 		return true;
 	}
+	bool GraphicsSys::draw(SDL_Texture* texture)const noexcept
+	{
+		return SDL_RenderTexture(mRenderer.get(), texture, nullptr, nullptr);
+	}
 }
 
 

@@ -93,6 +93,10 @@ namespace badEngine {
 		//returns false on failure, call SDL_GetError
 		bool draw(SDL_Texture* texture, const SequenceM<std::pair<rectF, rectF>>& list)const noexcept;
 
+		//draws full texture 
+		bool draw(SDL_Texture* texture)const noexcept;
+
+
 	private:
 		/* ORDER MATTERS BECAUSE OF DELETER! */
 		std::unique_ptr<SDL_Renderer, decltype(SDLRendererDeleter)> mRenderer{nullptr, SDLRendererDeleter };

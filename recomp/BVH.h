@@ -17,8 +17,8 @@ namespace badEngine {
 	static constexpr float aabbExtension = 0.1f;
 	static constexpr int nullnode = -1;
 
-	using T = int;//later tempalte
-	//template<typename T>
+	//using T = int;//later tempalte
+	template<typename T>
 	class BVHTree {
 
 		struct Node {
@@ -129,7 +129,7 @@ namespace badEngine {
 				//get the surface area of the the union of the entire section of the tree
 				float currentNodeArea = node.aabb.perimeter();
 				//combine leaf and the current structure and get the SA of the union
-				const rectF newBounds = Rectangle<float>::union_rect(leafAABB, node.aabb);
+				const rectF newBounds = rectF::union_rect(leafAABB, node.aabb);
 				float combinedArea = newBounds.perimeter();
 
 				//get the cost of staying on this level as it may be true that going deeper is not worth it
@@ -142,11 +142,11 @@ namespace badEngine {
 				//get the cost of children
 				float child1Cost;
 				if (mNodes[node.child1].is_leaf()) {
-					rectF path1 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child1].aabb);
+					rectF path1 = rectF::union_rect(leafAABB, mNodes[node.child1].aabb);
 					child1Cost = path1.perimeter() + inheritedCost;
 				}
 				else {
-					rectF path1 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child1].aabb);
+					rectF path1 = rectF::union_rect(leafAABB, mNodes[node.child1].aabb);
 					float oldArea = mNodes[node.child1].aabb.perimeter();
 					float newArea = path1.perimeter();
 					child1Cost = (newArea - oldArea) + inheritedCost;
@@ -154,11 +154,11 @@ namespace badEngine {
 
 				float child2Cost;
 				if (mNodes[node.child2].is_leaf()) {
-					rectF path2 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child2].aabb);
+					rectF path2 = rectF::union_rect(leafAABB, mNodes[node.child2].aabb);
 					child2Cost = path2.perimeter() + inheritedCost;
 				}
 				else {
-					rectF path2 = Rectangle<float>::union_rect(leafAABB, mNodes[node.child2].aabb);
+					rectF path2 = rectF::union_rect(leafAABB, mNodes[node.child2].aabb);
 					float oldArea = mNodes[node.child2].aabb.perimeter();
 					float newArea = path2.perimeter();
 					child2Cost = (newArea - oldArea) + inheritedCost;
@@ -191,7 +191,7 @@ namespace badEngine {
 			newParentNode.child1 = bestSibling;
 			newParentNode.child2 = proxyID;
 			newParentNode.height = child1.height + 1;
-			newParentNode.aabb = Rectangle<float>::union_rect(child1.aabb, child2.aabb);
+			newParentNode.aabb = rectF::union_rect(child1.aabb, child2.aabb);
 			//link up children and new parent
 			child1.parent = newParent;
 			child2.parent = newParent;
@@ -215,7 +215,7 @@ namespace badEngine {
 			std::size_t currentNode = newParent;
 			while (currentNode != nullnode) {
 
-				currentNode = rotate(currentNode);
+				currentNode = bottom_up_balance(currentNode);
 				
 				auto& node_at = mNodes[currentNode];
 
@@ -227,7 +227,7 @@ namespace badEngine {
 				//height is most importantly used for rebalancing 
 				node_at.height = 1 + bad_maxV(child1_at.height, child2_at.height);
 				//set SAH
-				node_at.aabb = Rectangle<float>::union_rect(child1_at.aabb, child2_at.aabb);
+				node_at.aabb = rectF::union_rect(child1_at.aabb, child2_at.aabb);
 
 				currentNode = node_at.parent;
 			}
@@ -239,12 +239,13 @@ namespace badEngine {
 			a parent cannot be swapped with its own leaf nodes
 			ONLY an internal node <- -> leaf node from another subtree is swappable
 
-			rotations purpose is not changing heights, its for reorganization spatial groups to reduce SAH costs
-			this means promoting smaller volumes upward, larger volumes downward
+			the function does 2 modifications:
+				one structural promoting a node upward with all its contents
+				one subtree selection. move deeper closer to the root to reduce SAH costs
 			leaf height = 0, internal height = max(of children) + 1
 			leaf nodes children are -1 height (default set)
 		*/
-		std::size_t rotate(std::size_t index)
+		std::size_t bottom_up_balance(std::size_t index)
 		{
 			auto iA = index;
 			auto& A = mNodes[index];
@@ -264,6 +265,8 @@ namespace badEngine {
 			//same rule applies as before except because of math it can now be +-1 and difference of 1 should be ignored
 			//that's why comparisons exclude 1 and -1
 
+			//ALSO: not all values are explicitly set. for example in case balance > 1. don't explicityl set A.child2 and D.parent. it is a significant win (tested).
+
 			//promote child1 up
 			if (balance > 1) {
 				//children of B
@@ -271,24 +274,19 @@ namespace badEngine {
 				auto iE = B.child2;
 				auto& D = mNodes[iD];
 				auto& E = mNodes[iE];
-				// 
 				//       A	  
 				//      / \	  
 				//     B   C  
 				//    / \	  
 				//   D   E	  
-
-				//B's parent becomes A's parent and A's parent becomes B
 				B.parent = A.parent;
 				A.parent = iB;
-				B.child1 = iA;
-			    // 
+				B.child1 = iA;  //convention, can be child 2 too
 				//       B	  
 				//      / \	  
 				//     A   ?  
 				//    / \	  
-				//   ?   ?	  
-
+				//   ?   C	  
 
 				//fix original parent of A to point to B
 				if (B.parent != nullnode) {
@@ -303,21 +301,106 @@ namespace badEngine {
 					mRoot = iB;
 				}
 
-				//rotate
+				//determine which OG child of B stays with B, which goes to A depending on height of B's children
+				//promote the subtree with larger spatial extent upwards so its BB is evaluated earlier
 				if (D.height > E.height) {
+					B.child2 = iD;
+					A.child1 = iE;
+					E.parent = iA;
+					//       B	 
+					//      / \	 
+					//     A   D 
+					//    / \	 
+					//   E   C	 
+					//set rest of BVH related data
+					A.aabb = rectF::union_rect(E.aabb, C.aabb);
+					B.aabb = rectF::union_rect(A.aabb, D.aabb);
 
+					A.height = bad_maxV(E.height, C.height) + 1;
+					B.height = bad_maxV(A.height, D.height) + 1;
 				}
 				else {
+					B.child2 = iE;
+					A.child1 = iD;
+					D.parent = iA;
+					//       B	 
+					//      / \	 
+					//     A   E 
+					//    / \	 
+					//   D   C
+					A.aabb = rectF::union_rect(D.aabb, C.aabb);
+					B.aabb = rectF::union_rect(A.aabb, E.aabb);
 
+					A.height = bad_maxV(D.height, C.height) + 1;
+					B.height = bad_maxV(A.height, E.height) + 1;
 				}
 				return iB;
 			}
 			//promote child2 up
 			else if (balance < -1) {
-
+				//children of C
+				auto iF = C.child1;
+				auto iG = C.child2;
+				auto& F = mNodes[iF];
+				auto& G = mNodes[iG];
+				//       A	  
+				//      / \	  
+				//     B   C  
+				//        / \	  
+				//       F   G
+				C.parent = A.parent;
+				A.parent = iC;
+				C.child1 = iA;
+				//       C	  
+				//      / \	  
+				//     A   ?  
+				//    / \	  
+				//   B   ?
+				//fix original parent of A to point to C
+				if (C.parent != nullnode) {
+					auto& root = mNodes[C.parent];
+					//if roots child 1 or child 2 pointed to iA
+					if (root.child1 == iA)
+						root.child1 = iC;
+					else
+						root.child2 = iC;
+				}
+				else {
+					mRoot = iC;
+				}
+				//determine which OG child of C stays with C, which goes to A depending on height of C's children
+				//promote the subtree with larger spatial extent upwards so its BB is evaluated earlier
+				if (F.height > G.height) {
+					C.child2 = iF;
+					A.child2 = iG;
+					G.parent = iA;
+					//       C	  
+					//      / \	  
+					//     A   F  
+					//    / \	  
+					//   B   G
+					A.aabb = rectF::union_rect(B.aabb, G.aabb);
+					C.aabb = rectF::union_rect(A.aabb, F.aabb);
+					A.height = bad_maxV(B.height, G.height) + 1;
+					C.height = bad_maxV(A.height, F.height) + 1;
+				}
+				else {
+					C.child2 = iG;
+					A.child2 = iF;
+					F.parent = iA;
+					//       C	  
+					//      / \	  
+					//     A   G  
+					//    / \	  
+					//   B   F
+					A.aabb = rectF::union_rect(B.aabb, F.aabb);
+					C.aabb = rectF::union_rect(A.aabb, G.aabb);
+					A.height = bad_maxV(B.height, F.height) + 1;
+					C.height = bad_maxV(A.height, G.height) + 1;
+				}
+				return iC;
 			}
-
-			return index;
+			return iA;
 		}
 	private:
 

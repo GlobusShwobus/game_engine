@@ -44,7 +44,10 @@ int main() {
         //init SDL system, can throw
         GraphicsSys renManager(windowConfig.get());
 
-        ////// TEST CODE
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+        //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         struct MyTester {
             rectF rect;
             Color col;
@@ -52,62 +55,89 @@ int main() {
         };
         NumberGenerator rng;
 
-        const float windowWidth = 960.f;
-        const float windowHeight = 540.f;
-        const rectI window(0, 0, windowWidth, windowHeight);
-        SequenceM<std::unique_ptr<MyTester>> myObjsStore;
-        myObjsStore.set_capacity(2210);
+        const float windowWidth = 5000.f;
+        const float windowHeight = 5000.f;
+        int plz_do_dis_many = 2210;//same as erin cattos PDF
 
-        BVHTree<MyTester> tree(myObjsStore.capacity());
+        SequenceM<std::unique_ptr<MyTester>> myObjsStore;
+        myObjsStore.set_capacity(plz_do_dis_many);
 
         Stopwatch insertionTimeVector;
-        const float spacing = 10;
-        const float width = 10;
-        const float height = 10;
-        float boxWidth = width + spacing;
-        float boxHeight = height + spacing;
+        for (int i = 0; i < plz_do_dis_many; ++i) {
 
-        for (int i = 0; i < 2210; ++i) {
-           //CREATING A WORST CASE SCENARIO OF A LINKED LIST BVH
-            //rectF rect(
-            //    i* boxWidth, // x-position increases linearly
-            //    0,            // all boxes at the same y
-            //    boxWidth,
-            //    boxHeight
-            //);
+            float w = rng.random_float(10, 50);
+            float h = rng.random_float(10, 50);
+            float x = rng.random_float(0, windowWidth-w);
+            float y = rng.random_float(0, windowHeight-h);
 
-            //CREATING A RANDOM CASE
-            rectF rect(
-                rng.random_float(0, windowWidth),
-                rng.random_float(0, windowHeight),
-                rng.random_float(1, 100),
-                rng.random_float(1, 100)
-            );
-
-            myObjsStore.emplace_back(std::make_unique<MyTester>(rect, Colors::Green));
+            myObjsStore.emplace_back(std::make_unique<MyTester>(rectF(x,y,w,h), Colors::Green));
         }
 
         std::size_t vectorInsertionTime = insertionTimeVector.dt_nanosec();
 
+        BVHTree<MyTester> tree((myObjsStore.capacity() * 2) - 1);
         Stopwatch insertionTimeBVH;
+        int counter = 0;
         for (auto it = myObjsStore.begin(); it != myObjsStore.end(); ++it) {
             MyTester* p = it->get();
             auto id = tree.create_proxy(p->rect, p);
+            counter++;
+            std::cout << counter << '\n';
         }
         std::size_t BVHInsertionTime = insertionTimeBVH.dt_nanosec();
 
         std::cout << "insertion into vector: " << vectorInsertionTime << "\ninserting into quadtree: " << BVHInsertionTime << "\ntotal: " << vectorInsertionTime + BVHInsertionTime << "\n";
         
 
-        renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
+        TargetTexture t1(windowWidth, windowHeight, renManager);
+        TargetTexture t2(windowWidth, windowHeight, renManager);
 
+        Canvas canvas_SAH(t1);
+        Canvas canvas_aabb(t2);
+        SDL_Texture* pCanvas = canvas_SAH.get_texture();
+
+
+        //draw SAH
+        canvas_SAH.start_drawing(renManager);
+        for (const auto& each : tree.myNodes()) {
+
+            static const float inset = 2.0f; // thickness of the hollow frame
+            const auto& nodeAABB = each.aabb;
+            rectF inner{
+                nodeAABB.x + inset,
+                nodeAABB.y + inset,
+                nodeAABB.w - 2 * inset,
+                nodeAABB.h - 2 * inset
+            };
+            renManager.fill_area_with(nodeAABB, inner, Colors::Green);
+        }
+        //draw leafs
+        canvas_aabb.start_drawing(renManager);
+        for (const auto& each : tree.myNodes()) {
+            if (each.is_leaf()) {
+                static const float inset = 2.0f; // thickness of the hollow frame
+                const auto& nodeAABB = each.aabb;
+                rectF inner{
+                    nodeAABB.x + inset,
+                    nodeAABB.y + inset,
+                    nodeAABB.w - 2 * inset,
+                    nodeAABB.h - 2 * inset
+                };
+                renManager.fill_area_with(nodeAABB, inner, Colors::Red);
+            }
+        }
+
+        renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
         long double time = 0;
         std::size_t frames = 0;
         const std::size_t frame_target = 2000;
         Camera2D camera(windowWidth, windowHeight);
-        //////#######################################################
-
+        //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+       
         //main loop
         bool GAME_RUNNING = true;
         SDL_Event EVENT;
@@ -123,38 +153,23 @@ int main() {
                     GAME_RUNNING = false;
                     continue;
                 }
+
+                if (EVENT.key.key == SDLK_A) {
+                    pCanvas = canvas_SAH.get_texture();
+                }
+                if (EVENT.key.key == SDLK_S) {
+                    pCanvas = canvas_aabb.get_texture();
+                }
                 script_handle_camera_mouse(EVENT, camera);
             }
 
 
-            for (const auto& each : tree.myNodes()) {
-                auto camAdjusted = camera.world_to_screen(each.aabb);
-
-                static const float inset = 2.0f; // thickness of the hollow frame
-                rectF inner{
-                    camAdjusted.x + inset,
-                    camAdjusted.y + inset,
-                    camAdjusted.w - 2 * inset,
-                    camAdjusted.h - 2 * inset
-                };
-                renManager.fill_area_with(camAdjusted, inner, Colors::Green);
-            }
-            for (const auto& each : tree.myNodes()) {
-                if (each.is_leaf()) {
-                    static const float inset = 2.0f; // thickness of the hollow frame
-                    auto camLeaf = camera.world_to_screen(each.user_data->rect);
-                    rectF inner{
-                        camLeaf.x + inset,
-                        camLeaf.y + inset,
-                        camLeaf.w - 2 * inset,
-                        camLeaf.h - 2 * inset
-                    };
-                    renManager.fill_area_with(camLeaf, inner, Colors::Red);
-                }
-            }
-            std::cout << tree.node_count() << '\n';
-
             //PRESENT
+            rectF cameraView = camera.get_view_rect();
+
+            rectF src = cameraView;
+            rectF dst = { 0.f, 0.f, 960, 540 };
+            renManager.draw(pCanvas, src, dst);
             renManager.renderer_present();
         }
     }
