@@ -55,8 +55,8 @@ int main() {
         };
         NumberGenerator rng;
 
-        const float windowWidth = 5000.f;
-        const float windowHeight = 5000.f;
+        const float windowWidth = 960.f;
+        const float windowHeight = 540.f;
         int plz_do_dis_many = 2210;//same as erin cattos PDF
 
         SequenceM<std::unique_ptr<MyTester>> myObjsStore;
@@ -87,7 +87,7 @@ int main() {
         std::size_t BVHInsertionTime = insertionTimeBVH.dt_nanosec();
 
         std::cout << "insertion into vector: " << vectorInsertionTime << "\ninserting into quadtree: " << BVHInsertionTime << "\ntotal: " << vectorInsertionTime + BVHInsertionTime << "\n";
-        
+        std::cout << "height of tree: " << tree.get_height() << '\n';
 
         TargetTexture t1(windowWidth, windowHeight, renManager);
         TargetTexture t2(windowWidth, windowHeight, renManager);
@@ -111,6 +111,7 @@ int main() {
             };
             renManager.fill_area_with(nodeAABB, inner, Colors::Green);
         }
+        canvas_SAH.end_drawing(renManager);
         //draw leafs
         canvas_aabb.start_drawing(renManager);
         for (const auto& each : tree.myNodes()) {
@@ -126,7 +127,7 @@ int main() {
                 renManager.fill_area_with(nodeAABB, inner, Colors::Red);
             }
         }
-
+        canvas_aabb.end_drawing(renManager);
         renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
 
         long double time = 0;
@@ -165,11 +166,9 @@ int main() {
 
 
             //PRESENT
-            rectF cameraView = camera.get_view_rect();
-
-            rectF src = cameraView;
-            rectF dst = { 0.f, 0.f, 960, 540 };
-            renManager.draw(pCanvas, src, dst);
+            rectF src=camera.get_view_rect();
+            rectF dest(0, 0, windowWidth, windowHeight);
+            renManager.draw(pCanvas, src, dest);
             renManager.renderer_present();
         }
     }

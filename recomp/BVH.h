@@ -73,7 +73,9 @@ namespace badEngine {
 
 			return proxyID;
 		}
-
+		std::size_t get_height() {
+			return (mRoot == nullnode) ? 0 : mNodes[mRoot].height;
+		}
 		~BVHTree() = default;
 
 	private:

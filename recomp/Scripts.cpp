@@ -43,7 +43,6 @@ namespace badEngine{
             camera.set_screen_update(event.window.data1, event.window.data2);
 
         }
-
     }
 
     void script_do_continuous_collision_routine(SequenceM<Transform*>& objects) {
