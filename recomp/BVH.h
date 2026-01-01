@@ -7,22 +7,17 @@
 
 namespace badEngine {
 
-	/*
-	IF node is leaf, children must be -1 and user_data must be dereferable
-	IF a node is an internal node (height other than 0) then user_data must be nullptr
-
-	Trees free list and nodes nextFreeNode MUST communicate
-	*/
-
 	static constexpr float aabbExtension = 0.1f;
 	static constexpr int nullnode = -1;
+
+
 
 	//using T = int;//later tempalte
 	template<typename T>
 	class BVHTree {
 
-		struct Node {
-			rectF aabb;//fattened
+		struct BVHNode {
+			float4 aabb;//fattened
 			T* user_data = nullptr;
 
 			int parent = nullnode;
@@ -37,7 +32,7 @@ namespace badEngine {
 				return height == 0;
 			}
 			//used in BHVTree constructor to only set the list, rest by default
-			Node(int next) :nextFreeNode(next) {}
+			BVHNode(int next) :nextFreeNode(next) {}
 		};
 
 	public:
@@ -56,11 +51,30 @@ namespace badEngine {
 			//iterating the freelist starts from 0
 			mFreeList = 0;
 		}
+		/*
+		template<std::input_iterator InputIt>
+			requires std::same_as<T, std::iter_reference_t<InputIt>>
+		BVHTree(InputIt begin, InputIt end, std::size_t element_count)
+		{
+			mRoot = nullnode;
+		
+			const std::size_t inital_capacity = 16;
+			mNodes.set_capacity(inital_capacity);
+		
+			//create a chain on nodes, except set last manually
+			for (std::size_t i = 0; i < inital_capacity - 1; ++i) {
+				mNodes.emplace_back(static_cast<int>(i+1));
+			}
+			mNodes.emplace_back(static_cast<int>(nullnode));
+			//iterating the freelist starts from 0
+			mFreeList = 0;
+		}
+		*/
 
-		std::size_t create_proxy(const rectF& aabb, T* user_data) 
+		std::size_t create_proxy(const float4& aabb, T* user_data) 
 		{
 			auto proxyID = build_node();
-			Node& node = mNodes[proxyID];
+			BVHNode& node = mNodes[proxyID];
 			auto& fatbox = node.aabb;
 			fatbox = aabb;
 			fatbox.x -= aabbExtension;
@@ -80,7 +94,7 @@ namespace badEngine {
 
 	private:
 
-		std::size_t build_node()
+		int build_node()
 		{
 			//if free list is out of nexts
 			if (mFreeList == nullnode) {
@@ -110,7 +124,7 @@ namespace badEngine {
 			return nodeId;
 		}
 
-		void insert_leaf(const std::size_t proxyID)
+		void insert_leaf(const int proxyID)
 		{
 			//the case of the very first leaf
 			if (mRoot == nullnode) {
@@ -123,7 +137,7 @@ namespace badEngine {
 			//loop by finding the path that causes the least amount of change by comparing left and right paths (child 1 and child 2)
 			//this is called branch and bound
 			int bestSibling = mRoot;
-			rectF leafAABB = mNodes[proxyID].aabb;
+			float4 leafAABB = mNodes[proxyID].aabb;
 
 			while (!mNodes[bestSibling].is_leaf()) {
 				//cahce node
@@ -131,7 +145,7 @@ namespace badEngine {
 				//get the surface area of the the union of the entire section of the tree
 				float currentNodeArea = node.aabb.perimeter();
 				//combine leaf and the current structure and get the SA of the union
-				const rectF newBounds = rectF::union_rect(leafAABB, node.aabb);
+				const float4 newBounds = union_rect(leafAABB, node.aabb);
 				float combinedArea = newBounds.perimeter();
 
 				//get the cost of staying on this level as it may be true that going deeper is not worth it
@@ -144,11 +158,11 @@ namespace badEngine {
 				//get the cost of children
 				float child1Cost;
 				if (mNodes[node.child1].is_leaf()) {
-					rectF path1 = rectF::union_rect(leafAABB, mNodes[node.child1].aabb);
+					float4 path1 = union_rect(leafAABB, mNodes[node.child1].aabb);
 					child1Cost = path1.perimeter() + inheritedCost;
 				}
 				else {
-					rectF path1 = rectF::union_rect(leafAABB, mNodes[node.child1].aabb);
+					float4 path1 = union_rect(leafAABB, mNodes[node.child1].aabb);
 					float oldArea = mNodes[node.child1].aabb.perimeter();
 					float newArea = path1.perimeter();
 					child1Cost = (newArea - oldArea) + inheritedCost;
@@ -156,11 +170,11 @@ namespace badEngine {
 
 				float child2Cost;
 				if (mNodes[node.child2].is_leaf()) {
-					rectF path2 = rectF::union_rect(leafAABB, mNodes[node.child2].aabb);
+					float4 path2 = union_rect(leafAABB, mNodes[node.child2].aabb);
 					child2Cost = path2.perimeter() + inheritedCost;
 				}
 				else {
-					rectF path2 = rectF::union_rect(leafAABB, mNodes[node.child2].aabb);
+					float4 path2 = union_rect(leafAABB, mNodes[node.child2].aabb);
 					float oldArea = mNodes[node.child2].aabb.perimeter();
 					float newArea = path2.perimeter();
 					child2Cost = (newArea - oldArea) + inheritedCost;
@@ -181,9 +195,9 @@ namespace badEngine {
 			//this requires rebalancing the tree later
 			
 			//previous leaf will become an internal node, thus the leaf will have to move
-			std::size_t oldParent = mNodes[bestSibling].parent;
+			int oldParent = mNodes[bestSibling].parent;
 			//build a new parent
-			std::size_t newParent = build_node();
+			int newParent = build_node();
 			//cache nodes for setting immediate data about the node set
 			auto& child1 = mNodes[bestSibling];
 			auto& child2 = mNodes[proxyID];
@@ -193,7 +207,7 @@ namespace badEngine {
 			newParentNode.child1 = bestSibling;
 			newParentNode.child2 = proxyID;
 			newParentNode.height = child1.height + 1;
-			newParentNode.aabb = rectF::union_rect(child1.aabb, child2.aabb);
+			newParentNode.aabb = union_rect(child1.aabb, child2.aabb);
 			//link up children and new parent
 			child1.parent = newParent;
 			child2.parent = newParent;
@@ -214,7 +228,7 @@ namespace badEngine {
 			}
 
 			//stage 3: walking back up from point of creation of a new parent and resizing all parent node AABBs
-			std::size_t currentNode = newParent;
+			int currentNode = newParent;
 			while (currentNode != nullnode) {
 
 				currentNode = bottom_up_balance(currentNode);
@@ -229,7 +243,7 @@ namespace badEngine {
 				//height is most importantly used for rebalancing 
 				node_at.height = 1 + bad_maxV(child1_at.height, child2_at.height);
 				//set SAH
-				node_at.aabb = rectF::union_rect(child1_at.aabb, child2_at.aabb);
+				node_at.aabb = union_rect(child1_at.aabb, child2_at.aabb);
 
 				currentNode = node_at.parent;
 			}
@@ -247,16 +261,16 @@ namespace badEngine {
 			leaf height = 0, internal height = max(of children) + 1
 			leaf nodes children are -1 height (default set)
 		*/
-		std::size_t bottom_up_balance(std::size_t index)
+		std::size_t bottom_up_balance(int index)
 		{
-			auto iA = index;
+			int iA = index;
 			auto& A = mNodes[index];
 			//as per rules of rotation, node can not be a leaf nor a parent with 2 leafs
 			if (A.height < 2) {
 				return index;
 			}
-			auto iB = A.child1;
-			auto iC = A.child2;
+			int iB = A.child1;
+			int iC = A.child2;
 			auto& B = mNodes[A.child1];
 			auto& C = mNodes[A.child2];
 
@@ -272,8 +286,8 @@ namespace badEngine {
 			//promote child1 up
 			if (balance > 1) {
 				//children of B
-				auto iD = B.child1;
-				auto iE = B.child2;
+				int iD = B.child1;
+				int iE = B.child2;
 				auto& D = mNodes[iD];
 				auto& E = mNodes[iE];
 				//       A	  
@@ -315,8 +329,8 @@ namespace badEngine {
 					//    / \	 
 					//   E   C	 
 					//set rest of BVH related data
-					A.aabb = rectF::union_rect(E.aabb, C.aabb);
-					B.aabb = rectF::union_rect(A.aabb, D.aabb);
+					A.aabb = union_rect(E.aabb, C.aabb);
+					B.aabb = union_rect(A.aabb, D.aabb);
 
 					A.height = bad_maxV(E.height, C.height) + 1;
 					B.height = bad_maxV(A.height, D.height) + 1;
@@ -330,8 +344,8 @@ namespace badEngine {
 					//     A   E 
 					//    / \	 
 					//   D   C
-					A.aabb = rectF::union_rect(D.aabb, C.aabb);
-					B.aabb = rectF::union_rect(A.aabb, E.aabb);
+					A.aabb = union_rect(D.aabb, C.aabb);
+					B.aabb = union_rect(A.aabb, E.aabb);
 
 					A.height = bad_maxV(D.height, C.height) + 1;
 					B.height = bad_maxV(A.height, E.height) + 1;
@@ -341,8 +355,8 @@ namespace badEngine {
 			//promote child2 up
 			else if (balance < -1) {
 				//children of C
-				auto iF = C.child1;
-				auto iG = C.child2;
+				int iF = C.child1;
+				int iG = C.child2;
 				auto& F = mNodes[iF];
 				auto& G = mNodes[iG];
 				//       A	  
@@ -381,8 +395,8 @@ namespace badEngine {
 					//     A   F  
 					//    / \	  
 					//   B   G
-					A.aabb = rectF::union_rect(B.aabb, G.aabb);
-					C.aabb = rectF::union_rect(A.aabb, F.aabb);
+					A.aabb = union_rect(B.aabb, G.aabb);
+					C.aabb = union_rect(A.aabb, F.aabb);
 					A.height = bad_maxV(B.height, G.height) + 1;
 					C.height = bad_maxV(A.height, F.height) + 1;
 				}
@@ -395,8 +409,8 @@ namespace badEngine {
 					//     A   G  
 					//    / \	  
 					//   B   F
-					A.aabb = rectF::union_rect(B.aabb, F.aabb);
-					C.aabb = rectF::union_rect(A.aabb, G.aabb);
+					A.aabb = union_rect(B.aabb, F.aabb);
+					C.aabb = union_rect(A.aabb, G.aabb);
 					A.height = bad_maxV(B.height, F.height) + 1;
 					C.height = bad_maxV(A.height, G.height) + 1;
 				}
@@ -406,14 +420,14 @@ namespace badEngine {
 		}
 	private:
 
-		SequenceM<Node> mNodes;
+		SequenceM<BVHNode> mNodes;
 
 		int mRoot = nullnode;
 		int mFreeList = nullnode;
 
 	public:
 		//just for testing and such
-		const SequenceM<Node>& myNodes()const {
+		const SequenceM<BVHNode>& myNodes()const {
 			return mNodes;
 		}
 
@@ -423,24 +437,4 @@ namespace badEngine {
 		int nodeCount = 0;
 	};
 }
-
-		/*
-				template<std::input_iterator InputIt>
-			requires std::same_as<T, std::iter_reference_t<InputIt>>
-		BVHTree(InputIt begin, InputIt end, std::size_t element_count)
-		{
-			mRoot = nullnode;
-
-			const std::size_t inital_capacity = 16;
-			mNodes.set_capacity(inital_capacity);
-
-			//create a chain on nodes, except set last manually
-			for (std::size_t i = 0; i < inital_capacity - 1; ++i) {
-				mNodes.emplace_back(static_cast<int>(i+1));
-			}
-			mNodes.emplace_back(static_cast<int>(nullnode));
-			//iterating the freelist starts from 0
-			mFreeList = 0;
-		}
-		*/
 

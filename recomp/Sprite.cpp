@@ -13,7 +13,7 @@ namespace badEngine {
 		uint16_t columnCount = (nColumns!=nullptr) ? *nColumns : static_cast<uint16_t>(textureW) / frameWidth;
 		uint16_t rowCount = (nRows!=nullptr) ? *nRows : static_cast<uint16_t>(textureH) / frameHeight;
 
-		const vec2i requiredSize(
+		const int2 requiredSize(
 			columnCount * frameWidth,
 			rowCount * frameHeight
 		);
@@ -31,12 +31,17 @@ namespace badEngine {
 		mColumnsN = columnCount;
 		mRowsN = rowCount;
 
-		mSource.set_pos(mFrames.front());
-		vec2f size(vec2f(static_cast<float>(frameWidth), static_cast<float>(frameHeight)));
-		mSource.set_size(size);
-		mDest.set_size(size);//default (set scale will mod it tho)
+		const auto& firstFrame = mFrames.front();
+		mSource.x = firstFrame.x;
+		mSource.y = firstFrame.y;
+		mSource.w = static_cast<float>(frameWidth);
+		mSource.h = static_cast<float>(frameHeight);
+
+		//default (set scale will mod it tho)
+		mDest.w = static_cast<float>(frameWidth);
+		mDest.h = static_cast<float>(frameHeight);
 	}
-	void Animation::anim_update(float dt, vec2f* pos)noexcept {
+	void Animation::anim_update(float dt, float2* pos)noexcept {
 		//add to the time counter
 		mCurrentFrameTime += dt;
 
@@ -51,11 +56,17 @@ namespace badEngine {
 				mCurrentFrameTime -= mHoldTime;        //subtract 1 update cycle worth of time
 			}
 
-			mSource.set_pos(mFrames[mCurrentRow * mColumnsN + mCurrentColumn]);    //set source position [y*width+x]
+			//set source position [y*width+x]
+			const auto& frame = mFrames[mCurrentRow * mColumnsN + mCurrentColumn];
+			mSource.x = frame.x;
+			mSource.y = frame.y;
 		}
 
-		if (pos)                                        //if pos set dest position
-			mDest.set_pos(*pos);
+		//if pos set dest position
+		if (pos) {
+			mDest.x = pos->x;
+			mDest.y = pos->y;
+		}
 	}
 	void Animation::anim_set_hold_time(float time)noexcept {
 		assert(time >= 0 && "negative time");
@@ -74,9 +85,9 @@ namespace badEngine {
 	void Animation::anim_set_scale(float scale)noexcept {
 		assert(scale > 0.0f && "scalar can not be 0 or less");
 		mScale = scale;
-		auto baseSize = mSource.get_size();
-		baseSize *= mScale;
-		mDest.set_size(baseSize);
+		//use base size of texture not already scaled dest
+		mDest.w = mSource.w * mScale;
+		mDest.h = mSource.h * mScale;
 	}
 	//#########################################################################################
 
@@ -95,11 +106,11 @@ namespace badEngine {
 		assert(mGlyphHeight * rowsCount == textureH && "texture image likely off size or invalid counts");
 		//no initial default sizes nor pos is set, set_text does that
 	}
-	void Font::font_set_text(std::string_view string, const vec2f& pos)noexcept {
+	void Font::font_set_text(std::string_view string, const float2& pos)noexcept {
 		font_clear_text();                                    //clear text, memory buffer stays
 		const float scaledW = mGlyphWidth * mScale;      //used for dest, not source
 		const float scaledH = mGlyphHeight * mScale;     //used for dest, not source
-		vec2f destP = pos;                               //modifiable pos
+		float2 destP = pos;                               //modifiable pos
 
 		for (char c : string){
 			//if new line character then set cursor to the beginning which is pos.x and go down by height (scaled) then continue to next char
@@ -120,13 +131,13 @@ namespace badEngine {
 				const uint32_t glyphX = glyphIndex % mColumnsCount;     //column index: using above, 65%32 = (32+32 = 64, remainder is 1)
 				                                                        //^ if font is set up not in order of ASCII then its all fucked
 				mLetterPos.emplace_back(
-					rectF(
+					float4(
 						static_cast<float>(glyphX * mGlyphWidth), //source x
 						static_cast<float>(glyphY * mGlyphHeight),//source y
 						static_cast<float>(mGlyphWidth),          //source w
 						static_cast<float>(mGlyphHeight)          //source h
 					),
-					rectF(
+					float4(
 						destP.x, //dest x
 						destP.y, //dest y
 						scaledW, //dest w

@@ -16,6 +16,7 @@
 #include "Camera.h"
 #include "Scripts.h"
 #include "BVH.h"
+#include "Ray.h"
 
 #include <iostream>
 /*
@@ -49,9 +50,9 @@ int main() {
         //#####################################################################################################################################################################
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         struct MyTester {
-            rectF rect;
+            float4 rect;
             Color col;
-            MyTester(const rectF& r, Color col) :rect(r), col(col) {}
+            MyTester(const float4& r, Color col) :rect(r), col(col) {}
         };
         NumberGenerator rng;
 
@@ -70,7 +71,7 @@ int main() {
             float x = rng.random_float(0, windowWidth-w);
             float y = rng.random_float(0, windowHeight-h);
 
-            myObjsStore.emplace_back(std::make_unique<MyTester>(rectF(x,y,w,h), Colors::Green));
+            myObjsStore.emplace_back(std::make_unique<MyTester>(float4(x,y,w,h), Colors::Green));
         }
 
         std::size_t vectorInsertionTime = insertionTimeVector.dt_nanosec();
@@ -103,7 +104,7 @@ int main() {
 
             static const float inset = 2.0f; // thickness of the hollow frame
             const auto& nodeAABB = each.aabb;
-            rectF inner{
+            float4 inner{
                 nodeAABB.x + inset,
                 nodeAABB.y + inset,
                 nodeAABB.w - 2 * inset,
@@ -118,7 +119,7 @@ int main() {
             if (each.is_leaf()) {
                 static const float inset = 2.0f; // thickness of the hollow frame
                 const auto& nodeAABB = each.aabb;
-                rectF inner{
+                float4 inner{
                     nodeAABB.x + inset,
                     nodeAABB.y + inset,
                     nodeAABB.w - 2 * inset,
@@ -134,6 +135,32 @@ int main() {
         std::size_t frames = 0;
         const std::size_t frame_target = 2000;
         Camera2D camera(windowWidth, windowHeight);
+
+
+        SequenceM<Ray> sray;
+        sray.set_capacity(640 * 640);
+        float2 originPos(0, 0);
+        float2 p0(1, 0), p1(1,1), p2(0,1);
+        for (int y = 0; y < 640; y++) {
+            for (int x = 0; x < 640; x++) {
+                float2 pixelPos = p0 + (p1 - p0) * (x / 640.0f) + (p2 - p0) * (y / 640.f);
+                Ray r;
+                r.origin = originPos;
+                r.dir = unit_vector(pixelPos - originPos);
+                sray.push_back(r);
+            }
+        }
+        float4 ayyy(0, 0, 640, 640);
+ 
+        Stopwatch testingRays;
+        for (int i = 0; i < 8; i++) {
+            for (auto& r : sray) {
+                Hit h;
+                sweep(r, ayyy, h);
+            }
+        }
+        std::size_t raystime = testingRays.dt_nanosec();
+        std::cout << "ray test: " << raystime << '\n';
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         //#####################################################################################################################################################################
         //#####################################################################################################################################################################
@@ -166,9 +193,9 @@ int main() {
 
 
             //PRESENT
-            rectF src=camera.get_view_rect();
-            rectF dest(0, 0, windowWidth, windowHeight);
-            renManager.draw(pCanvas, src, dest);
+            
+            // test out ray shit. make a ray from one end to another and a rectangle around mouse
+
             renManager.renderer_present();
         }
     }

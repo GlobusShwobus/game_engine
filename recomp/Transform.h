@@ -10,13 +10,14 @@ namespace badEngine {
 
 		//CONSTRUCTORS
 		constexpr Transform()noexcept = default;
-		constexpr Transform(const rectF& rectangle, const vec2f& velocity)noexcept
+		constexpr Transform(const float4& rectangle, const float2& velocity)noexcept
 			:mBox(rectangle), mVelocity(velocity), mCurrVelocity(mVelocity) {}
-		constexpr Transform(const rectF& rectangle)noexcept
+		constexpr Transform(const float4& rectangle)noexcept
 			:mBox(rectangle) {}
 
 		void update_position()noexcept {
-			mBox.move_by(mCurrVelocity);
+			mBox.x += mCurrVelocity.x;
+			mBox.y += mCurrVelocity.y;
 		}
 		void reset_velocity()noexcept {
 			mCurrVelocity = mVelocity;
@@ -24,8 +25,8 @@ namespace badEngine {
 
 	public:
 
-		rectF mBox;
-		vec2f mVelocity;
-		vec2f mCurrVelocity;
+		float4 mBox;
+		float2 mVelocity;
+		float2 mCurrVelocity;
 	};
 }
