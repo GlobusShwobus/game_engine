@@ -139,31 +139,25 @@ int main() {
             }myObj;
             float2 myObjEndPoint = myObj.pos + myObj.vec;
             renManager.render_line(myObj.pos, myObjEndPoint, Colors::Blue);
-
+            //
             Ray ray1;
             ray1.origin = myObj.pos;
             ray1.dir = unit_vector(myObj.vec);
 
             float2 mousePos;
             SDL_GetMouseState(&mousePos.x, &mousePos.y);
-            //float4 mouseRect = float4(
-            //    mousePos.x - 64 / 2,
-            //    mousePos.y - 64 / 2,
-            //    64, 64
-            //);
-
             float4 mouseRect = float4(
-                99,540+100,
-                64,64
+                mousePos.x - 64 / 2,
+                mousePos.y - 64 / 2,
+                64, 64
             );
 
-            Color mouseCol;
 
+            Color mouseCol;
             Hit hit;
             sweep(ray1, mouseRect, hit);
 
-            float maxDist = length_vector(myObj.vec);
-            if (hit.is_hit(maxDist)) {
+            if (hit.is_hit_dot(dot_vector(myObj.vec))) {
                 mouseCol = Colors::Red;
             }
             else {
@@ -171,7 +165,6 @@ int main() {
             }
             renManager.render_rectangle(mouseRect, mouseCol);
 
-            std::cout << "RECT POS: " << mouseRect.x << " " << mouseRect.y << "\t\tHIT POS: " << hit.pos.x << " " << hit.pos.y << '\n';
 
             renManager.renderer_present();
         }

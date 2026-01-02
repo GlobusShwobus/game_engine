@@ -18,6 +18,6 @@ namespace badEngine {
 		);
 		Hit hit;
 		sweep(ray, expandedTarget, hit);
-		return hit;
+		return {};
 	}
 }

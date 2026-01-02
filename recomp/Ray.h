@@ -3,6 +3,7 @@
 #include "Rectangle.h"
 
 namespace badEngine {
+	//assumes dir is normalized to unit lenght
 	struct Ray {
 		float2 origin;
 		float2 dir;
@@ -10,15 +11,21 @@ namespace badEngine {
 	struct Hit {
 		float2 pos;
 		float t = INFINITY;
-		int materialID = -1;
+		int materialID = -1;// invalid index = -1
 
-		constexpr bool is_hit(float len)const noexcept {
-			return t >= 0.0f && t <= len;
+		//assumes dot lenght is passed, recommended
+		constexpr bool is_hit_dot(float dot_lenght)const noexcept {
+			return t >= 0.0f && (t * t) < dot_lenght;
+		}
+		//assumes sqrt lenght is passed
+		constexpr bool is_hit_sqrt(float sqrt_lenght)const noexcept {
+			return t >= 0.0f && t < sqrt_lenght;
 		}
 	};
 
-	//maybe update if literture does it differently
-	inline void sweep(Ray& ray, const float4& target, Hit& hit)noexcept
+	//assumes rays dir is already set in unit vector scale
+	//rays should be constructed in bulk up front
+	inline void sweep(const Ray& ray, const float4& target, Hit& hit)noexcept
 	{
 		//inv dir
 		float2 invdir(
@@ -46,10 +53,10 @@ namespace badEngine {
 
 		//if no intersect or rectangle behind ray
 		if (t_hit_near > t_hit_far || t_hit_far < 0.0f) return;
-
+		
 		// Closest 'time' will be the first contact
 		hit.t = (t_hit_near < 0.0f) ? t_hit_far : t_hit_near;
-
+		
 		// point of impact
 		hit.pos = ray.origin + hit.t * ray.dir;
 	}

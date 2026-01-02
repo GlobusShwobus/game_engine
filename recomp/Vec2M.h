@@ -125,11 +125,19 @@ namespace badEngine {
 	constexpr vec2<T> abs_vector(const vec2<T>& vec)noexcept {
 		return vec2<T>(std::abs(vec.x), std::abs(vec.y));
 	}
+	template<typename T>
+	constexpr float dot_vector(const vec2<T>& vec)noexcept {
+		return (vec.x * vec.x) + (vec.y * vec.y);
+	}
 
+	/*
+	DEPRICATED FOR NOW, this is a real math version, not graphics. and should be abs i think
 	template <typename T>
 	constexpr auto dot_vector(const vec2<T>& v1, const vec2<T>& v2)noexcept {
 		return (v1.x * v2.x) + (v1.y * v2.y);
 	}
+	*/
+
 
 	template <typename T>
 	inline float length_vector(const vec2<T>& v)noexcept {
