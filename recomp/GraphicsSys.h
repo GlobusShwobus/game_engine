@@ -60,8 +60,9 @@ namespace badEngine {
 		bool set_render_draw_color(Color color)noexcept;
 
 		//TODO:: add docs
-		void fill_area_with(const float4& area, Color color)const noexcept;
-		void fill_area_with(const float4& outer, const float4& inner, Color color)const noexcept;
+		void render_rectangle(const float4& area, Color color)const noexcept;
+		void render_rectangle(const float4& outer, const float4& inner, Color color)const noexcept;
+		void render_line(const float2& start, const float2& end, Color color);
 
 		//overrides location that is being drawn on. 
 		//Texture will be permanently overwritten in memory, so make a copy or just keep in mind to reload a clean slate

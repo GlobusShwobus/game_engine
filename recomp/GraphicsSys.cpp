@@ -69,7 +69,7 @@ namespace badEngine {
 		}
 		return false;
 	}
-	void GraphicsSys::fill_area_with(const float4& area, Color color)const noexcept
+	void GraphicsSys::render_rectangle(const float4& area, Color color)const noexcept
 	{
 		SDL_Renderer* ren = mRenderer.get();
 		SDL_SetRenderDrawColor(ren, color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
@@ -77,7 +77,7 @@ namespace badEngine {
 		SDL_RenderFillRect(ren, &sdlArea);
 		SDL_SetRenderDrawColor(ren, mDrawColor.get_red(), mDrawColor.get_green(), mDrawColor.get_blue(), mDrawColor.get_alpha());
 	}
-	void GraphicsSys::fill_area_with(const float4& outer, const float4& inner, Color color)const noexcept
+	void GraphicsSys::render_rectangle(const float4& outer, const float4& inner, Color color)const noexcept
 	{
 		if (outer.contains(inner)) {
 			SDL_Renderer* ren = mRenderer.get();
@@ -89,6 +89,13 @@ namespace badEngine {
 			SDL_SetRenderDrawColor(ren, mDrawColor.get_red(), mDrawColor.get_green(), mDrawColor.get_blue(), mDrawColor.get_alpha());
 			SDL_RenderFillRect(ren, &sdlInner);
 		}
+	}
+	void GraphicsSys::render_line(const float2& start, const float2& end, Color color)
+	{
+		SDL_Renderer* ren = mRenderer.get();
+		SDL_SetRenderDrawColor(ren, color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+		SDL_RenderLine(mRenderer.get(), start.x, start.y, end.x, end.y);
+		SDL_SetRenderDrawColor(ren, mDrawColor.get_red(), mDrawColor.get_green(), mDrawColor.get_blue(), mDrawColor.get_alpha());
 	}
 	bool GraphicsSys::set_render_target(SDL_Texture* target)const noexcept
 	{

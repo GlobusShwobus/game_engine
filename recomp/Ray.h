@@ -9,11 +9,11 @@ namespace badEngine {
 	};
 	struct Hit {
 		float2 pos;
-		float t = 1e30f;
+		float t = INFINITY;
 		int materialID = -1;
 
-		constexpr bool is_hit()const noexcept {
-			return t >= 0.0f && t < 1.0f;
+		constexpr bool is_hit(float len)const noexcept {
+			return t >= 0.0f && t <= len;
 		}
 	};
 
@@ -35,9 +35,6 @@ namespace badEngine {
 			(target.x + target.w - ray.origin.x) * invdir.x,
 			(target.y + target.h - ray.origin.y) * invdir.y
 		);
-		// Is a number test
-		//if (bad_isNaN(t_far.y) || bad_isNaN(t_far.x)) return;
-		//if (bad_isNaN(t_near.y) || bad_isNaN(t_near.x)) return;
 
 		// Sort distances
 		if (t_near.x > t_far.x) swap_numerical(t_near.x, t_far.x);
@@ -55,11 +52,6 @@ namespace badEngine {
 
 		// point of impact
 		hit.pos = ray.origin + hit.t * ray.dir;
-
-		//if (t_near.x > t_near.y)
-		//	hit.normal = (invdir.x < 0) ? float2(1, 0) : float2(-1, 0);
-		//else if (t_near.x < t_near.y)
-		//	hit.normal = (invdir.y < 0) ? float2(0, 1) : float2(0, -1);
 	}
 	//maybe depricate if literture does it differently
 	Hit sweep_dynamic(const float4& dynamicBox, const float2& dynamicDir, const float4& staticBox) noexcept;

@@ -49,18 +49,13 @@ int main() {
         //#####################################################################################################################################################################
         //#####################################################################################################################################################################
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
-        struct MyTester {
-            float4 rect;
-            Color col;
-            MyTester(const float4& r, Color col) :rect(r), col(col) {}
-        };
         NumberGenerator rng;
-
         const float windowWidth = 960.f;
         const float windowHeight = 540.f;
+        Camera2D camera(windowWidth, windowHeight);
         int plz_do_dis_many = 2210;//same as erin cattos PDF
 
-        SequenceM<std::unique_ptr<MyTester>> myObjsStore;
+        SequenceM<std::unique_ptr<float4>> myObjsStore;
         myObjsStore.set_capacity(plz_do_dis_many);
 
         Stopwatch insertionTimeVector;
@@ -71,70 +66,23 @@ int main() {
             float x = rng.random_float(0, windowWidth-w);
             float y = rng.random_float(0, windowHeight-h);
 
-            myObjsStore.emplace_back(std::make_unique<MyTester>(float4(x,y,w,h), Colors::Green));
+            myObjsStore.emplace_back(std::make_unique<float4>(float4(x,y,w,h)));
         }
 
         std::size_t vectorInsertionTime = insertionTimeVector.dt_nanosec();
 
-        BVHTree<MyTester> tree((myObjsStore.capacity() * 2) - 1);
+        BVHTree<float4> tree((myObjsStore.capacity() * 2) - 1);
         Stopwatch insertionTimeBVH;
-        int counter = 0;
         for (auto it = myObjsStore.begin(); it != myObjsStore.end(); ++it) {
-            MyTester* p = it->get();
-            auto id = tree.create_proxy(p->rect, p);
-            counter++;
-            std::cout << counter << '\n';
+            
+            auto id = tree.create_proxy(*it->get(), it->get());
         }
         std::size_t BVHInsertionTime = insertionTimeBVH.dt_nanosec();
 
         std::cout << "insertion into vector: " << vectorInsertionTime << "\ninserting into quadtree: " << BVHInsertionTime << "\ntotal: " << vectorInsertionTime + BVHInsertionTime << "\n";
         std::cout << "height of tree: " << tree.get_height() << '\n';
 
-        TargetTexture t1(windowWidth, windowHeight, renManager);
-        TargetTexture t2(windowWidth, windowHeight, renManager);
-
-        Canvas canvas_SAH(t1);
-        Canvas canvas_aabb(t2);
-        SDL_Texture* pCanvas = canvas_SAH.get_texture();
-
-
-        //draw SAH
-        canvas_SAH.start_drawing(renManager);
-        for (const auto& each : tree.myNodes()) {
-
-            static const float inset = 2.0f; // thickness of the hollow frame
-            const auto& nodeAABB = each.aabb;
-            float4 inner{
-                nodeAABB.x + inset,
-                nodeAABB.y + inset,
-                nodeAABB.w - 2 * inset,
-                nodeAABB.h - 2 * inset
-            };
-            renManager.fill_area_with(nodeAABB, inner, Colors::Green);
-        }
-        canvas_SAH.end_drawing(renManager);
-        //draw leafs
-        canvas_aabb.start_drawing(renManager);
-        for (const auto& each : tree.myNodes()) {
-            if (each.is_leaf()) {
-                static const float inset = 2.0f; // thickness of the hollow frame
-                const auto& nodeAABB = each.aabb;
-                float4 inner{
-                    nodeAABB.x + inset,
-                    nodeAABB.y + inset,
-                    nodeAABB.w - 2 * inset,
-                    nodeAABB.h - 2 * inset
-                };
-                renManager.fill_area_with(nodeAABB, inner, Colors::Red);
-            }
-        }
-        canvas_aabb.end_drawing(renManager);
         renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
-
-        long double time = 0;
-        std::size_t frames = 0;
-        const std::size_t frame_target = 2000;
-        Camera2D camera(windowWidth, windowHeight);
 
 
         SequenceM<Ray> sray;
@@ -181,20 +129,49 @@ int main() {
                     GAME_RUNNING = false;
                     continue;
                 }
-
-                if (EVENT.key.key == SDLK_A) {
-                    pCanvas = canvas_SAH.get_texture();
-                }
-                if (EVENT.key.key == SDLK_S) {
-                    pCanvas = canvas_aabb.get_texture();
-                }
-                script_handle_camera_mouse(EVENT, camera);
             }
 
 
             //PRESENT
-            
-            // test out ray shit. make a ray from one end to another and a rectangle around mouse
+            struct myObject {
+                float2 pos = float2(100, 100);
+                float2 vec = float2(0, 540);
+            }myObj;
+            float2 myObjEndPoint = myObj.pos + myObj.vec;
+            renManager.render_line(myObj.pos, myObjEndPoint, Colors::Blue);
+
+            Ray ray1;
+            ray1.origin = myObj.pos;
+            ray1.dir = unit_vector(myObj.vec);
+
+            float2 mousePos;
+            SDL_GetMouseState(&mousePos.x, &mousePos.y);
+            //float4 mouseRect = float4(
+            //    mousePos.x - 64 / 2,
+            //    mousePos.y - 64 / 2,
+            //    64, 64
+            //);
+
+            float4 mouseRect = float4(
+                99,540+100,
+                64,64
+            );
+
+            Color mouseCol;
+
+            Hit hit;
+            sweep(ray1, mouseRect, hit);
+
+            float maxDist = length_vector(myObj.vec);
+            if (hit.is_hit(maxDist)) {
+                mouseCol = Colors::Red;
+            }
+            else {
+                mouseCol = Colors::Green;
+            }
+            renManager.render_rectangle(mouseRect, mouseCol);
+
+            std::cout << "RECT POS: " << mouseRect.x << " " << mouseRect.y << "\t\tHIT POS: " << hit.pos.x << " " << hit.pos.y << '\n';
 
             renManager.renderer_present();
         }
