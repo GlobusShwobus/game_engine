@@ -50,6 +50,37 @@ int main() {
         //#####################################################################################################################################################################
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
 
+        SequenceM<float4> things;
+        things.set_capacity(10);
+        BinaryBVH<float4> things2(things.capacity());
+
+        for (int i = 0; i < 10; i++) {
+            float4 rect(i*20, i*20, i*20, i*20);
+            things.emplace_back(rect);
+        }
+
+        for (auto& t : things) {
+            things2.dynamic_insert(t, &t);
+        }
+
+        for (auto& n : things2) {
+            if (n.is_leaf()) {
+                static const float inset = 2.0f; // 
+                const auto& nodeAABB = n.aabb;
+                float4 inner{
+                    nodeAABB.x + inset,
+                    nodeAABB.y + inset,
+                    nodeAABB.w - 2 * inset,
+                    nodeAABB.h - 2 * inset
+                };
+                renManager.render_rectangle(nodeAABB,inner, Colors::Green);
+
+            }
+        }
+        renManager.renderer_present();
+        std::cin.get();
+        return 69;
+
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         //#####################################################################################################################################################################
         //#####################################################################################################################################################################

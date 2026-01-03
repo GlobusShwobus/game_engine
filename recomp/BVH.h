@@ -11,85 +11,117 @@ namespace badEngine {
 	static constexpr int nullnode = -1;
 
 	//temp helper, should not be expected to retain anything
+	template<typename T>
 	struct BVHPrimitiveInfo {
 		BVHPrimitiveInfo() = default;
-		BVHPrimitiveInfo(const std::size_t primitive, const float4& bounds)
-			: primitiveNumber(primitive),
+		BVHPrimitiveInfo(void* primitive_address, const float4& bounds)
+			: primitive(primitive_address),
 			bounds(bounds),
 			centroid(bounds.get_center_point()) {
 		}
 		float4 bounds;
 		float2 centroid;
-		std::size_t primitiveNumber;
+		T* primitive = nullptr;
+	};
+
+	struct BVHBuildNode {
+		float4 bounds;
+		BVHBuildNode* children[2];
+		int splitAxis;
+		int firstPrimOffset;
+		int nPrimitives;
+
+		constexpr void init_leaf(int first, int n, const float4& b)noexcept {
+			firstPrimOffset = first;
+			nPrimitives = n;
+			bounds = b;
+			children[0] = children[1] = nullptr;
+		}
+		constexpr void init_interior(int axis, BVHBuildNode* c1, BVHBuildNode* c2)noexcept {
+			children[0] = c1;
+			children[1] = c2;
+			bounds = union_rect(c1->bounds, c2->bounds);
+			splitAxis = axis;
+			nPrimitives = 0;
+		}
+	};
+
+	template<typename T>
+	struct BVHNode {
+		float4 aabb;//bounds of the node (union)
+		T* primitive;
+
+		int parent;
+		int child1;
+		int child2;
+
+		int height;//leaf = 0; internal = max(child)+1
+
+		int nextFreeNode;
+
+		constexpr bool is_leaf()const noexcept {
+			return height == 0;
+		}
 	};
 
 	//using T = int;//later tempalte
 	template<typename T>
 	class BinaryBVH {
 
-		struct BVHNode {
-			float4 aabb;//bounds of the node
-			T* user_data = nullptr;
-
-			int parent = nullnode;
-			int child1 = nullnode;
-			int child2 = nullnode;
-
-			int height = -1;//leaf = 0; internal = max(child)+1
-
-			int nextFreeNode = nullnode;
-
-			constexpr bool is_leaf()const noexcept {
-				return height == 0;
-			}
-			//used in BHVTree constructor to only set the list, rest by default
-			BVHNode(int next) :nextFreeNode(next) {}
-			
-			BVHNode() = default;
-		};
+		using PrimitiveInfo = BVHPrimitiveInfo<T>;
+		using Node = BVHNode<T>;
 
 	public:
 
-
-
-
 		template<std::input_iterator InputIt>
-			requires std::same_as<BVHPrimitiveInfo, std::iter_reference_t<InputIt>>
+			requires std::same_as<PrimitiveInfo, std::iter_reference_t<InputIt>>
 		BinaryBVH(InputIt begin, InputIt end, std::size_t element_count)
 		{
-			//binary tree always has 2N-1 nodes
-			mNodes.set_capacity((2 * element_count) - 1);
-			//set up container to store ordered primitives
-			SequenceM<BVHPrimitiveInfo> orderedPrimitives;
-			orderedPrimitives.set_capacity(element_count);
+
+			//initialize primitive info array for primitives, store user data and bounds
+			SequenceM<PrimitiveInfo> primitiveInfos;
+			primitiveInfos.set_capacity(element_count);
+
+			for (; begin != end; ++begin)
+				primitiveInfos.emplace_back(begin->primitive, begin->bounds);
+			//1 MB worth of mem, arbitrary but sufficient
+			BVHBuildNode* buildPhaseNodes = static_cast<BVHBuildNode*>(::operator new((1024 * 1024)));
+			std::memset(buildPhaseNodes, 0, 1024 * 1024);
 
 		}
-		
-
+	
 		BinaryBVH(std::size_t inital_size)
 		{
 			mRoot = nullnode;
 
-			mNodes.set_capacity(inital_size);
+			mNodeCount = 0;
+			mNodeCapacity = inital_size;
+			mNodes = static_cast<Node*>(::operator new (inital_size * sizeof(Node)));
+			std::memset(mNodes, 0, inital_size*sizeof(Node));//assigns all bytes to 0
 
 			//create a chain on nodes, except set last manually
-			for (std::size_t i = 0; i < inital_size - 1; ++i) {
-				mNodes.emplace_back(static_cast<int>(i+1));
+			for (int i = 0; i < inital_size - 1; ++i) {
+				//NOTE:: legal without calling a constructor... but default values DO NOT APPLY, must set manually
+				mNodes[i].nextFreeNode = i + 1;
+				mNodes[i].height = -1;
 			}
-			mNodes.emplace_back(static_cast<int>(nullnode));
+			mNodes[inital_size - 1].nextFreeNode = nullnode;
+			mNodes[inital_size - 1].height = -1;
 			//iterating the freelist starts from 0
 			mFreeList = 0;
 		}
 
 		std::size_t dynamic_insert(const float4& aabb, T* user_data) 
 		{
-			auto proxyID = build_node();
-			BVHNode& node = mNodes[proxyID];
-			node.aabb.x -= aabbExtension;
-			node.aabb.y -= aabbExtension;
-			node.aabb.w += 2 * aabbExtension;
-			node.aabb.h += 2 * aabbExtension;
-			node.user_data = user_data;
+			auto proxyID = allocate_node();
+			
+			Node& node = mNodes[proxyID];
+
+			node.aabb.x = aabb.x - aabbExtension;
+			node.aabb.y = aabb.y - aabbExtension;
+			node.aabb.w = aabb.w + (2 * aabbExtension);
+			node.aabb.h = aabb.h + (2 * aabbExtension);
+			node.primitive = user_data;
 
 			insert_leaf(proxyID);
 
@@ -98,37 +130,50 @@ namespace badEngine {
 		std::size_t get_height() {
 			return (mRoot == nullnode) ? 0 : mNodes[mRoot].height;
 		}
-		~BinaryBVH() = default;
+		
+		~BinaryBVH()noexcept {
+			::operator delete(mNodes);
+			mNodes = nullptr;
+		}
 
 	private:
 
-		int build_node()
+		int allocate_node()
 		{
 			//if free list is out of nexts
 			if (mFreeList == nullnode) {
 
-				auto currentCap = mNodes.capacity();
-				auto newCap = currentCap * 2;
-				mNodes.set_capacity(newCap);
+				assert(mNodeCount == mNodeCapacity);
+				Node* oldNodes = mNodes;
+				mNodeCapacity = (mNodeCapacity * 2) + 1;
+				mNodes = static_cast<Node*>(::operator new(mNodeCapacity * sizeof(Node)));
+				std::memcpy(mNodes, oldNodes, mNodeCount * sizeof(Node));
+				::operator delete(oldNodes);
 
 				//create a chain on nodes, except set last manually
-				for (std::size_t i = currentCap; i < newCap - 1; ++i) {
-					mNodes.emplace_back(i + 1);
+				for (int i = mNodeCount; i < mNodeCapacity - 1; ++i) {
+					mNodes[i].nextFreeNode = i + 1;
+					mNodes[i].height = -1;
 				}
-				mNodes.emplace_back(nullnode);
-				mFreeList = currentCap;
+				mNodes[mNodeCapacity-1].nextFreeNode = nullnode;
+				mNodes[mNodeCapacity-1].height = -1;
+
+				mFreeList = mNodeCount;
 			}
 
 			//pop a node from freelist
 			int nodeId = mFreeList;
 			//cache the value
 			auto& node = mNodes[nodeId];
-			//asign the freelist to the nextfree node
+			//asign ALL values of the node (mem allocator does not do it)
 			mFreeList = node.nextFreeNode;
-			//set height to leaf
+			node.parent = nullnode;
+			node.child1 = nullnode;
+			node.child2 = nullnode;
 			node.height = 0;
+			node.primitive = nullptr;
 
-			nodeCount++;
+			++mNodeCount;
 			return nodeId;
 		}
 
@@ -205,7 +250,7 @@ namespace badEngine {
 			//previous leaf will become an internal node, thus the leaf will have to move
 			int oldParent = mNodes[bestSibling].parent;
 			//build a new parent
-			int newParent = build_node();
+			int newParent = allocate_node();
 			//cache nodes for setting immediate data about the node set
 			auto& child1 = mNodes[bestSibling];
 			auto& child2 = mNodes[proxyID];
@@ -428,21 +473,23 @@ namespace badEngine {
 		}
 	private:
 
-		SequenceM<BVHNode> mNodes;
+		Node* mNodes = nullptr;
+		int mNodeCount = 0;
+		int mNodeCapacity = 0;
 
-		int mRoot = nullnode;
 		int mFreeList = nullnode;
 
+
+		int mRoot = nullnode;
+
 	public:
-		//just for testing and such
-		const SequenceM<BVHNode>& myNodes()const {
+
+		Node* begin() {
 			return mNodes;
 		}
-
-		int node_count()const {
-			return nodeCount;
+		Node* end() {
+			return mNodes + mNodeCount;
 		}
-		int nodeCount = 0;
 	};
 }
 
