@@ -14,36 +14,13 @@ namespace badEngine {
 	template<typename T>
 	struct BVHPrimitiveInfo {
 		BVHPrimitiveInfo() = default;
-		BVHPrimitiveInfo(void* primitive_address, const float4& bounds)
+		BVHPrimitiveInfo(T* primitive_address, const float4& bounds)
 			: primitive(primitive_address),
-			bounds(bounds),
-			centroid(bounds.get_center_point()) {
+			bounds(bounds)
+		{
 		}
 		float4 bounds;
-		float2 centroid;
 		T* primitive = nullptr;
-	};
-
-	struct BVHBuildNode {
-		float4 bounds;
-		BVHBuildNode* children[2];
-		int splitAxis;
-		int firstPrimOffset;
-		int nPrimitives;
-
-		constexpr void init_leaf(int first, int n, const float4& b)noexcept {
-			firstPrimOffset = first;
-			nPrimitives = n;
-			bounds = b;
-			children[0] = children[1] = nullptr;
-		}
-		constexpr void init_interior(int axis, BVHBuildNode* c1, BVHBuildNode* c2)noexcept {
-			children[0] = c1;
-			children[1] = c2;
-			bounds = union_rect(c1->bounds, c2->bounds);
-			splitAxis = axis;
-			nPrimitives = 0;
-		}
 	};
 
 	template<typename T>
@@ -73,20 +50,11 @@ namespace badEngine {
 
 	public:
 
-		template<std::input_iterator InputIt>
-			requires std::same_as<PrimitiveInfo, std::iter_reference_t<InputIt>>
-		BinaryBVH(InputIt begin, InputIt end, std::size_t element_count)
+
+		BinaryBVH(const SequenceM<PrimitiveInfo>& primitives)
 		{
 
-			//initialize primitive info array for primitives, store user data and bounds
-			SequenceM<PrimitiveInfo> primitiveInfos;
-			primitiveInfos.set_capacity(element_count);
 
-			for (; begin != end; ++begin)
-				primitiveInfos.emplace_back(begin->primitive, begin->bounds);
-			//1 MB worth of mem, arbitrary but sufficient
-			BVHBuildNode* buildPhaseNodes = static_cast<BVHBuildNode*>(::operator new((1024 * 1024)));
-			std::memset(buildPhaseNodes, 0, 1024 * 1024);
 
 		}
 	
