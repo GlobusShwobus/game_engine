@@ -10,14 +10,25 @@ namespace badEngine {
 	static constexpr float aabbExtension = 0.1f;
 	static constexpr int nullnode = -1;
 
-
+	//temp helper, should not be expected to retain anything
+	struct BVHPrimitiveInfo {
+		BVHPrimitiveInfo() = default;
+		BVHPrimitiveInfo(const std::size_t primitive, const float4& bounds)
+			: primitiveNumber(primitive),
+			bounds(bounds),
+			centroid(bounds.get_center_point()) {
+		}
+		float4 bounds;
+		float2 centroid;
+		std::size_t primitiveNumber;
+	};
 
 	//using T = int;//later tempalte
 	template<typename T>
-	class BVHTree {
+	class BinaryBVH {
 
 		struct BVHNode {
-			float4 aabb;//fattened
+			float4 aabb;//bounds of the node
 			T* user_data = nullptr;
 
 			int parent = nullnode;
@@ -33,11 +44,29 @@ namespace badEngine {
 			}
 			//used in BHVTree constructor to only set the list, rest by default
 			BVHNode(int next) :nextFreeNode(next) {}
+			
+			BVHNode() = default;
 		};
 
 	public:
 
-		BVHTree(std::size_t inital_size)
+
+
+
+		template<std::input_iterator InputIt>
+			requires std::same_as<BVHPrimitiveInfo, std::iter_reference_t<InputIt>>
+		BinaryBVH(InputIt begin, InputIt end, std::size_t element_count)
+		{
+			//binary tree always has 2N-1 nodes
+			mNodes.set_capacity((2 * element_count) - 1);
+			//set up container to store ordered primitives
+			SequenceM<BVHPrimitiveInfo> orderedPrimitives;
+			orderedPrimitives.set_capacity(element_count);
+
+		}
+		
+
+		BinaryBVH(std::size_t inital_size)
 		{
 			mRoot = nullnode;
 
@@ -51,36 +80,15 @@ namespace badEngine {
 			//iterating the freelist starts from 0
 			mFreeList = 0;
 		}
-		/*
-		template<std::input_iterator InputIt>
-			requires std::same_as<T, std::iter_reference_t<InputIt>>
-		BVHTree(InputIt begin, InputIt end, std::size_t element_count)
-		{
-			mRoot = nullnode;
-		
-			const std::size_t inital_capacity = 16;
-			mNodes.set_capacity(inital_capacity);
-		
-			//create a chain on nodes, except set last manually
-			for (std::size_t i = 0; i < inital_capacity - 1; ++i) {
-				mNodes.emplace_back(static_cast<int>(i+1));
-			}
-			mNodes.emplace_back(static_cast<int>(nullnode));
-			//iterating the freelist starts from 0
-			mFreeList = 0;
-		}
-		*/
 
-		std::size_t create_proxy(const float4& aabb, T* user_data) 
+		std::size_t dynamic_insert(const float4& aabb, T* user_data) 
 		{
 			auto proxyID = build_node();
 			BVHNode& node = mNodes[proxyID];
-			auto& fatbox = node.aabb;
-			fatbox = aabb;
-			fatbox.x -= aabbExtension;
-			fatbox.y -= aabbExtension;
-			fatbox.w += 2 * aabbExtension;
-			fatbox.h += 2 * aabbExtension;
+			node.aabb.x -= aabbExtension;
+			node.aabb.y -= aabbExtension;
+			node.aabb.w += 2 * aabbExtension;
+			node.aabb.h += 2 * aabbExtension;
 			node.user_data = user_data;
 
 			insert_leaf(proxyID);
@@ -90,7 +98,7 @@ namespace badEngine {
 		std::size_t get_height() {
 			return (mRoot == nullnode) ? 0 : mNodes[mRoot].height;
 		}
-		~BVHTree() = default;
+		~BinaryBVH() = default;
 
 	private:
 

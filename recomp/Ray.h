@@ -33,23 +33,13 @@ namespace badEngine {
 			(ray.dir.y == 0.0f) ? INFINITY : 1.0f / ray.dir.y
 		);
 		// Calculate intersections with rectangle bounding axes
-		float2 t_near(
-			(target.x - ray.origin.x) * invdir.x,
-			(target.y - ray.origin.y) * invdir.y
-		);
+		float t_near_x = (target.x - ray.origin.x) * invdir.x;
+		float t_far_x  = (target.x + target.w - ray.origin.x) * invdir.x;
+		float t_near_y = (target.y - ray.origin.y) * invdir.y;
+		float t_far_y  = (target.y + target.h - ray.origin.y) * invdir.y;
 
-		float2 t_far(
-			(target.x + target.w - ray.origin.x) * invdir.x,
-			(target.y + target.h - ray.origin.y) * invdir.y
-		);
-
-		// Sort distances
-		if (t_near.x > t_far.x) swap_numerical(t_near.x, t_far.x);
-		if (t_near.y > t_far.y) swap_numerical(t_near.y, t_far.y);
-
-		//times
-		float t_hit_near = bad_maxV(t_near.x, t_near.y);
-		float t_hit_far = bad_minV(t_far.x, t_far.y);
+		float t_hit_near = bad_maxV(bad_minV(t_near_x, t_far_x), bad_minV(t_near_y, t_far_y));
+		float t_hit_far = bad_minV(bad_maxV(t_near_x, t_far_x), bad_maxV(t_near_y, t_far_y));
 
 		//if no intersect or rectangle behind ray
 		if (t_hit_near > t_hit_far || t_hit_far < 0.0f) return;
@@ -59,6 +49,26 @@ namespace badEngine {
 		
 		// point of impact
 		hit.pos = ray.origin + hit.t * ray.dir;
+	}
+
+	//assumes rays dir is already set in unit vector scale
+	//rays should be constructed in bulk up front
+	inline bool sweep_fast(const Ray& ray, const float4& target)noexcept
+	{
+		//inv dir
+		float2 invdir(
+			(ray.dir.x == 0.0f) ? INFINITY : 1.0f / ray.dir.x,
+			(ray.dir.y == 0.0f) ? INFINITY : 1.0f / ray.dir.y
+		);
+		float t_near_x = (target.x - ray.origin.x) * invdir.x;
+		float t_far_x = (target.x + target.w - ray.origin.x) * invdir.x;
+		float t_near_y = (target.y - ray.origin.y) * invdir.y;
+		float t_far_y = (target.y + target.h - ray.origin.y) * invdir.y;
+
+		float t_hit_near = bad_maxV(bad_minV(t_near_x, t_far_x), bad_minV(t_near_y, t_far_y));
+		float t_hit_far = bad_minV(bad_maxV(t_near_x, t_far_x), bad_maxV(t_near_y, t_far_y));
+
+		return (t_hit_near <= t_hit_far && t_hit_far >= 0.0f);
 	}
 	//maybe depricate if literture does it differently
 	Hit sweep_dynamic(const float4& dynamicBox, const float2& dynamicDir, const float4& staticBox) noexcept;
