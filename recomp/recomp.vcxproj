@@ -146,14 +146,14 @@
     <ClInclude Include="BadExceptions.h" />
     <ClInclude Include="badUtility.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Collision.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Entity_Factory.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Configs.h" />
+    <ClInclude Include="Ray.h" />
     <ClInclude Include="SLList.h" />
     <ClInclude Include="NumberGenerator.h" />
-    <ClInclude Include="QuadTree.h" />
+    <ClInclude Include="BVH.h" />
     <ClInclude Include="Rectangle.h" />
     <ClInclude Include="Scripts.h" />
     <ClInclude Include="SequenceM.h" />
@@ -165,9 +165,9 @@
     <ClInclude Include="GraphicsSys.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="GraphicsSys.cpp" />
+    <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Scripts.cpp" />
     <ClCompile Include="Sprite.cpp" />
   </ItemGroup>

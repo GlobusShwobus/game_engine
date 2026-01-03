@@ -26,7 +26,7 @@ namespace badEngine {
 
 		void do_setup(std::string_view heading, Uint32 width, Uint32 height, SDL_WindowFlags flags);
 
-		inline SDL_FRect convert_rect(const rectF& rect)const noexcept {
+		inline SDL_FRect convert_rect(const float4& rect)const noexcept {
 			return SDL_FRect(rect.x, rect.y, rect.w, rect.h);
 		}
 
@@ -59,8 +59,10 @@ namespace badEngine {
 		//on fail call SDL_GetError()
 		bool set_render_draw_color(Color color)noexcept;
 
-		
-		void fill_area_with(const rectF& area, Color color)const noexcept;
+		//TODO:: add docs
+		void render_rectangle(const float4& area, Color color)const noexcept;
+		void render_rectangle(const float4& outer, const float4& inner, Color color)const noexcept;
+		void render_line(const float2& start, const float2& end, Color color);
 
 		//overrides location that is being drawn on. 
 		//Texture will be permanently overwritten in memory, so make a copy or just keep in mind to reload a clean slate
@@ -84,13 +86,17 @@ namespace badEngine {
 		//params copy from, src, dest dictate what texture to copy from, the copied area source and destination
 		//by default if src is nullptr, it copies the whole texture and destination is by default same as src
 		//NOTE:: if source and/or dest are out of bounds, default SDL behavior occurs meaning things get cliped or simply not drawn at all
-		SDL_Texture* create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from = nullptr, rectF* src = nullptr, rectF* dest = nullptr)const noexcept;
+		SDL_Texture* create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from = nullptr, float4* src = nullptr, float4* dest = nullptr)const noexcept;
 		//draws a source rectangle from texture to the position of dest on current rendering target
 		//returns false on failure, call SDL_GetError
-		bool draw(SDL_Texture* texture, const rectF& source, const rectF& dest)const noexcept;
+		bool draw(SDL_Texture* texture, const float4& source, const float4& dest)const noexcept;
 		//draws pairs of sources and destinations from texture to current rendering target
 		//returns false on failure, call SDL_GetError
-		bool draw(SDL_Texture* texture, const SequenceM<std::pair<rectF, rectF>>& list)const noexcept;
+		bool draw(SDL_Texture* texture, const SequenceM<std::pair<float4, float4>>& list)const noexcept;
+
+		//draws full texture 
+		bool draw(SDL_Texture* texture)const noexcept;
+
 
 	private:
 		/* ORDER MATTERS BECAUSE OF DELETER! */

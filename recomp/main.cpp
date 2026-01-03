@@ -15,16 +15,17 @@
 #include "Color.h"
 #include "Camera.h"
 #include "Scripts.h"
-#include "QuadTree.h"
+#include "BVH.h"
+#include "Ray.h"
 
 #include <iostream>
 /*
 PRIORITY: constexpr for SLList and then correct signatures for quad/BHV tree
 
-1) do a hash map data structure for reasons
-2) get back to quad tree reenvigorated
-3) make engine class for on user create and run loop sepparation
-4) entities??? probably not
+1) BVH and related
+2) make engine class for on user create and run loop sepparation
+3) probably transform...
+3) entities??? probably not
 
 */
 
@@ -45,50 +46,47 @@ int main() {
         //init SDL system, can throw
         GraphicsSys renManager(windowConfig.get());
 
-        ////// TEST CODE
-        struct SomeObjWithArea {
-            rectF rect;
-            vec2f vel;
-            Color col;
-        };
-        NumberGenerator rng;
-        const float windowWidth = 960;
-        const float windowHeight = 540;
-        const rectI window(0, 0, windowWidth, windowHeight);
-        SpatialQuadTree<SomeObjWithArea> myObjsQuad(rectF(0, 0, windowWidth, windowHeight));
-        Camera2D camera(960, 540);
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+        //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
 
-        const float mouseBoxSize = 50.0f;
-        bool mouseHeld = false;
-        bool plzDeleteArea = false;
+        SequenceM<float4> things;
+        things.set_capacity(10);
+        BinaryBVH<float4> things2(things.capacity());
 
-
-        Stopwatch insertionTime;
-        for (int i = 0; i < 10000; i++) {
-            //ALSO TEST OUT WITH SMALLER RANGES TO TEST IF contains() is worth it for collision
-            float boxWidth = rng.random_float(1, 10);
-            float boxHeight = rng.random_float(1, 10);
-
-            rectF box = rectF(rng.random_float(0, windowWidth - boxWidth), rng.random_float(0, windowHeight - boxHeight), boxWidth, boxHeight);
-            SomeObjWithArea item = SomeObjWithArea(
-                box,
-                vec2f(rng.random_float(-1, 1), rng.random_float(-1, 1)),
-                Color(rng.random_int(1, 255), rng.random_int(1, 255), rng.random_int(1, 255), 255)
-            );
-
-            myObjsQuad.insert(box, std::move(item));
+        for (int i = 0; i < 10; i++) {
+            float4 rect(i*20, i*20, i*20, i*20);
+            things.emplace_back(rect);
         }
-        std::size_t insertTime = insertionTime.dt_nanosec();
-        std::cout << "time: " << insertTime << "\n";
 
-        renManager.set_render_blend_mode(SDL_BLENDMODE_BLEND);
+        for (auto& t : things) {
+            things2.dynamic_insert(t, &t);
+        }
 
+        for (auto& n : things2) {
+            if (n.is_leaf()) {
+                static const float inset = 2.0f; // 
+                const auto& nodeAABB = n.aabb;
+                float4 inner{
+                    nodeAABB.x + inset,
+                    nodeAABB.y + inset,
+                    nodeAABB.w - 2 * inset,
+                    nodeAABB.h - 2 * inset
+                };
+                renManager.render_rectangle(nodeAABB,inner, Colors::Green);
 
-        long double time = 0;
-        std::size_t frames = 0;
-        const std::size_t frame_target = 2000;
-        //////#######################################################
+            }
+        }
+        renManager.renderer_present();
+        std::cin.get();
+        return 69;
 
+        //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+        //#####################################################################################################################################################################
+       
         //main loop
         bool GAME_RUNNING = true;
         SDL_Event EVENT;
@@ -104,111 +102,42 @@ int main() {
                     GAME_RUNNING = false;
                     continue;
                 }
-                if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_DOWN && EVENT.button.button == SDL_BUTTON_LEFT) {
-                    plzDeleteArea = true;
-                }
-                if (EVENT.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-                    plzDeleteArea = false;
-                }
-                script_handle_camera_mouse(EVENT, camera);
             }
 
-            //////TEST CODE        
-            //Stopwatch HOW_LONG_THIS_SHIT_TAKES;
+            struct myObject {
+                float2 pos = float2(100, 100);
+                float2 vec = float2(0, 540);
+            }myObj;
+            float2 myObjEndPoint = myObj.pos + myObj.vec;
+            renManager.render_line(myObj.pos, myObjEndPoint, Colors::Blue);
             //
-            //
-            //rectF cameraSpace = camera.get_view_rect();
-            //std::size_t objectsCount = 0;
-            ////draw
-            //auto foundObjects = myObjsQuad.search_area(cameraSpace);
-            //for (const auto& each : foundObjects) {
-            //    //first draw
-            //    auto& obj = myObjsQuad[each];
-            //    rectF cameraAdjusted = camera.world_to_screen(obj.rect);
-            //    renManager.fill_area_with(cameraAdjusted, obj.col);
-            //    objectsCount++;
-            //}
-            ////ONLY MOVE THE OBJECTS ON THE SCREEN
-            //for (auto& each : foundObjects) {
-            //    auto& object = myObjsQuad[each];
-            //    rectF newPos(object.rect.x + object.vel.x, object.rect.y + object.vel.y, object.rect.w, object.rect.h);
-            //
-            //    //myObjsQuad.relocate(each, newPos);
-            //    //object.rect = newPos;
-            //}
-            //
-            ////BOUNCHE OFF WINDOW EDGES TO KEEP THINGS IN VIEW, ALSO THIS IS HOW COLLISIONS GET COLLECTED
-            //SequenceM<std::pair<std::size_t, rectF>> relocations;
-            //for (std::size_t i = 0; i < myObjsQuad.size(); ++i) {
-            //    auto& obj = myObjsQuad[i];
-            //    rectF newBox = obj.rect;
-            //    vec2f newVel = obj.vel;
-            //    newBox.move_by(newVel);
-            //
-            //    if (newBox.x < 0) {
-            //        newBox.x = 0;
-            //        newVel.x = -newVel.x;
-            //    }
-            //    else if (newBox.x + newBox.w >= 960) {
-            //        newBox.x = 960 - newBox.w;
-            //        newVel.x = -newVel.x;
-            //    }
-            //
-            //    if (newBox.y < 0) {
-            //        newBox.y = 0;
-            //        newVel.y = -newVel.y;
-            //    }
-            //    else if (newBox.y + newBox.h >= 540) {
-            //        newBox.y = 540 - newBox.h;
-            //        newVel.y = -newVel.y;
-            //    }
-            //    obj.rect = newBox;
-            //    obj.vel = newVel;
-            //    relocations.emplace_back(i, std::move(newBox));
-            //}
-            //
-            ////SEARCH FOR COLLIDERS, NO RESOLUTION
-            //auto colliders = myObjsQuad.search_collisions();
-            //
-            //myObjsQuad.relocate(relocations);
-            //
-            ////remove dead cells every frame
-            //myObjsQuad.remove_dead_cells();
-            //
-            ////DRAW MOUSE BOX AND IF DELETE AREA
-            //vec2f mouseScreenPos;
-            //SDL_GetMouseState(&mouseScreenPos.x, &mouseScreenPos.y);
-            //vec2f screenPos = camera.screen_to_world_point(mouseScreenPos);
-            //rectF rectAroundMouse = rectF(
-            //    screenPos.x - mouseBoxSize / 2,
-            //    screenPos.y - mouseBoxSize / 2,
-            //    mouseBoxSize, mouseBoxSize
-            //);
-            //rectF  cameraAdjustedMouse = camera.world_to_screen(rectAroundMouse);
-            //
-            //if (plzDeleteArea) {
-            //    myObjsQuad.remove_area(rectAroundMouse);
-            //}
-            //
-            //Color mouseCol = Colors::Magenta;
-            //mouseCol.set_alpha(125u);
-            //renManager.fill_area_with(cameraAdjustedMouse, mouseCol);
-            //
-            //time += HOW_LONG_THIS_SHIT_TAKES.dt_float();
-            //frames++;
-            //
-            //if (frames == frame_target) {
-            //    GAME_RUNNING = false;
-            //}
-            //////########################################################
+            Ray ray1;
+            ray1.origin = myObj.pos;
+            ray1.dir = unit_vector(myObj.vec);
 
-            //PRESENT
+            float2 mousePos;
+            SDL_GetMouseState(&mousePos.x, &mousePos.y);
+            float4 mouseRect = float4(
+                mousePos.x - 64 / 2,
+                mousePos.y - 64 / 2,
+                64, 64
+            );
+
+
+            Color mouseCol;
+            Hit hit;
+            sweep(ray1, mouseRect, hit);
+
+            if (sweep_fast(ray1, mouseRect)) {
+                mouseCol = Colors::Red;
+            }
+            else {
+                mouseCol = Colors::Green;
+            }
+
+            renManager.render_rectangle(mouseRect, mouseCol);
             renManager.renderer_present();
         }
-
-        std::cout << "average time: " << time / frames << '\n';
-        //OLD   0.00827729    0.00803674     0.00808599 -->> just about 60 FPS just doing quadtree stuff with 5k objects... sweaty
-        //    
     }
     _CrtDumpMemoryLeaks();
     return 0;

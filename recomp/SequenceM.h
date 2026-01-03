@@ -388,7 +388,7 @@ namespace badEngine {
 			if index is not in the range of [begin -> end]
 		*/
 		constexpr reference operator[](size_type index) {
-			assert(index < mSize && "operator[] access with out of range index");
+			//assert(index < mSize && "operator[] access with out of range index");
 			return mArray[index];
 		}
 		/*

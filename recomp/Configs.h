@@ -63,7 +63,7 @@ namespace badEngine {
 				throw BAD_CONFIG_EXCEPTION("JSON parse_error", "[" + std::string(path) + "] at byte{" + std::to_string(e.byte) + "} " + std::string(e.what()), e.id);
 			}
 			catch (const ConfigException& e) {
-				throw;
+				throw e;
 			}
 		}
 

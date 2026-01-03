@@ -64,9 +64,6 @@
     <ClInclude Include="Entity_Factory.h">
       <Filter>Entity</Filter>
     </ClInclude>
-    <ClInclude Include="QuadTree.h">
-      <Filter>MATHY_GEOMETRY</Filter>
-    </ClInclude>
     <ClInclude Include="Scripts.h">
       <Filter>Scripts</Filter>
     </ClInclude>
@@ -76,14 +73,15 @@
     <ClInclude Include="Texture.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
-    <ClInclude Include="Collision.h">
-      <Filter>MATHY_GEOMETRY</Filter>
-    </ClInclude>
     <ClInclude Include="BadExceptions.h">
       <Filter>GENERIC_UTILITY</Filter>
     </ClInclude>
     <ClInclude Include="SLList.h">
       <Filter>GENERIC_UTILITY</Filter>
+    </ClInclude>
+    <ClInclude Include="BVH.h" />
+    <ClInclude Include="Ray.h">
+      <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -99,7 +97,7 @@
     <ClCompile Include="Sprite.cpp">
       <Filter>RENDERING_STUFF</Filter>
     </ClCompile>
-    <ClCompile Include="Collision.cpp">
+    <ClCompile Include="Ray.cpp">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClCompile>
   </ItemGroup>

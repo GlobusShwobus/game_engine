@@ -1,0 +1,463 @@
+#pragma once
+#include "Rectangle.h"
+#include "SequenceM.h"
+
+#include <memory>
+#include <array>
+
+namespace badEngine {
+
+	static constexpr float aabbExtension = 0.1f;
+	static constexpr int nullnode = -1;
+
+	//temp helper, should not be expected to retain anything
+	template<typename T>
+	struct BVHPrimitiveInfo {
+		BVHPrimitiveInfo() = default;
+		BVHPrimitiveInfo(T* primitive_address, const float4& bounds)
+			: primitive(primitive_address),
+			bounds(bounds)
+		{
+		}
+		float4 bounds;
+		T* primitive = nullptr;
+	};
+
+	template<typename T>
+	struct BVHNode {
+		float4 aabb;//bounds of the node (union)
+		T* primitive;
+
+		int parent;
+		int child1;
+		int child2;
+
+		int height;//leaf = 0; internal = max(child)+1
+
+		int nextFreeNode;
+
+		constexpr bool is_leaf()const noexcept {
+			return height == 0;
+		}
+	};
+
+	//using T = int;//later tempalte
+	template<typename T>
+	class BinaryBVH {
+
+		using PrimitiveInfo = BVHPrimitiveInfo<T>;
+		using Node = BVHNode<T>;
+
+	public:
+
+
+		BinaryBVH(const SequenceM<PrimitiveInfo>& primitives)
+		{
+
+
+
+		}
+	
+		BinaryBVH(std::size_t inital_size)
+		{
+			mRoot = nullnode;
+
+			mNodeCount = 0;
+			mNodeCapacity = inital_size;
+			mNodes = static_cast<Node*>(::operator new (inital_size * sizeof(Node)));
+			std::memset(mNodes, 0, inital_size*sizeof(Node));//assigns all bytes to 0
+
+			//create a chain on nodes, except set last manually
+			for (int i = 0; i < inital_size - 1; ++i) {
+				//NOTE:: legal without calling a constructor... but default values DO NOT APPLY, must set manually
+				mNodes[i].nextFreeNode = i + 1;
+				mNodes[i].height = -1;
+			}
+			mNodes[inital_size - 1].nextFreeNode = nullnode;
+			mNodes[inital_size - 1].height = -1;
+			//iterating the freelist starts from 0
+			mFreeList = 0;
+		}
+
+		std::size_t dynamic_insert(const float4& aabb, T* user_data) 
+		{
+			auto proxyID = allocate_node();
+			
+			Node& node = mNodes[proxyID];
+
+			node.aabb.x = aabb.x - aabbExtension;
+			node.aabb.y = aabb.y - aabbExtension;
+			node.aabb.w = aabb.w + (2 * aabbExtension);
+			node.aabb.h = aabb.h + (2 * aabbExtension);
+			node.primitive = user_data;
+
+			insert_leaf(proxyID);
+
+			return proxyID;
+		}
+		std::size_t get_height() {
+			return (mRoot == nullnode) ? 0 : mNodes[mRoot].height;
+		}
+		
+		~BinaryBVH()noexcept {
+			::operator delete(mNodes);
+			mNodes = nullptr;
+		}
+
+	private:
+
+		int allocate_node()
+		{
+			//if free list is out of nexts
+			if (mFreeList == nullnode) {
+
+				assert(mNodeCount == mNodeCapacity);
+				Node* oldNodes = mNodes;
+				mNodeCapacity = (mNodeCapacity * 2) + 1;
+				mNodes = static_cast<Node*>(::operator new(mNodeCapacity * sizeof(Node)));
+				std::memcpy(mNodes, oldNodes, mNodeCount * sizeof(Node));
+				::operator delete(oldNodes);
+
+				//create a chain on nodes, except set last manually
+				for (int i = mNodeCount; i < mNodeCapacity - 1; ++i) {
+					mNodes[i].nextFreeNode = i + 1;
+					mNodes[i].height = -1;
+				}
+				mNodes[mNodeCapacity-1].nextFreeNode = nullnode;
+				mNodes[mNodeCapacity-1].height = -1;
+
+				mFreeList = mNodeCount;
+			}
+
+			//pop a node from freelist
+			int nodeId = mFreeList;
+			//cache the value
+			auto& node = mNodes[nodeId];
+			//asign ALL values of the node (mem allocator does not do it)
+			mFreeList = node.nextFreeNode;
+			node.parent = nullnode;
+			node.child1 = nullnode;
+			node.child2 = nullnode;
+			node.height = 0;
+			node.primitive = nullptr;
+
+			++mNodeCount;
+			return nodeId;
+		}
+
+		void insert_leaf(const int proxyID)
+		{
+			//the case of the very first leaf
+			if (mRoot == nullnode) {
+				mRoot = proxyID;
+				mNodes[mRoot].parent = nullnode;
+				return;
+			}
+			//stage 1: find the best sibling for the new leaf
+			//instead of looping over all elements finding the best option which is O(n)
+			//loop by finding the path that causes the least amount of change by comparing left and right paths (child 1 and child 2)
+			//this is called branch and bound
+			int bestSibling = mRoot;
+			float4 leafAABB = mNodes[proxyID].aabb;
+
+			while (!mNodes[bestSibling].is_leaf()) {
+				//cahce node
+				auto& node = mNodes[bestSibling];
+				//get the surface area of the the union of the entire section of the tree
+				float currentNodeArea = node.aabb.perimeter();
+				//combine leaf and the current structure and get the SA of the union
+				const float4 newBounds = union_rect(leafAABB, node.aabb);
+				float combinedArea = newBounds.perimeter();
+
+				//get the cost of staying on this level as it may be true that going deeper is not worth it
+				//2x multiplier is a SAH math bullshit. im regular cases it doesn't matter, but in some it basically says "this layer is better than children"
+				//importantly if the child node is not a leaf then the cost is the difference between new and old because to go down that path would mean creating a new node child pairs
+				//where the original child is still the same size
+				float directCost = 2.0f * combinedArea;
+				//the minimum possible cost of going down
+				float inheritedCost = 2.0f * (combinedArea - currentNodeArea);
+				//get the cost of children
+				float child1Cost;
+				if (mNodes[node.child1].is_leaf()) {
+					float4 path1 = union_rect(leafAABB, mNodes[node.child1].aabb);
+					child1Cost = path1.perimeter() + inheritedCost;
+				}
+				else {
+					float4 path1 = union_rect(leafAABB, mNodes[node.child1].aabb);
+					float oldArea = mNodes[node.child1].aabb.perimeter();
+					float newArea = path1.perimeter();
+					child1Cost = (newArea - oldArea) + inheritedCost;
+				}
+
+				float child2Cost;
+				if (mNodes[node.child2].is_leaf()) {
+					float4 path2 = union_rect(leafAABB, mNodes[node.child2].aabb);
+					child2Cost = path2.perimeter() + inheritedCost;
+				}
+				else {
+					float4 path2 = union_rect(leafAABB, mNodes[node.child2].aabb);
+					float oldArea = mNodes[node.child2].aabb.perimeter();
+					float newArea = path2.perimeter();
+					child2Cost = (newArea - oldArea) + inheritedCost;
+				}
+				//if cost of adding here is less than into either child, stop
+				if (directCost < child1Cost && directCost < child2Cost) {
+					break;
+				}
+				//otherwise descend into either child 1 or 2
+				bestSibling = (child1Cost < child2Cost) ? node.child1 : node.child2;
+			}
+
+			//stage 2: creating and building a new set of node and leaves
+			//each internal node must have 2 leaf nodes, a leaf node may not have any children, thus the leaf nodes children are denoted as nullnodes
+			//in this implementation a leaf node stores only 1 primitive, not a bucket
+			//the most reasonable way to achieve this is by creating a new parent node which is attached to the previous parent
+			//however if input is sorted this will break down and cause the creation of a linked list due to SAH "failing"
+			//this requires rebalancing the tree later
+			
+			//previous leaf will become an internal node, thus the leaf will have to move
+			int oldParent = mNodes[bestSibling].parent;
+			//build a new parent
+			int newParent = allocate_node();
+			//cache nodes for setting immediate data about the node set
+			auto& child1 = mNodes[bestSibling];
+			auto& child2 = mNodes[proxyID];
+			auto& newParentNode = mNodes[newParent];
+			//set new parent info
+			newParentNode.parent = oldParent;
+			newParentNode.child1 = bestSibling;
+			newParentNode.child2 = proxyID;
+			newParentNode.height = child1.height + 1;
+			newParentNode.aabb = union_rect(child1.aabb, child2.aabb);
+			//link up children and new parent
+			child1.parent = newParent;
+			child2.parent = newParent;
+
+			//link new parent and old parent, or set as root if old parent was nullnode
+			if (oldParent != nullnode) {
+				auto& oldParentNode = mNodes[oldParent];
+				//determine which side to attach to
+				if (oldParentNode.child1 == bestSibling) {
+					oldParentNode.child1 = newParent;
+				}
+				else {
+					oldParentNode.child2 = newParent;
+				}
+			}
+			else {
+				mRoot = newParent;
+			}
+
+			//stage 3: walking back up from point of creation of a new parent and resizing all parent node AABBs
+			int currentNode = newParent;
+			while (currentNode != nullnode) {
+
+				currentNode = bottom_up_balance(currentNode);
+				
+				auto& node_at = mNodes[currentNode];
+
+				assert(node_at.child1 != nullnode);
+				assert(node_at.child2 != nullnode);
+
+				auto& child1_at = mNodes[node_at.child1];
+				auto& child2_at = mNodes[node_at.child2];
+				//height is most importantly used for rebalancing 
+				node_at.height = 1 + bad_maxV(child1_at.height, child2_at.height);
+				//set SAH
+				node_at.aabb = union_rect(child1_at.aabb, child2_at.aabb);
+
+				currentNode = node_at.parent;
+			}
+		}
+		/*
+		RULES:
+			a internal node cannot be swapped with another internal node
+			a leaf node cannot be swapped with another leaf node
+			a parent cannot be swapped with its own leaf nodes
+			ONLY an internal node <- -> leaf node from another subtree is swappable
+
+			the function does 2 modifications:
+				one structural promoting a node upward with all its contents
+				one subtree selection. move deeper closer to the root to reduce SAH costs
+			leaf height = 0, internal height = max(of children) + 1
+			leaf nodes children are -1 height (default set)
+		*/
+		std::size_t bottom_up_balance(int index)
+		{
+			int iA = index;
+			auto& A = mNodes[index];
+			//as per rules of rotation, node can not be a leaf nor a parent with 2 leafs
+			if (A.height < 2) {
+				return index;
+			}
+			int iB = A.child1;
+			int iC = A.child2;
+			auto& B = mNodes[A.child1];
+			auto& C = mNodes[A.child2];
+
+			int balance = B.height - C.height;
+			//if balance > 0 == child1 is taller
+			//if balance < 0 == child2 is taller
+			//if |balance| <= 1 == perfectly balanced NO OP
+			//same rule applies as before except because of math it can now be +-1 and difference of 1 should be ignored
+			//that's why comparisons exclude 1 and -1
+
+			//ALSO: not all values are explicitly set. for example in case balance > 1. don't explicityl set A.child2 and D.parent. it is a significant win (tested).
+
+			//promote child1 up
+			if (balance > 1) {
+				//children of B
+				int iD = B.child1;
+				int iE = B.child2;
+				auto& D = mNodes[iD];
+				auto& E = mNodes[iE];
+				//       A	  
+				//      / \	  
+				//     B   C  
+				//    / \	  
+				//   D   E	  
+				B.parent = A.parent;
+				A.parent = iB;
+				B.child1 = iA;  //convention, can be child 2 too
+				//       B	  
+				//      / \	  
+				//     A   ?  
+				//    / \	  
+				//   ?   C	  
+
+				//fix original parent of A to point to B
+				if (B.parent != nullnode) {
+					auto& root = mNodes[B.parent];
+					//if roots child 1 or child 2 pointed to iA
+					if (root.child1 == iA) 
+						root.child1 = iB;
+					else 
+						root.child2 = iB;
+				}
+				else {
+					mRoot = iB;
+				}
+
+				//determine which OG child of B stays with B, which goes to A depending on height of B's children
+				//promote the subtree with larger spatial extent upwards so its BB is evaluated earlier
+				if (D.height > E.height) {
+					B.child2 = iD;
+					A.child1 = iE;
+					E.parent = iA;
+					//       B	 
+					//      / \	 
+					//     A   D 
+					//    / \	 
+					//   E   C	 
+					//set rest of BVH related data
+					A.aabb = union_rect(E.aabb, C.aabb);
+					B.aabb = union_rect(A.aabb, D.aabb);
+
+					A.height = bad_maxV(E.height, C.height) + 1;
+					B.height = bad_maxV(A.height, D.height) + 1;
+				}
+				else {
+					B.child2 = iE;
+					A.child1 = iD;
+					D.parent = iA;
+					//       B	 
+					//      / \	 
+					//     A   E 
+					//    / \	 
+					//   D   C
+					A.aabb = union_rect(D.aabb, C.aabb);
+					B.aabb = union_rect(A.aabb, E.aabb);
+
+					A.height = bad_maxV(D.height, C.height) + 1;
+					B.height = bad_maxV(A.height, E.height) + 1;
+				}
+				return iB;
+			}
+			//promote child2 up
+			else if (balance < -1) {
+				//children of C
+				int iF = C.child1;
+				int iG = C.child2;
+				auto& F = mNodes[iF];
+				auto& G = mNodes[iG];
+				//       A	  
+				//      / \	  
+				//     B   C  
+				//        / \	  
+				//       F   G
+				C.parent = A.parent;
+				A.parent = iC;
+				C.child1 = iA;
+				//       C	  
+				//      / \	  
+				//     A   ?  
+				//    / \	  
+				//   B   ?
+				//fix original parent of A to point to C
+				if (C.parent != nullnode) {
+					auto& root = mNodes[C.parent];
+					//if roots child 1 or child 2 pointed to iA
+					if (root.child1 == iA)
+						root.child1 = iC;
+					else
+						root.child2 = iC;
+				}
+				else {
+					mRoot = iC;
+				}
+				//determine which OG child of C stays with C, which goes to A depending on height of C's children
+				//promote the subtree with larger spatial extent upwards so its BB is evaluated earlier
+				if (F.height > G.height) {
+					C.child2 = iF;
+					A.child2 = iG;
+					G.parent = iA;
+					//       C	  
+					//      / \	  
+					//     A   F  
+					//    / \	  
+					//   B   G
+					A.aabb = union_rect(B.aabb, G.aabb);
+					C.aabb = union_rect(A.aabb, F.aabb);
+					A.height = bad_maxV(B.height, G.height) + 1;
+					C.height = bad_maxV(A.height, F.height) + 1;
+				}
+				else {
+					C.child2 = iG;
+					A.child2 = iF;
+					F.parent = iA;
+					//       C	  
+					//      / \	  
+					//     A   G  
+					//    / \	  
+					//   B   F
+					A.aabb = union_rect(B.aabb, F.aabb);
+					C.aabb = union_rect(A.aabb, G.aabb);
+					A.height = bad_maxV(B.height, F.height) + 1;
+					C.height = bad_maxV(A.height, G.height) + 1;
+				}
+				return iC;
+			}
+			return iA;
+		}
+	private:
+
+		Node* mNodes = nullptr;
+		int mNodeCount = 0;
+		int mNodeCapacity = 0;
+
+		int mFreeList = nullnode;
+
+
+		int mRoot = nullnode;
+
+	public:
+
+		Node* begin() {
+			return mNodes;
+		}
+		Node* end() {
+			return mNodes + mNodeCount;
+		}
+	};
+}
+
