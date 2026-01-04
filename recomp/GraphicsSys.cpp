@@ -69,7 +69,7 @@ namespace badEngine {
 		}
 		return false;
 	}
-	void GraphicsSys::render_rectangle(const float4& area, Color color)const noexcept
+	void GraphicsSys::render_rectangle(const AABB& area, Color color)const noexcept
 	{
 		SDL_Renderer* ren = mRenderer.get();
 		SDL_SetRenderDrawColor(ren, color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
@@ -77,7 +77,7 @@ namespace badEngine {
 		SDL_RenderFillRect(ren, &sdlArea);
 		SDL_SetRenderDrawColor(ren, mDrawColor.get_red(), mDrawColor.get_green(), mDrawColor.get_blue(), mDrawColor.get_alpha());
 	}
-	void GraphicsSys::render_rectangle(const float4& outer, const float4& inner, Color color)const noexcept
+	void GraphicsSys::render_rectangle(const AABB& outer, const AABB& inner, Color color)const noexcept
 	{
 		if (outer.contains(inner)) {
 			SDL_Renderer* ren = mRenderer.get();
@@ -119,7 +119,7 @@ namespace badEngine {
 	{
 		return IMG_LoadTexture(mRenderer.get(), path.data());
 	}
-	SDL_Texture* GraphicsSys::create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from, float4* src, float4* dest)const noexcept
+	SDL_Texture* GraphicsSys::create_texture_targetable(Uint32 width, Uint32 height, SDL_Texture* copy_from, AABB* src, AABB* dest)const noexcept
 	{
 		SDL_Renderer* ren = mRenderer.get();
 		//create texture
@@ -156,7 +156,7 @@ namespace badEngine {
 		}
 		return texture;
 	}
-	bool GraphicsSys::draw(SDL_Texture* texture, const float4& source, const float4& dest)const noexcept
+	bool GraphicsSys::draw(SDL_Texture* texture, const AABB& source, const AABB& dest)const noexcept
 	{
 		SDL_FRect sdlSrc = convert_rect(source);
 		SDL_FRect sdlDest = convert_rect(dest);
@@ -171,7 +171,7 @@ namespace badEngine {
 
 		return SDL_RenderTexture(ren, texture, &sdlSrc, &sdlDest);
 	}
-	bool GraphicsSys::draw(SDL_Texture* texture, const SequenceM<std::pair<float4, float4>>& list)const noexcept
+	bool GraphicsSys::draw(SDL_Texture* texture, const SequenceM<std::pair<AABB, AABB>>& list)const noexcept
 	{
 
 		SDL_Renderer* ren = mRenderer.get();

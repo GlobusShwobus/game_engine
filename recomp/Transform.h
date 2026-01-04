@@ -10,9 +10,9 @@ namespace badEngine {
 
 		//CONSTRUCTORS
 		constexpr Transform()noexcept = default;
-		constexpr Transform(const float4& rectangle, const float2& velocity)noexcept
+		constexpr Transform(const AABB& rectangle, const float2& velocity)noexcept
 			:mBox(rectangle), mVelocity(velocity), mCurrVelocity(mVelocity) {}
-		constexpr Transform(const float4& rectangle)noexcept
+		constexpr Transform(const AABB& rectangle)noexcept
 			:mBox(rectangle) {}
 
 		void update_position()noexcept {
@@ -25,7 +25,7 @@ namespace badEngine {
 
 	public:
 
-		float4 mBox;
+		AABB mBox;
 		float2 mVelocity;
 		float2 mCurrVelocity;
 	};

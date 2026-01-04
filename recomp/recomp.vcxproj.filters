@@ -79,8 +79,10 @@
     <ClInclude Include="SLList.h">
       <Filter>GENERIC_UTILITY</Filter>
     </ClInclude>
-    <ClInclude Include="BVH.h" />
     <ClInclude Include="Ray.h">
+      <Filter>MATHY_GEOMETRY</Filter>
+    </ClInclude>
+    <ClInclude Include="TooHardTree.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
   </ItemGroup>

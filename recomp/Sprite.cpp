@@ -131,13 +131,13 @@ namespace badEngine {
 				const uint32_t glyphX = glyphIndex % mColumnsCount;     //column index: using above, 65%32 = (32+32 = 64, remainder is 1)
 				                                                        //^ if font is set up not in order of ASCII then its all fucked
 				mLetterPos.emplace_back(
-					float4(
+					AABB(
 						static_cast<float>(glyphX * mGlyphWidth), //source x
 						static_cast<float>(glyphY * mGlyphHeight),//source y
 						static_cast<float>(mGlyphWidth),          //source w
 						static_cast<float>(mGlyphHeight)          //source h
 					),
-					float4(
+					AABB(
 						destP.x, //dest x
 						destP.y, //dest y
 						scaledW, //dest w

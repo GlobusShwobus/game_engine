@@ -46,7 +46,7 @@ namespace badEngine {
 
 		//TRANSLATE A BEWEEN WORLD AND SCREEN SPACE
 		template<typename S>
-		constexpr float4 world_to_screen(const Rectangle<S>& worldRect)const noexcept {
+		constexpr AABB world_to_screen(const Rectangle<S>& worldRect)const noexcept {
 			return rectF(
 				(worldRect.x - mOffset.x) * mScale.x,
 				(worldRect.y - mOffset.y) * mScale.y,
@@ -61,8 +61,8 @@ namespace badEngine {
 			);
 		}
 		
-		constexpr float4 get_view_rect()const noexcept {
-			return float4(
+		constexpr AABB get_view_rect()const noexcept {
+			return AABB(
 				mOffset, float2(mScreenSize.x / mScale.x, mScreenSize.y / mScale.y)
 			);
 		}

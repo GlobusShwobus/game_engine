@@ -52,7 +52,7 @@ namespace badEngine {
 			assert(txtr != nullptr && "Texture is nullptr");
 			mTexture.reset(txtr);
 		}
-		TargetTexture(Uint32 w, Uint32 h, const GraphicsSys& gfx, SDL_Texture* copy_from, float4* src = nullptr, float4* dest = nullptr)
+		TargetTexture(Uint32 w, Uint32 h, const GraphicsSys& gfx, SDL_Texture* copy_from, AABB* src = nullptr, AABB* dest = nullptr)
 		{
 			SDL_Texture* txtr = gfx.create_texture_targetable(w, h, copy_from, src, dest);
 			assert(txtr != nullptr && "Texture is nullptr");

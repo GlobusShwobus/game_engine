@@ -16,8 +16,8 @@ namespace badEngine {
 			assert(mTexture != nullptr && "Texture is nullptr");
 			float w, h;
 			SDL_GetTextureSize(mTexture, &w, &h);
-			mSource = float4(0, 0, w, h);
-			mDest = float4(0, 0, w, h);
+			mSource = AABB(0, 0, w, h);
+			mDest = AABB(0, 0, w, h);
 		}
 
 		Sprite(const TargetTexture& texture) :mTexture(texture.get())
@@ -25,18 +25,18 @@ namespace badEngine {
 			assert(mTexture != nullptr && "Texture is nullptr");
 			float w, h;
 			SDL_GetTextureSize(mTexture, &w, &h);
-			mSource = float4(0, 0, w, h);
-			mDest = float4(0, 0, w, h);
+			mSource = AABB(0, 0, w, h);
+			mDest = AABB(0, 0, w, h);
 		}
 
 	public:
 
 		virtual ~Sprite() = default;
 		
-		const float4& get_source()const noexcept {
+		const AABB& get_source()const noexcept {
 			return mSource;
 		}
-		const float4& get_dest()const noexcept {
+		const AABB& get_dest()const noexcept {
 			return mDest;
 		}
 		SDL_Texture* const get_texture()const noexcept {
@@ -45,8 +45,8 @@ namespace badEngine {
 
 	protected:
 		SDL_Texture* mTexture = nullptr;
-		float4 mSource;
-		float4 mDest;
+		AABB mSource;
+		AABB mDest;
 	};
 
 	class Animation :public Sprite {
@@ -90,11 +90,11 @@ namespace badEngine {
 		void font_clear_text()noexcept;
 		void font_set_scale(float scale)noexcept;
 
-		const SequenceM<std::pair<float4, float4>>& get_letter_positions()const {
+		const SequenceM<std::pair<AABB, AABB>>& get_letter_positions()const {
 			return mLetterPos;
 		}
 	private:
-		SequenceM<std::pair<float4, float4>> mLetterPos;
+		SequenceM<std::pair<AABB, AABB>> mLetterPos;
 
 		uint32_t mColumnsCount = 0;
 		uint32_t mRowsCount = 0;

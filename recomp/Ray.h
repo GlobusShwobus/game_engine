@@ -25,7 +25,7 @@ namespace badEngine {
 
 	//assumes rays dir is already set in unit vector scale
 	//rays should be constructed in bulk up front
-	inline void sweep(const Ray& ray, const float4& target, Hit& hit)noexcept
+	inline void sweep(const Ray& ray, const AABB& target, Hit& hit)noexcept
 	{
 		//inv dir
 		float2 invdir(
@@ -53,7 +53,7 @@ namespace badEngine {
 
 	//assumes rays dir is already set in unit vector scale
 	//rays should be constructed in bulk up front
-	inline bool sweep_fast(const Ray& ray, const float4& target)noexcept
+	inline bool sweep_fast(const Ray& ray, const AABB& target)noexcept
 	{
 		//inv dir
 		float2 invdir(
@@ -71,7 +71,7 @@ namespace badEngine {
 		return (t_hit_near <= t_hit_far && t_hit_far >= 0.0f);
 	}
 	//maybe depricate if literture does it differently
-	Hit sweep_dynamic(const float4& dynamicBox, const float2& dynamicDir, const float4& staticBox) noexcept;
+	Hit sweep_dynamic(const AABB& dynamicBox, const float2& dynamicDir, const AABB& staticBox) noexcept;
 
 	/*
 	DEPRICATED AND BORKEN ANYWAY

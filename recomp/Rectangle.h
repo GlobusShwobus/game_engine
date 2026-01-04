@@ -83,8 +83,7 @@ namespace badEngine {
 		T h = 0;
 	};
 
-	using int4 = Rectangle<int>;
-	using float4 = Rectangle<float>;
+	using AABB = Rectangle<float>;
 
 	template<typename U>
 	constexpr  Rectangle<U> union_rect(const Rectangle<U>& A, const Rectangle<U>& B)noexcept {

@@ -15,17 +15,15 @@
 #include "Color.h"
 #include "Camera.h"
 #include "Scripts.h"
-#include "BVH.h"
 #include "Ray.h"
 
 #include <iostream>
 /*
 PRIORITY: constexpr for SLList and then correct signatures for quad/BHV tree
 
-1) BVH and related
+1) revist quadtree (though not a lot of justification), mainly create a hash grid instead
+2) documentation and visit <functional>
 2) make engine class for on user create and run loop sepparation
-3) probably transform...
-3) entities??? probably not
 
 */
 
@@ -51,36 +49,6 @@ int main() {
         //#####################################################################################################################################################################
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
 
-        SequenceM<float4> things;
-        things.set_capacity(10);
-        BinaryBVH<float4> things2(things.capacity());
-
-        for (int i = 0; i < 10; i++) {
-            float4 rect(i*20, i*20, i*20, i*20);
-            things.emplace_back(rect);
-        }
-
-        for (auto& t : things) {
-            things2.dynamic_insert(t, &t);
-        }
-
-        for (auto& n : things2) {
-            if (n.is_leaf()) {
-                static const float inset = 2.0f; // 
-                const auto& nodeAABB = n.aabb;
-                float4 inner{
-                    nodeAABB.x + inset,
-                    nodeAABB.y + inset,
-                    nodeAABB.w - 2 * inset,
-                    nodeAABB.h - 2 * inset
-                };
-                renManager.render_rectangle(nodeAABB,inner, Colors::Green);
-
-            }
-        }
-        renManager.renderer_present();
-        std::cin.get();
-        return 69;
 
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         //#####################################################################################################################################################################
@@ -117,7 +85,7 @@ int main() {
 
             float2 mousePos;
             SDL_GetMouseState(&mousePos.x, &mousePos.y);
-            float4 mouseRect = float4(
+            AABB mouseRect = AABB(
                 mousePos.x - 64 / 2,
                 mousePos.y - 64 / 2,
                 64, 64
