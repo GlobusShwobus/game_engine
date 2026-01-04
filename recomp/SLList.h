@@ -11,6 +11,7 @@ namespace badEngine {
 		struct NodeBase {
 			NodeBase() = default;
 			NodeBase(NodeBase* next) :next(next) {}
+			~NodeBase()noexcept = default;
 			NodeBase* next = nullptr;
 		};
 		struct Node : NodeBase {
@@ -20,7 +21,7 @@ namespace badEngine {
 				: NodeBase{ next }, value(std::forward<Args>(args)...)
 			{
 			}
-
+			~Node()noexcept = default;
 			T value;
 		};
 
@@ -131,14 +132,14 @@ namespace badEngine {
 
 	public:
 		SLList() = default;
-		explicit SLList(size_type count)
+		constexpr explicit SLList(size_type count)
 			requires std::default_initializable<value_type>
 		{
 			for (size_type i = 0; i < count; ++i) {
 				emplace_after(before_begin(), value_type{});
 			}
 		}
-		SLList(size_type count, const_reference value)
+		constexpr SLList(size_type count, const_reference value)
 			requires std::constructible_from<value_type, const_reference>
 		{
 			for (size_type i = 0; i < count; ++i) {
@@ -147,17 +148,17 @@ namespace badEngine {
 		}
 		template<std::input_iterator InputIt>
 			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>
-		SLList(InputIt first, InputIt last)
+		constexpr SLList(InputIt first, InputIt last)
 		{
 			insert_after(before_begin(), first, last);
 		}
 		template<std::ranges::input_range R>
 			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>//NOTE, if range_ref_t can be used to construct T, being the same exact type is not required
-		SLList(R&& range)
+		constexpr SLList(R&& range)
 		{
 			insert_range_after(before_begin(), std::move(range));
 		}
-		SLList(const SLList& other)
+		constexpr SLList(const SLList& other)
 			requires std::constructible_from<value_type, const_reference>
 		{
 			auto curr = before_begin();
@@ -166,13 +167,13 @@ namespace badEngine {
 				curr = emplace_after(curr, v);
 			}
 		}
-		SLList(SLList&& other)noexcept
+		constexpr SLList(SLList&& other)noexcept
 		{
 			mSentinel.next = other.mSentinel.next;
 			other.mSentinel.next = nullptr;
 		}
-		SLList(std::initializer_list<value_type> init)
-			requires std::constructible_from<value_type, const_reference>
+		constexpr SLList(std::initializer_list<value_type> init)
+			requires std::constructible_from<value_type, const_reference>//not super clean but fine
 		{
 			auto curr = before_begin();
 			for (const auto& v : init)
@@ -180,18 +181,21 @@ namespace badEngine {
 				curr = emplace_after(curr, v);
 			}
 		}
-		SLList& operator=(SLList other) noexcept
+		//uses swap idiom to replace reference and move assignments
+		constexpr SLList& operator=(SLList other) noexcept
 		{
 			this->swap(other);
 			return *this;
 		}
-		SLList& operator=(std::initializer_list<value_type> list)
+		//uses swap idiom to take advantage of a defined constructor
+		constexpr SLList& operator=(std::initializer_list<value_type> list)
 		{
 			SLList temp(list);
 			this->swap(temp);
 			return *this;
 		}
-		void swap(SLList& other)noexcept
+		//swaps pointer ownerships
+		constexpr void swap(SLList& other)noexcept
 		{
 			NodeBase* temp = mSentinel.next;
 			mSentinel.next = other.mSentinel.next;
@@ -199,60 +203,61 @@ namespace badEngine {
 		}
 
 
-		~SLList()noexcept
+		constexpr ~SLList()noexcept
 		{
 			clear();
 		}
 
 		//ELEMENT ACCESS
-		iterator begin()noexcept
+		constexpr iterator begin()noexcept
 		{
 			return iterator(mSentinel.next);
 		}
-		const_iterator begin()const noexcept
+		constexpr const_iterator begin()const noexcept
 		{
 			return const_iterator(mSentinel.next);
 		}
-		const_iterator cbegin()const noexcept
+		constexpr const_iterator cbegin()const noexcept
 		{
 			return const_iterator(mSentinel.next);
 		}
-		iterator end()noexcept
+		constexpr iterator end()noexcept
 		{
 			return iterator(nullptr);
 		}
-		const_iterator end()const noexcept
+		constexpr const_iterator end()const noexcept
 		{
 			return const_iterator(nullptr);
 		}
-		const_iterator cend()const noexcept
+		constexpr const_iterator cend()const noexcept
 		{
 			return const_iterator(nullptr);
 		}
-		iterator before_begin()noexcept
+		constexpr iterator before_begin()noexcept
 		{
 			return iterator(&mSentinel);
 		}
-		const_iterator before_begin()const noexcept
+		constexpr const_iterator before_begin()const noexcept
 		{
 			return const_iterator(&mSentinel);
 		}
-		const_iterator cbefore_begin()const noexcept
+		constexpr const_iterator cbefore_begin()const noexcept
 		{
 			return const_iterator(&mSentinel);
 		}
-
-		reference front()
+		
+		//Undefined behavior if empty
+		constexpr reference front()
 		{
 			return *begin();
 		}
-		const_reference front()const
+		//Undefined behavior if empty
+		constexpr const_reference front()const
 		{
 			return *begin();
 		}
-		//MODIFY
-
-		void clear()noexcept
+		//erases all elements, invalidates any references/pointers/iterators refering to contained elements. end iterator still valid (nullptr)
+		constexpr void clear()noexcept
 		{
 			NodeBase* curr = mSentinel.next;
 			while (curr) {
@@ -262,13 +267,12 @@ namespace badEngine {
 			}
 			mSentinel.next = nullptr;
 		}
-		/*
-		UNDEFIEND BEHAVIOR CONDITION:
-			if pos is not in range of [begin -> end)
-		*/
+		//Undefined behavior if pos is not in range of [before_begin -> end), including begin up to but not including end
+		//does not guarantee ANY exception safety
+		//returns iterator to the new element
 		template<typename... Args>
 			requires std::constructible_from<value_type, Args...>
-		iterator emplace_after(const_iterator pos, Args&&...args)
+		constexpr iterator emplace_after(const_iterator pos, Args&&...args)noexcept
 		{
 			NodeBase* given = pos.mPtr;
 			//new node that sits in the middle of nodes points to whatever given->next is, data is saved or nullptr
@@ -276,17 +280,21 @@ namespace badEngine {
 
 			return iterator(given->next);
 		}
-		iterator insert_after(const_iterator pos, const_reference value)
+		//internally emplace_after
+		constexpr iterator insert_after(const_iterator pos, const_reference value)noexcept
 			requires std::constructible_from<value_type, const_reference>
 		{
 			return emplace_after(pos, value);
 		}
-		iterator insert_after(const_iterator pos, value_type&& value)
+		//internally emplace_after
+		constexpr iterator insert_after(const_iterator pos, value_type&& value)noexcept
 			requires std::constructible_from<value_type, value_type&&>
 		{
 			return emplace_after(pos, std::move(value));
 		}
-		iterator insert_after(const_iterator pos, size_type count, const_reference value)
+		//internally emplace_after
+		//returns iterator to the the last element inserted or pos if range is 0
+		constexpr iterator insert_after(const_iterator pos, size_type count, const_reference value)noexcept
 			requires std::constructible_from<value_type, const_reference>
 		{
 			iterator ret = iterator(pos.mPtr);
@@ -295,9 +303,11 @@ namespace badEngine {
 			}
 			return ret;
 		}
+		//internally emplace_after
+		//returns iterator to the the last element inserted or pos if range is 0
 		template<std::input_iterator InputIt>
 			requires std::constructible_from<value_type, std::iter_reference_t<InputIt>>
-		iterator insert_after(const_iterator pos, InputIt first, InputIt last)
+		constexpr iterator insert_after(const_iterator pos, InputIt first, InputIt last)noexcept
 		{
 			iterator ret = iterator(pos.mPtr);
 			for (; first != last; ++first) {
@@ -305,22 +315,22 @@ namespace badEngine {
 			}
 			return ret;
 		}
-		iterator insert_after(const_iterator pos, std::initializer_list<value_type> ilist)
+		//internally insert_after(const_iterator pos, InputIt first, InputIt last)
+		constexpr iterator insert_after(const_iterator pos, std::initializer_list<value_type> ilist)noexcept
 		{
 			return insert_after(pos, ilist.begin(), ilist.end());
 		}
+		//internally insert_after(const_iterator pos, InputIt first, InputIt last)
 		template<std::ranges::input_range R>
 			requires std::constructible_from<value_type, std::ranges::range_reference_t<R>>
-		iterator insert_range_after(const_iterator pos, R&& range)//ranges is gigachad wtf
+		constexpr iterator insert_range_after(const_iterator pos, R&& range)noexcept
 		{
 			return insert_after(pos, std::ranges::begin(range), std::ranges::end(range));
 		}
-		/*
-		UNDEFIEND BEHAVIOR CONDITION:
-			if pos is not in the range of [begin -> end)
-			calling it with end() will cause double delete
-		*/
-		iterator erase_after(const_iterator pos)
+
+		//undefined behavior if pos is not in the range of [before_begin -> end)
+		//retruns iterator to the new element at after pos
+		constexpr iterator erase_after(const_iterator pos)noexcept
 		{
 			NodeBase* given = pos.mPtr;
 			NodeBase* removedNode = given->next;
@@ -328,7 +338,9 @@ namespace badEngine {
 			delete removedNode;
 			return iterator(given->next);
 		}
-		iterator erase_after(const_iterator first, const_iterator last)
+		//undefined behavior if the range of [first -> last) is not in the range of [before_begin -> end)
+		//returns iterator after the last erased object
+		constexpr iterator erase_after(const_iterator first, const_iterator last)noexcept
 		{
 			NodeBase* b = first.mPtr;
 			NodeBase* e = last.mPtr;
@@ -345,72 +357,54 @@ namespace badEngine {
 
 				b->next = curr;
 			}
-			return iterator(e);
+			return iterator(b->next);
 		}
-
-		void push_front(const_reference value)
+		//internally emplace_after
+		constexpr void push_front(const_reference value)noexcept
 			requires std::constructible_from<value_type, const_reference>
 		{
 			emplace_after(before_begin(), value);
 		}
-		void push_front(value_type&& value)
+		//internally emplace_after
+		constexpr void push_front(value_type&& value)noexcept
 			requires std::constructible_from<value_type, value_type&&>
 		{
 			emplace_after(before_begin(), std::move(value));
 		}
+		//internally insert_range_after
 		template<std::ranges::input_range R>
-		void push_front_range(R&& range)
+		constexpr void push_front_range(R&& range)noexcept
 		{
 			insert_range_after(before_begin(), std::forward<R>(range));
 		}
-		void pop_front()
+		//internally erase_after
+		constexpr void pop_front()noexcept
 		{
 			erase_after(before_begin());
 		}
-		/*
-		UNDEFINED BEHAVIOR CONDITIONS:
-			if list is empty
-		*/
-		value_type pop_front_return()
+		//undefined behavior if list is empty
+		//pops and returns the last element by value
+		constexpr value_type pop_front_get() noexcept
 			requires std::constructible_from<value_type, value_type&&>
 		{
 			value_type value = std::move(front());
 			pop_front();
 			return value;
 		}
-		//INFO
-		bool is_empty()const noexcept
+		//is empty
+		constexpr bool is_empty()const noexcept
 		{
 			return mSentinel.next == nullptr;
 		}
 
-		//OPERATIONS
-		/*
-		UNDEFINED BEHAVIOR CONDITIONS:
-			if pos is not in the range of *this [before_begin - > end]
-			if this == &other
-		*/
-		void splice_after(const_iterator pos, SLList& other)
-		{
-			splice_after(pos, other, other.before_begin(), other.end());
-		}
-		/*
-		UNDEFINED BEHAVIOR CONDITIONS:
-			if pos is not in the range of *this [before_begin - > end]
-			if this == &other but pos is within [before_first - > end]
-		*/
-		void splice_after(const_iterator pos, SLList& other, const_iterator before_first)
-		{
-			splice_after(pos, other, before_first, other.end());
-		}
-		/*
-		UNDEFINED BEHAVIOR CONDITIONS
-			if pos is not in the range of *this [before_begin - > end]
-			if [before_first - > last] is not in the range of [other.before_begin - > other.end]
-			if any iterator in others range is not dereferenceable (concurrency outcomes)
-			if this == &other but pos is within [before_first - > last]
-		*/
-		void splice_after(const_iterator pos, SLList& other, const_iterator before_first, const_iterator last)
+		//undefined behavior if pos of this is not in the range of [before_begin -> end)
+		//					 if other before_first and last are not in the range of [other.before_begin -> other.end)
+		//                   if any iterator in others range is not dereferencable
+		//	                 if this == &other but pos is included in the range of input parameters
+		//takes a chunck of other list and inserts it into this list after pos
+		//splicing the same list is allowed
+		//no exception guarantees
+		constexpr void splice_after(const_iterator pos, SLList& other, const_iterator before_first, const_iterator last)noexcept
 		{
 			NodeBase* posNode = pos.mPtr;
 			NodeBase* beforeFirst = before_first.mPtr;
@@ -437,19 +431,23 @@ namespace badEngine {
 			//reattach other tail
 			beforeFirst->next = otherTail;
 		}
-		void merge(SLList& other)
-			requires std::strict_weak_order<std::less<>, value_type, value_type>
+		//internally  splice_after(const_iterator pos, SLList& other, const_iterator before_first, const_iterator last)
+		constexpr void splice_after(const_iterator pos, SLList& other)noexcept
 		{
-			merge(other, std::less<>{});
+			splice_after(pos, other, other.before_begin(), other.end());
 		}
-		/*
-		UNDEFINED BEHAVIOR CONDITIONS:
-			assumes the containers are sorted with respect to comp as a precondition
-			merge does not sort nor does it check if it is sorted and it WILL produce a result unless this == &other
-		*/
+		//internally  splice_after(const_iterator pos, SLList& other, const_iterator before_first, const_iterator last)
+		constexpr void splice_after(const_iterator pos, SLList& other, const_iterator before_first)noexcept
+		{
+			splice_after(pos, other, before_first, other.end());
+		}
+		//undefined behavior if for any reason requirement std::strict_weak_order<Compare&, value_type, value_type> is not met, compiles but fails
+		//throws nothing so refer to std::strict_weak_order type trait
+		//merges this and other list into this in an ordered fashion but does no sorting itself, assumes lists are sorted up front
+		//no exception guarantees
 		template<typename Compare>
 			requires std::strict_weak_order<Compare&, value_type, value_type>// maybe also match bool comp(cosnt&, const&)?
-		void merge(SLList& other, Compare comp)
+		constexpr void merge(SLList& other, Compare comp)noexcept
 		{
 			if (this == &other)return;
 
@@ -484,18 +482,19 @@ namespace badEngine {
 			//other sentinel non owning
 			other.mSentinel.next = nullptr;
 		}
-
-		size_type remove(const_reference value)
-			requires std::equality_comparable_with<value_type, value_type>
+		//internally merge(SLList& other, Compare comp)
+		void merge(SLList& other)
+			requires std::strict_weak_order<std::less<>, value_type, value_type>
 		{
-			return remove_if([&value](const_reference other) {
-				return other == value;
-				}
-			);
+			merge(other, std::less<>{});
 		}
+		//removes elements according to unary predicate result
+		//iterates over all elements, internally calls erase_after
+		//no exception guarantees
+		//returns the number of elements removed
 		template<typename UnaryPred>
 			requires std::predicate<UnaryPred&, const_reference>
-		size_type remove_if(UnaryPred p)
+		constexpr size_type remove_if(UnaryPred p)noexcept
 		{
 			size_type count = 0;
 
@@ -516,7 +515,18 @@ namespace badEngine {
 
 			return count;
 		}
-		void reverse()noexcept
+		//internally size_type remove_if(UnaryPred p)
+		//returns the number of elements removed
+		constexpr size_type remove(const_reference value)noexcept
+			requires std::equality_comparable_with<value_type, value_type>
+		{
+			return remove_if([&value](const_reference other) {
+				return other == value;
+				}
+			);
+		}
+		//reverses the order of elements
+		constexpr void reverse()noexcept
 		{
 			NodeBase* prev = nullptr;
 			NodeBase* curr = mSentinel.next;
@@ -530,18 +540,11 @@ namespace badEngine {
 
 			mSentinel.next = prev;
 		}
-		size_type unique()
-			requires std::equality_comparable_with<value_type, value_type>
-		{
-			return unique(std::equal_to<>{});
-		}
-		/*
-		UNDEFIEND BEHAVIOR CONDITION:
-			if p does not establih an equivalance relation, the behavior is undefined
-		*/
+		//removes consecutive duplicate elements as a result of binary predicate p
+		//no exception guarantees
 		template<typename BinaryPred>
 			requires std::predicate<BinaryPred&, const_reference, const_reference>
-		size_type unique(BinaryPred p)
+		constexpr size_type unique(BinaryPred p) noexcept
 		{
 			size_type count = 0;
 
@@ -566,20 +569,30 @@ namespace badEngine {
 			}
 			return count;
 		}
+		//internally size_type unique(BinaryPred p), std::equal_to<>{}
+		constexpr size_type unique()noexcept
+			requires std::equality_comparable_with<value_type, value_type>
+		{
+			return unique(std::equal_to<>{});
+		}
+		//sorts elements and preserves the order of equivalent elements
+		//requires element to support std::strict_weak_order
+		//no exception guarantees
+		template<typename Compare>
+			requires std::strict_weak_order<Compare&, value_type, value_type> // maybe also match bool comp(cosnt&, const&)?
+		void sort(Compare comp) noexcept
+		{
+			mSentinel.next = setup_merge_sort(mSentinel.next, comp);
+		}
+		//internally sort(Compare comp), with std::less<>()
 		void sort()
 		{
 			sort(std::less<>());
 		}
-		template<typename Compare>
-			requires std::strict_weak_order<Compare&, value_type, value_type> // maybe also match bool comp(cosnt&, const&)?
-		void sort(Compare comp)
-		{
-			mSentinel.next = setup_merge_sort(mSentinel.next, comp);
-		}
 	private:
 
 		template<typename Compare>
-		NodeBase* setup_merge_sort(NodeBase* head, Compare comp)
+		constexpr NodeBase* setup_merge_sort(NodeBase* head, Compare comp)noexcept
 		{
 			//base case
 			if (!head || !head->next) {
@@ -604,7 +617,7 @@ namespace badEngine {
 			return merge_sort(head, second, comp);
 		}
 		template<typename Compare>
-		NodeBase* merge_sort(NodeBase* a, NodeBase* b, Compare comp)
+		constexpr NodeBase* merge_sort(NodeBase* a, NodeBase* b, Compare comp)noexcept
 		{
 			NodeBase dummy;
 			NodeBase* tail = &dummy;
