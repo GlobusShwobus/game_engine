@@ -82,7 +82,7 @@
     <ClInclude Include="Ray.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
-    <ClInclude Include="SpatialHashGrid.h">
+    <ClInclude Include="UniformGrid.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
   </ItemGroup>

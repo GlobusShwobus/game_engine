@@ -324,7 +324,7 @@ namespace badEngine {
 		/*
 		erases elements
 		UNDEFIEND BEHAVIOR CONDITIONS:
-			if [first -> last) is not in the range of [begin -> end]
+			if [first -> last) is not in the range of [begin -> end)
 		*/
 		void erase(const_iterator first, const_iterator last)
 			requires std::is_nothrow_move_assignable_v<value_type>
@@ -344,6 +344,7 @@ namespace badEngine {
 			for (; targetEnd != thisEnd; ++targetBegin, ++targetEnd) {
 				*targetBegin = std::move(*targetEnd);
 			}
+
 			mSize -= destroy_size;
 			destroy_objects(end(), thisEnd);
 		}
@@ -407,6 +408,10 @@ namespace badEngine {
 				erase(begin() + count, end());
 			}
 			else {
+
+				if (count > mCapacity)
+					set_capacity(count);
+
 				size_type amount = count - mSize;
 				while (amount--) {
 					emplace_back(value);

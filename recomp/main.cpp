@@ -9,7 +9,7 @@
 
 #include "Sprite.h"
 
-
+#include "UniformGrid.h"
 
 #include "SequenceM.h"
 #include "SLList.h"
@@ -61,16 +61,27 @@ int main() {
         }
         auto vecTT = vecT.dt_nanosec();
 
-        //SpatialQuadTree<AABB> quadt(window);
-        //quadt.reserve(myABBS.size());
-        //Stopwatch qT;
-        //for (int i = 0; i < myABBS.size(); i++)
-        //{
-        //    quadt.insert(*myABBS[i], myABBS[i].get());
-        //}
-        //auto qTT = qT.dt_nanosec();
-        //
-        //std::cout << "vec insert: " << vecTT << '\n' << "quad insert: " << qTT << '\n';
+
+        UniformGrid<int> grid(window, 32,32);
+
+        Stopwatch stdtime;
+        int a1 = std::min(69, 420);
+        auto result1 = stdtime.dt_nanosec();
+
+        Stopwatch mytime;
+        int a2 = bad_minV(69,420);
+        auto result2 = mytime.dt_nanosec();
+
+        Stopwatch stdtime2;
+        int a3 = std::max(69, 420);
+        auto result3 = stdtime2.dt_nanosec();
+
+        Stopwatch mytime2;
+        int a4 = bad_maxV(69, 420);
+        auto result4 = mytime2.dt_nanosec();
+
+
+        std::cout << "std min: " << result1 << "\tstd max: " << result3 << "\nmy min: " << result2 << "\tmy max: " << result4 << '\n';
 
         //for quadtree 160-180m ns
 
