@@ -397,7 +397,8 @@ namespace badEngine {
 		constexpr void resize(size_type count)
 			requires std::default_initializable<value_type>
 		{
-			resize(count, value_type{});
+			value_type def = value_type{};
+			resize(count, def);
 		}
 		constexpr void resize(size_type count, const_reference value)
 			requires std::constructible_from<value_type, const_reference>

@@ -82,7 +82,7 @@
     <ClInclude Include="Ray.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
-    <ClInclude Include="TooHardTree.h">
+    <ClInclude Include="SpatialHashGrid.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
   </ItemGroup>

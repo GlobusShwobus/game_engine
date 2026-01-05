@@ -150,10 +150,10 @@
     <ClInclude Include="Entity_Factory.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Configs.h" />
+    <ClInclude Include="SpatialHashGrid.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="SLList.h" />
     <ClInclude Include="NumberGenerator.h" />
-    <ClInclude Include="TooHardTree.h" />
     <ClInclude Include="Rectangle.h" />
     <ClInclude Include="Scripts.h" />
     <ClInclude Include="SequenceM.h" />

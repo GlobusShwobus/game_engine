@@ -9,6 +9,8 @@
 
 #include "Sprite.h"
 
+
+
 #include "SequenceM.h"
 #include "SLList.h"
 #include "NumberGenerator.h"
@@ -49,8 +51,28 @@ int main() {
         //#####################################################################################################################################################################
         //#####################################################################################################################################################################
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
+        AABB window = AABB(0, 0, 960, 540);
+        NumberGenerator gen;
+        SequenceM<std::unique_ptr<AABB>> myABBS;
+        myABBS.set_capacity(1000000);
+        Stopwatch vecT;
+        for (int i = 0; i < myABBS.capacity(); i++) {
+            myABBS.emplace_back(std::make_unique<AABB>(gen.random_float(1, 800), gen.random_float(1, 500), 25, 25));
+        }
+        auto vecTT = vecT.dt_nanosec();
 
-        SLList<AABB> lmao = { AABB(1,1,1,1),AABB(2,2,2,2) };
+        //SpatialQuadTree<AABB> quadt(window);
+        //quadt.reserve(myABBS.size());
+        //Stopwatch qT;
+        //for (int i = 0; i < myABBS.size(); i++)
+        //{
+        //    quadt.insert(*myABBS[i], myABBS[i].get());
+        //}
+        //auto qTT = qT.dt_nanosec();
+        //
+        //std::cout << "vec insert: " << vecTT << '\n' << "quad insert: " << qTT << '\n';
+
+        //for quadtree 160-180m ns
 
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         //#####################################################################################################################################################################
