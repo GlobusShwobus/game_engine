@@ -64,12 +64,10 @@ int main() {
         UniformGrid muhGrid(window, 32.0f, 32.0f);
         Stopwatch insertTime;
         //testing single insert
-        //for (std::size_t i = 0; i < myABBS.size();++i) {
-        //    muhGrid.insert(i, myABBS[i]);
-        //}
+        for (std::size_t i = 0; i < myABBS.size();++i) {
+            muhGrid.insert(i, myABBS[i]);
+        }
 
-        //testing bulk insert
-        muhGrid.build(myABBS);
         auto buildtime = insertTime.dt_nanosec();
 
         std::cout << "vec insert time: " << vecTT << '\n';

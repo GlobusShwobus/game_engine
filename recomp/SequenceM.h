@@ -418,7 +418,6 @@ namespace badEngine {
 				}
 			}
 		}
-
 		//shrinks to current size
 		void shrink_to_fit() {
 			set_capacity(mSize);
