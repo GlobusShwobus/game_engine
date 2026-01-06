@@ -51,37 +51,26 @@ int main() {
         //#####################################################################################################################################################################
         //#####################################################################################################################################################################
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
-        AABB window = AABB(0, 0, 960, 540);
+        AABB window = AABB(0, 0, 960, 640);
         NumberGenerator gen;
-        SequenceM<std::unique_ptr<AABB>> myABBS;
+        SequenceM<AABB> myABBS;
         myABBS.set_capacity(1000000);
         Stopwatch vecT;
         for (int i = 0; i < myABBS.capacity(); i++) {
-            myABBS.emplace_back(std::make_unique<AABB>(gen.random_float(1, 800), gen.random_float(1, 500), 25, 25));
+            myABBS.emplace_back(50, 50, 25, 25);
         }
         auto vecTT = vecT.dt_nanosec();
 
+        UniformGrid<AABB> muhGrid(window, 32.0f, 32.0f);
+        Stopwatch insertTime;
+        for (auto& tili:myABBS) {
+            muhGrid.insert(&tili, tili);
+        }
+        auto buildtime = insertTime.dt_nanosec();
 
-        UniformGrid<int> grid(window, 32,32);
+        std::cout << "vec insert time: " << vecTT << '\n';
+        std::cout << "grid insert time: " << buildtime << "\n";
 
-        Stopwatch stdtime;
-        int a1 = std::min(69, 420);
-        auto result1 = stdtime.dt_nanosec();
-
-        Stopwatch mytime;
-        int a2 = bad_minV(69,420);
-        auto result2 = mytime.dt_nanosec();
-
-        Stopwatch stdtime2;
-        int a3 = std::max(69, 420);
-        auto result3 = stdtime2.dt_nanosec();
-
-        Stopwatch mytime2;
-        int a4 = bad_maxV(69, 420);
-        auto result4 = mytime2.dt_nanosec();
-
-
-        std::cout << "std min: " << result1 << "\tstd max: " << result3 << "\nmy min: " << result2 << "\tmy max: " << result4 << '\n';
 
         //for quadtree 160-180m ns
 
