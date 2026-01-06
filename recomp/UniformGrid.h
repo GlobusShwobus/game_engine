@@ -51,7 +51,7 @@ namespace badEngine {
 				back.minx = back.minx < mColumns ? back.minx : mColumns - 1;
 				back.miny = back.miny < mRows ? back.miny : mRows - 1;
 				back.maxx = back.maxx < mColumns ? back.maxx : mColumns - 1;
-				back.miny = back.miny < mRows ? back.miny : mRows - 1;
+				back.maxy = back.miny < mRows ? back.miny : mRows - 1;
 			}
 			int user_index = 0;
 			for (const auto& each : ranges) {
