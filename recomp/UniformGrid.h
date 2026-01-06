@@ -9,10 +9,9 @@ namespace badEngine {
 
 	static constexpr std::size_t CELL_ADDATIVE = 3;
 
-	template<typename T>
 	class UniformGrid {
 
-		using Cell = SequenceM<T*>;
+		using Cell = SequenceM<int>;
 
 	public:
 
@@ -22,47 +21,57 @@ namespace badEngine {
 			mColumns = bounds.w / cellWidth;
 			mRows = bounds.h / cellHeight;
 
+			invCellW = 1.0f / mCellWidth;
+			invCellH = 1.0f / mCellHeight;
+
 			mCells.resize(mColumns * mRows);
 			
-			//for (auto& cell : mCells) {
-			//	cell.set_additive(CELL_ADDATIVE);//actually pretty good in this scenario, massive help for early inserts while not doing potentially wasteful allocations
-			//}
+			for (auto& cell : mCells) {
+				cell.set_additive(CELL_ADDATIVE);//actually pretty good in this scenario, massive help for early inserts while not doing potentially wasteful allocations
+			}
 		}
+		//TODO: later test with iterators/raw pointers/multi thread
+		void build(const SequenceM<AABB>& sizes)
+		{
+			//TODO: clear later
+			struct sizet4 {
+				std::size_t minx, miny, maxx, maxy;
+			};
+			SequenceM<sizet4> ranges;
+			ranges.set_capacity(sizes.size());
 
-		//void insert(T* user_data, const AABB& box)
-		//{
-		//	//calculate the range of cells the box will be stored in
-		//	//box is potentially sotored is multiple cells
-		//	std::size_t startx = static_cast<std::size_t>((box.x - mBounds.x) / mCellWidth);
-		//	std::size_t starty = static_cast<std::size_t>((box.y - mBounds.y) / mCellHeight);
-		//	std::size_t endx = static_cast<std::size_t>((box.x + box.w - mBounds.x) / mCellWidth);
-		//	std::size_t endy = static_cast<std::size_t>((box.y + box.h - mBounds.y) / mCellHeight);
-		//
-		//	//box may be partially on the grid from any side. this has to be legal logically as collision with even a partial is correct
-		//	//to avoid accessing invalid indexes, clamp values
-		//	startx = bad_minV(startx, mColumns - 1);
-		//	starty = bad_minV(starty, mRows - 1);
-		//	endx   = bad_minV(endx, mColumns - 1);
-		//	endy   = bad_minV(endy, mRows - 1);
-		//
-		//	//insert user_data into all overlapping indexes
-		//
-		//	for (std::size_t y = starty; y < endy; ++y) {
-		//		for (std::size_t x = startx; x < endx; ++x) {
-		//			std::size_t index = y * mColumns + x;
-		//			mCells[index].push_back(user_data);
-		//		}
-		//	}
-		//}
+			for (const auto& box : sizes) {
+				ranges.emplace_back();
+				auto& back = ranges.back();
+				back.minx = static_cast<std::size_t>((box.x - mBounds.x) * invCellW);
+				back.miny = static_cast<std::size_t>((box.y - mBounds.y) * invCellH);
+				back.maxx = static_cast<std::size_t>((box.x + box.w - mBounds.x) * invCellW);
+				back.miny = static_cast<std::size_t>((box.y + box.h - mBounds.y) * invCellH);
 
-		void insert(T* user_data, const AABB& box)
+				back.minx = back.minx < mColumns ? back.minx : mColumns - 1;
+				back.miny = back.miny < mRows ? back.miny : mRows - 1;
+				back.maxx = back.maxx < mColumns ? back.maxx : mColumns - 1;
+				back.miny = back.miny < mRows ? back.miny : mRows - 1;
+			}
+			int user_index = 0;
+			for (const auto& each : ranges) {
+				for (std::size_t y = each.miny; y < each.maxy; ++y) {
+					for (std::size_t x = each.minx; x < each.maxx; ++x) {
+						std::size_t index = y * mColumns + x;
+						mCells[index].emplace_back(user_index++);
+					}
+				}
+			}
+
+		}
+		void insert(int user_index, const AABB& box)
 		{
 			//calculate the range of cells the box will be stored in
 			//box is potentially sotored is multiple cells
-			std::size_t startx = static_cast<std::size_t>((box.x - mBounds.x) / mCellWidth);
-			std::size_t starty = static_cast<std::size_t>((box.y - mBounds.y) / mCellHeight);
-			std::size_t endx = static_cast<std::size_t>((box.x + box.w - mBounds.x) / mCellWidth);
-			std::size_t endy = static_cast<std::size_t>((box.y + box.h - mBounds.y) / mCellHeight);
+			std::size_t startx = static_cast<std::size_t>((box.x - mBounds.x) * invCellW);
+			std::size_t starty = static_cast<std::size_t>((box.y - mBounds.y) * invCellH);
+			std::size_t endx   = static_cast<std::size_t>((box.x + box.w - mBounds.x) * invCellW);
+			std::size_t endy   = static_cast<std::size_t>((box.y + box.h - mBounds.y) * invCellH);
 
 			//box may be partially on the grid from any side. this has to be legal logically as collision with even a partial is correct
 			//to avoid accessing invalid indexes, clamp values
@@ -71,13 +80,11 @@ namespace badEngine {
 			endx = endx < mColumns ? endx : mColumns - 1;
 			endy = endy < mRows ? endy : mRows - 1;
 
-
 			//insert user_data into all overlapping indexes
-
 			for (std::size_t y = starty; y < endy; ++y) {
 				for (std::size_t x = startx; x < endx; ++x) {
 					std::size_t index = y * mColumns + x;
-					mCells[index].push_back(user_data);
+					mCells[index].emplace_back(user_index);
 				}
 			}
 		}
@@ -93,6 +100,10 @@ namespace badEngine {
 		std::size_t mRows;
 		float mCellWidth;
 		float mCellHeight;
+
+		//invCells are better than mCellWidth for math, so if cell sized don't matter remove them later
+		float invCellW;
+		float invCellH;
 	};
 }
 
