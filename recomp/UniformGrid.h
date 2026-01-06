@@ -46,7 +46,7 @@ namespace badEngine {
 				back.minx = static_cast<std::size_t>((box.x - mBounds.x) * invCellW);
 				back.miny = static_cast<std::size_t>((box.y - mBounds.y) * invCellH);
 				back.maxx = static_cast<std::size_t>((box.x + box.w - mBounds.x) * invCellW);
-				back.miny = static_cast<std::size_t>((box.y + box.h - mBounds.y) * invCellH);
+				back.maxy = static_cast<std::size_t>((box.y + box.h - mBounds.y) * invCellH);
 
 				back.minx = back.minx < mColumns ? back.minx : mColumns - 1;
 				back.miny = back.miny < mRows ? back.miny : mRows - 1;
