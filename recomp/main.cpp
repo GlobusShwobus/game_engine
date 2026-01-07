@@ -60,26 +60,34 @@ int main() {
             myABBS.emplace_back(gen.random_float(0,959), gen.random_float(0,639), gen.random_float(1,64), gen.random_float(1,64));
         }
         auto wtf = vecT.dt_nanosec();
-
         UniformGrid muhGrid(window, 32.0f, 32.0f);
-    
-        Stopwatch insertTime;
         muhGrid.insert(myABBS.begin(), myABBS.end(), 0);
-        auto it = insertTime.dt_nanosec();
-
-        Stopwatch clearTime;
-        muhGrid.clear();
-        auto ct = clearTime.dt_nanosec();
 
 
-        Stopwatch reinsertTime;
-        for (std::size_t i = 0; i < myABBS.size(); ++i) {
-            muhGrid.insert(i, myABBS[i]);
+        const AABB region = AABB(240, 240, 240, 240);
+
+        SequenceM<int> queryVec;
+        std::unordered_set<int> querySet;
+        queryVec.set_capacity(10000);
+        querySet.reserve(10000);
+
+        Stopwatch queryRegionVecT;
+        muhGrid.query_region_vec(region, queryVec);
+        for (auto& i : queryVec) {
+            myABBS[i].intersects(region);
         }
-        auto rit = reinsertTime.dt_nanosec();
 
+        auto queryRegionVecTime = queryRegionVecT.dt_nanosec();
 
+        Stopwatch queryRegionSetT;
+        muhGrid.query_region_set(region, querySet);
+        for (auto& i : querySet) {
+            myABBS[i].intersects(region);
+        }
+        auto queryRegionSetTime = queryRegionSetT.dt_nanosec();
 
+        std::cout << "query vec: size ( " << queryVec.size() << " ) time taken ( " << queryRegionVecTime << " )\n";
+        std::cout << "query set: size ( " << querySet.size() << " ) time taken ( " << queryRegionSetTime << " )\n";
         //for quadtree 160-180m ns
 
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 

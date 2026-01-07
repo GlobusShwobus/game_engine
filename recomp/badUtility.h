@@ -26,8 +26,8 @@ namespace badEngine {
 	concept VECTOR_TYPE = ONE_OF<std::remove_cvref_t<T>, short, int, long, long long, float, double, long double> && BY_VALUE_TYPE<T>;
 
 
-	template<typename T, typename U = T>
-	concept LESS_THAN_COMPARE = requires (const T & x, const U & y) {
+	template<typename T>
+	concept LESS_THAN_COMPARE = requires (const T & x, const T & y) {
 		{ x < y }->std::convertible_to<bool>;
 	};
 
@@ -37,13 +37,22 @@ namespace badEngine {
 	template<typename T>
 	concept IS_SLLIST_COMPATIBLE = std::destructible<T> && BY_VALUE_TYPE<T>;
 
-	template <typename T, typename U> requires LESS_THAN_COMPARE<T>
+	template <typename T, typename U> requires LESS_THAN_COMPARE<std::remove_cvref_t<T>>
 	constexpr auto bad_maxV(const T& x, const U& y)noexcept {
 		return (x < y) ? y : x;
 	}
-	template<typename T, typename U> requires LESS_THAN_COMPARE<T>
+	template<typename T, typename U> requires LESS_THAN_COMPARE<std::remove_cvref_t<T>>
 	constexpr auto bad_minV(const T& x, const U& y)noexcept {
 		return (x < y) ? x : y;
+	}
+
+	//undefined behavior if low is higher than high
+	template<typename T>
+	requires LESS_THAN_COMPARE<std::remove_cvref_t<T>>
+	constexpr const T& bad_clamp(const T& val, const T& low, const T& high) {
+		if (val < low)return low;
+		if (high < val)return high;
+		return val;
 	}
 
 	template<typename T>requires MATHEMATICAL_PRIMITIVE<T>
