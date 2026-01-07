@@ -3,9 +3,11 @@
 #include "SequenceM.h"
 #include "Rectangle.h"
 
+
 //TODO asserts for constructor
 
 namespace badEngine {
+
 
 	static constexpr std::size_t CELL_ADDATIVE = 3;
 	class UniformGrid {
@@ -66,8 +68,9 @@ namespace badEngine {
 				cell.clear();
 			}
 		}
-
+		
 		void query_pairs(SequenceM<std::pair<int, int>>& pairs)noexcept {
+			//duplicate entries are fine, tested it with unordered_set hashing bs, and it's night and day
 			//for every cell
 			for (const auto& cell : mCells) {
 				//collect all potential collisions
@@ -78,6 +81,7 @@ namespace badEngine {
 				}
 			}
 		}
+
 
 		const AABB& get_grid_bounds()noexcept {
 			return mBounds;

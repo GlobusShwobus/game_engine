@@ -79,45 +79,6 @@ int main() {
         auto rit = reinsertTime.dt_nanosec();
 
 
-        Stopwatch NsquaredTime;
-        std::size_t collisionsTried = 0;
-        std::size_t collisionsDetected = 0;
-        for (std::size_t a = 0; a < myABBS.size(); ++a) {
-            for (std::size_t b = a+1; b < myABBS.size(); ++b) {
-                if (myABBS[a].intersects(myABBS[b])) {
-                    collisionsDetected++;
-                }
-                collisionsTried++;
-            }
-        }
-        auto NsquaredTimeTaken = NsquaredTime.dt_nanosec();
-        
-
-        SequenceM<std::pair<int, int>> potentials;
-        potentials.set_capacity(myABBS.size());//arbitrary prediction
-
-        Stopwatch GridQueryTime;
-        muhGrid.query_pairs(potentials);
-        auto GQTR = GridQueryTime.dt_nanosec();
-
-        Stopwatch queryResultChecker;
-        std::size_t collisionsTried2 = 0;
-        std::size_t collisionsDetected2 = 0;
-        for (const auto pair: potentials) {
-            if (myABBS[pair.first].intersects(myABBS[pair.second])) {
-                collisionsDetected2++;
-            }
-            collisionsTried2++;
-        }
-        auto QRC = queryResultChecker.dt_nanosec();
-
-
-
-        std::cout << "vec: " << wtf << '\n';
-        std::cout << "grid insert time: " << it << "\nclear time: " << ct << "\nreinsert time: " << rit << "\n";
-        std::cout << "\n\nNAIVE N SQUARED SEARCH AND DETECT TIME: " << NsquaredTimeTaken << "\tcollisions tested: " << collisionsTried << "\tcollisions found: " << collisionsDetected << "\n";
-        std::cout << "\n\nGRID SEARCH AND QUERY TIME: " << GQTR << "\tcollisions TEST TIME: " << QRC << "\tcombined: " << GQTR+ QRC << "\tcollisions tested: "<< collisionsTried2<<"\tcollisions found: "<< collisionsDetected2 <<'\n';
-
 
         //for quadtree 160-180m ns
 
