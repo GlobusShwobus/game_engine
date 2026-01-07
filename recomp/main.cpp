@@ -1,3 +1,4 @@
+#include "SLList.h"
 #include "Stopwatch.h"
 #include "GraphicsSys.h"
 #include "Configs.h"
@@ -12,7 +13,7 @@
 #include "UniformGrid.h"
 
 #include "SequenceM.h"
-#include "SLList.h"
+
 #include "NumberGenerator.h"
 #include "Transform.h"
 #include "Color.h"
@@ -40,7 +41,6 @@ int main() {
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
     {
         using namespace badEngine;
-
         //configs
         Configs windowConfig("SystemManagerConfig.json");
 
@@ -54,24 +54,69 @@ int main() {
         AABB window = AABB(0, 0, 960, 640);
         NumberGenerator gen;
         SequenceM<AABB> myABBS;
-        myABBS.set_capacity(1000000);
+        myABBS.set_capacity(10000);
         Stopwatch vecT;
         for (int i = 0; i < myABBS.capacity(); i++) {
-            myABBS.emplace_back(50, 50, 25, 25);
+            myABBS.emplace_back(gen.random_float(0,959), gen.random_float(0,639), gen.random_float(1,64), gen.random_float(1,64));
         }
-        auto vecTT = vecT.dt_nanosec();
+        auto wtf = vecT.dt_nanosec();
 
         UniformGrid muhGrid(window, 32.0f, 32.0f);
+    
         Stopwatch insertTime;
-        //testing single insert
-        for (std::size_t i = 0; i < myABBS.size();++i) {
+        muhGrid.insert(myABBS.begin(), myABBS.end(), 0);
+        auto it = insertTime.dt_nanosec();
+
+        Stopwatch clearTime;
+        muhGrid.clear();
+        auto ct = clearTime.dt_nanosec();
+
+
+        Stopwatch reinsertTime;
+        for (std::size_t i = 0; i < myABBS.size(); ++i) {
             muhGrid.insert(i, myABBS[i]);
         }
+        auto rit = reinsertTime.dt_nanosec();
 
-        auto buildtime = insertTime.dt_nanosec();
 
-        std::cout << "vec insert time: " << vecTT << '\n';
-        std::cout << "grid insert time: " << buildtime << "\n";
+        Stopwatch NsquaredTime;
+        std::size_t collisionsTried = 0;
+        std::size_t collisionsDetected = 0;
+        for (std::size_t a = 0; a < myABBS.size(); ++a) {
+            for (std::size_t b = a+1; b < myABBS.size(); ++b) {
+                if (myABBS[a].intersects(myABBS[b])) {
+                    collisionsDetected++;
+                }
+                collisionsTried++;
+            }
+        }
+        auto NsquaredTimeTaken = NsquaredTime.dt_nanosec();
+        
+
+        SequenceM<std::pair<int, int>> potentials;
+        potentials.set_capacity(myABBS.size());//arbitrary prediction
+
+        Stopwatch GridQueryTime;
+        muhGrid.query_pairs(potentials);
+        auto GQTR = GridQueryTime.dt_nanosec();
+
+        Stopwatch queryResultChecker;
+        std::size_t collisionsTried2 = 0;
+        std::size_t collisionsDetected2 = 0;
+        for (const auto pair: potentials) {
+            if (myABBS[pair.first].intersects(myABBS[pair.second])) {
+                collisionsDetected2++;
+            }
+            collisionsTried2++;
+        }
+        auto QRC = queryResultChecker.dt_nanosec();
+
+
+
+        std::cout << "vec: " << wtf << '\n';
+        std::cout << "grid insert time: " << it << "\nclear time: " << ct << "\nreinsert time: " << rit << "\n";
+        std::cout << "\n\nNAIVE N SQUARED SEARCH AND DETECT TIME: " << NsquaredTimeTaken << "\tcollisions tested: " << collisionsTried << "\tcollisions found: " << collisionsDetected << "\n";
+        std::cout << "\n\nGRID SEARCH AND QUERY TIME: " << GQTR << "\tcollisions TEST TIME: " << QRC << "\tcombined: " << GQTR+ QRC << "\tcollisions tested: "<< collisionsTried2<<"\tcollisions found: "<< collisionsDetected2 <<'\n';
 
 
         //for quadtree 160-180m ns
