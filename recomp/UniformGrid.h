@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_set>
-
 #include "SequenceM.h"
 #include "Rectangle.h"
 
@@ -83,32 +81,7 @@ namespace badEngine {
 				}
 			}
 		}
-
-		void query_region_set(const AABB& region, std::unordered_set<int>& results)noexcept {
-			//calculate the range of cells region is within
-			std::size_t startx = static_cast<std::size_t>((region.x - mBounds.x) * invCellW);
-			std::size_t starty = static_cast<std::size_t>((region.y - mBounds.y) * invCellH);
-			std::size_t endx = static_cast<std::size_t>((region.x + region.w - mBounds.x) * invCellW);
-			std::size_t endy = static_cast<std::size_t>((region.y + region.h - mBounds.y) * invCellH);
-			//unlike in insert, here a clamp is required
-			//in insert, it is assumed the user knows his box is within bounds of the grid system, plus it removes a branch
-			//here however it is required to allow the user to query a region that is partially or totally outside of the grid
-			startx = bad_clamp(startx,   0ull, mColumns - 1);
-			starty = bad_clamp(starty,   0ull, mRows - 1);
-			endx   = bad_clamp(endx + 1, 0ull, mColumns);
-			endy   = bad_clamp(endy + 1, 0ull, mRows);
-
-
-			for (std::size_t y = starty; y < endy; ++y) {
-				for (std::size_t x = startx; x < endx; ++x) {
-					std::size_t index = y * mColumns + x;
-					for (int id : mCells[index]) {
-						results.insert(id);
-					}
-				}
-			}
-		}
-		void query_region_vec(const AABB& region, SequenceM<int>& results)noexcept {
+		void query_region(const AABB& region, SequenceM<int>& results)noexcept {
 			//calculate the range of cells region is within
 			std::size_t startx = static_cast<std::size_t>((region.x - mBounds.x) * invCellW);
 			std::size_t starty = static_cast<std::size_t>((region.y - mBounds.y) * invCellH);
