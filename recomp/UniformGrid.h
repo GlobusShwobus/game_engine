@@ -5,6 +5,7 @@
 
 
 //TODO asserts for constructor
+//TODO:: check if checking validity is better than clamps in query_region
 
 namespace badEngine {
 
@@ -82,22 +83,24 @@ namespace badEngine {
 		}
 		void query_region(const AABB& region, SequenceM<int>& results)noexcept {
 			//calculate the range of cells region is within
-			std::size_t startx = static_cast<std::size_t>((region.x - mBounds.x) * invCellW);
-			std::size_t starty = static_cast<std::size_t>((region.y - mBounds.y) * invCellH);
-			std::size_t endx = static_cast<std::size_t>((region.x + region.w - mBounds.x) * invCellW);
-			std::size_t endy = static_cast<std::size_t>((region.y + region.h - mBounds.y) * invCellH);
+			int startx = static_cast<int>((region.x - mBounds.x) * invCellW);
+			int starty = static_cast<int>((region.y - mBounds.y) * invCellH);
+			int endx   = static_cast<int>((region.x + region.w - mBounds.x) * invCellW);
+			int endy   = static_cast<int>((region.y + region.h - mBounds.y) * invCellH);
 			//unlike in insert, here a clamp is required
 			//in insert, it is assumed the user knows his box is within bounds of the grid system, plus it removes a branch
 			//here however it is required to allow the user to query a region that is partially or totally outside of the grid
-			startx = bad_clamp(startx, 0ull, mColumns - 1);
-			starty = bad_clamp(starty, 0ull, mRows - 1);
-			endx = bad_clamp(endx + 1, 0ull, mColumns);
-			endy = bad_clamp(endy + 1, 0ull, mRows);
+			
+			//TODO:: check if checking validity is better than clamps
+			startx = bad_clamp(startx, 0, mColumns - 1);
+			starty = bad_clamp(starty, 0, mRows - 1);
+			endx   = bad_clamp(endx + 1, 0, mColumns);
+			endy   = bad_clamp(endy + 1, 0, mRows);
 		
 		
-			for (std::size_t y = starty; y < endy; ++y) {
-				for (std::size_t x = startx; x < endx; ++x) {
-					std::size_t index = y * mColumns + x;
+			for (int y = starty; y < endy; ++y) {
+				for (int x = startx; x < endx; ++x) {
+					std::size_t index = static_cast<std::size_t>(y) * mColumns + x;
 					for (int id : mCells[index]) {
 						results.emplace_back(id);
 					}
@@ -142,8 +145,10 @@ namespace badEngine {
 	private:
 		SequenceM<Cell> mCells;
 		AABB mBounds;
-		std::size_t mColumns;
-		std::size_t mRows;
+		
+		int mColumns;
+		int mRows;
+
 		float mCellWidth;
 		float mCellHeight;
 
