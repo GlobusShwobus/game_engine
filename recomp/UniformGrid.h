@@ -29,10 +29,22 @@ namespace badEngine {
 			mCells.resize(mColumns * mRows);
 
 			for (auto& cell : mCells) {
+				//cell.set_capacity(10);
 				cell.set_additive(CELL_ADDATIVE);//actually pretty good in this scenario, massive help for early inserts while not doing potentially wasteful allocations
 			}
 		}
-
+		//insert does not check if box top left is within the range of the grid
+		//if x or y aren't in range they will be inserted to the clamped index at x, y or both x and y axis
+		void insert(int user_index, const AABB& box)noexcept
+		{
+			const auto g4 = grid_range(box);
+			for (int y = g4.miny; y < g4.maxy; ++y) {
+				const int offset = y * mColumns;//cache multiplication, minor thing...
+				for (int x = g4.minx; x < g4.maxx; ++x) {
+					mCells[static_cast<std::size_t>(offset + x)].emplace_back(user_index);
+				}
+			}
+		}
 		template<std::input_iterator InputIt>
 			requires std::same_as<std::remove_cvref_t<std::iter_reference_t<InputIt>>, AABB>
 		void insert(InputIt first, InputIt last, int begin_index_naming) {
@@ -40,33 +52,6 @@ namespace badEngine {
 				insert(begin_index_naming++, *first);
 			}
 		}
-		//insert does not check if box top left is within the range of the grid
-		//if x or y aren't in range they will be inserted to the clamped index at x, y or both x and y axis
-		void insert(int user_index, const AABB& box)noexcept
-		{
-			//calculate the range of cells the box will be stored in
-			//box is potentially sotored is multiple cells
-			int startx = static_cast<int>((box.x - mBounds.x) * invCellW);
-			int starty = static_cast<int>((box.y - mBounds.y) * invCellH);
-			int endx = static_cast<int>(std::ceil((box.x + box.w - mBounds.x) * invCellW));
-			int endy = static_cast<int>(std::ceil((box.y + box.h - mBounds.y) * invCellH));
-		
-			//starting positions must be clamped to beginning edges of the screen or 1 before the last
-			startx = bad_clamp(startx, 0, mColumns - 1);
-			starty = bad_clamp(starty, 0, mRows - 1);
-			endx = bad_clamp(endx, 0, mColumns);
-			endy = bad_clamp(endy, 0, mRows);
-		
-			//insert user_data into all overlapping indexes
-			for (int y = starty; y < endy; ++y) {
-				const int offset = y * mColumns;
-				for (int x = startx; x < endx; ++x) {
-					mCells[static_cast<std::size_t>(offset + x)].emplace_back(user_index);
-				}
-			}
-		}
-
-
 		//returns all potential collision candidates, includes duplicates
 		//doing basic intersecion tests with duplicates should be always be better than cache misses, otherwise sorting is left to the user
 		void query_pairs(SequenceM<std::pair<int, int>>& pairs)noexcept {
@@ -80,24 +65,14 @@ namespace badEngine {
 				}
 			}
 		}
-		//collects all elements within the reguion
-		//the rectangle can be partially intersecting the bounds of the grid but returns no results of the region is fully outside
+		//collects all elements within the region
+		//the rectangle can be partially intersecting the bounds of the grid but returns no results if the region is fully outside
 		void query_region(const AABB& region, SequenceM<int>& results)noexcept {
-			//calculate the range of cells region is within
-			int startx = static_cast<int>((region.x - mBounds.x) * invCellW);
-			int starty = static_cast<int>((region.y - mBounds.y) * invCellH);
-			int endx   = static_cast<int>(std::ceil((region.x + region.w - mBounds.x) * invCellW));
-			int endy   = static_cast<int>(std::ceil((region.y + region.h - mBounds.y) * invCellH));
-
-			
-			startx = bad_clamp(startx, 0, mColumns - 1);
-			starty = bad_clamp(starty, 0, mRows - 1);
-			endx   = bad_clamp(endx, 0, mColumns);
-			endy   = bad_clamp(endy, 0, mRows);
+			const auto g4 = grid_range(region);
 		
-			for (int y = starty; y < endy; ++y) {
+			for (int y = g4.miny; y < g4.maxy; ++y) {
 				const int offset = y * mColumns;
-				for (int x = startx; x < endx; ++x) {					
+				for (int x = g4.minx; x < g4.maxx; ++x) {					
 					for (int id : mCells[static_cast<std::size_t>(offset + x)]) {
 						results.emplace_back(id);
 					}
@@ -125,26 +100,53 @@ namespace badEngine {
 		void maintain_uniform_memory(std::size_t cell_capacity_target) {
 
 		}
-
+		//empties out all cells, leaves capacity intact
 		void clear()noexcept {
 			for (auto& cell : mCells) {
 				cell.clear();
 			}
 		}
-
+		//returns the structure itself
 		const SequenceM<Cell>& get_cells()const noexcept {
 			return mCells;
 		}
+		//get the bounds of the grid
 		const AABB& get_grid_bounds()noexcept {
 			return mBounds;
 		}
-
+		//get how much elements are actually stored
+		//keep in mind an object can overlap multiple cells
 		std::size_t debug_elements_count()const {
 			std::size_t counter = 0;
 			for (auto& cell : mCells) {
 				counter += cell.size();
 			}
 			return counter;
+		}
+	private:
+
+		struct GridInt4 {
+			int minx;
+			int miny;
+			int maxx;
+			int maxy;
+		};
+
+		inline GridInt4 grid_range(const AABB& box)const noexcept
+		{
+			GridInt4 g4;
+			//NOTE: the reason for std::ceil is because we must include partially overlapping cells
+			g4.minx = static_cast<int>((box.x - mBounds.x) * invCellW);					     //left edge (round down)
+			g4.miny = static_cast<int>((box.y - mBounds.y) * invCellH);					     //top edge (round down)
+			g4.maxx = static_cast<int>(std::ceil((box.x + box.w - mBounds.x) * invCellW));	 //right edge (round up)
+			g4.maxy = static_cast<int>(std::ceil((box.y + box.h - mBounds.y) * invCellH));	 //bottom edge (round up)
+
+			//NOTE: the reason for clamp high difference is because we do 0 based indexing AND the loop is exclusionary (using < instead of <=)
+			g4.minx = bad_clamp(g4.minx, 0, mColumns - 1);	    //clamp x to left edge if negative, to right if wider than width, or keep
+			g4.miny = bad_clamp(g4.miny, 0, mRows - 1);		    //clamp y to top edge if negative, to bottom if deeper than height, or keep
+			g4.maxx = bad_clamp(g4.maxx, 0, mColumns);			//clamp x to left edge if negative, to right if wider than width, or keep
+			g4.maxy = bad_clamp(g4.maxy, 0, mRows);				//clamp y to top edge if negative, to bottom if deeper than height, or keep
+			return g4;
 		}
 
 	private:
