@@ -53,6 +53,7 @@ namespace badEngine {
 
 	//assumes rays dir is already set in unit vector scale
 	//rays should be constructed in bulk up front
+	//provides no output other than a bool that states "at some point yes, it collides"
 	inline bool sweep_fast(const Ray& ray, const AABB& target)noexcept
 	{
 		//inv dir

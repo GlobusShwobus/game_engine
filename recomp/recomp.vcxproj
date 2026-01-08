@@ -147,8 +147,6 @@
     <ClInclude Include="badUtility.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />
-    <ClInclude Include="Entity_Factory.h" />
-    <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="Configs.h" />
     <ClInclude Include="UniformGrid.h" />
     <ClInclude Include="Ray.h" />
@@ -160,7 +158,6 @@
     <ClInclude Include="Stopwatch.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="Transform.h" />
     <ClInclude Include="Vec2M.h" />
     <ClInclude Include="GraphicsSys.h" />
   </ItemGroup>

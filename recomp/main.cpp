@@ -15,7 +15,7 @@
 #include "SequenceM.h"
 
 #include "NumberGenerator.h"
-#include "Transform.h"
+
 #include "Color.h"
 #include "Camera.h"
 #include "Scripts.h"
@@ -41,6 +41,7 @@ int main() {
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
     {
         using namespace badEngine;
+        //using namespace badEngine;
         //configs
         Configs windowConfig("SystemManagerConfig.json");
 
@@ -61,9 +62,25 @@ int main() {
         }
         auto wtf = vecT.dt_nanosec();
         UniformGrid muhGrid(window, 32.0f, 32.0f);
-        muhGrid.insert(myABBS.begin(), myABBS.end(), 0);
 
-        //for quadtree 160-180m ns
+
+        std::size_t some_time = 0;
+        while (some_time != 100000) {
+            muhGrid.insert(myABBS.begin(), myABBS.end(), 0);
+
+            AABB find = AABB(gen.random_float(0,959), gen.random_float(0,639), 64, 64);
+
+            SequenceM<int> list;
+            list.set_capacity(5000);
+
+            muhGrid.query_region(find, list);
+
+
+            muhGrid.clear();
+
+            some_time++;
+        }
+        return 1;
 
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         //#####################################################################################################################################################################

@@ -79,7 +79,6 @@ DEPRICATED OLD COLLISION MODEL, BVH + hashgrid should be used...
 #include "Camera.h"
 #include "SDL3/SDL_events.h"
 
-#include "Transform.h"
 #include "SequenceM.h"
 
 namespace badEngine {

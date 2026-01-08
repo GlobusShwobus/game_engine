@@ -85,9 +85,14 @@ namespace badEngine {
 
 	using AABB = Rectangle<float>;
 
-	template<typename U>
-	constexpr  Rectangle<U> union_rect(const Rectangle<U>& A, const Rectangle<U>& B)noexcept {
+	template<typename T>
+	constexpr  Rectangle<T> union_rect(const Rectangle<T>& A, const Rectangle<T>& B)noexcept {
 		return A.union_with(B);
+	}
+	//can be used as a querying helper to capture elements near point
+	template <typename T>
+	constexpr Rectangle<T> rect_from_center_point(const vec2<T>& point, T halfWidth, T halfHeight)noexcept {
+		return Rectangle<T>(point.x - halfWidth, point.y - halfHeight, halfWidth + halfWidth, halfHeight + halfHeight);
 	}
 
 	template<typename U>

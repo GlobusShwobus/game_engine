@@ -17,9 +17,6 @@
     <Filter Include="MATHY_GEOMETRY">
       <UniqueIdentifier>{23dee9f4-19a6-42ef-8f04-3bd25fb30a85}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Entity">
-      <UniqueIdentifier>{533b2fbe-4f0f-4701-88c0-0fa9fea5e181}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Scripts">
       <UniqueIdentifier>{4bec3fdd-bf36-4a6b-a2e1-e58aea8e5e3b}</UniqueIdentifier>
     </Filter>
@@ -32,9 +29,6 @@
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
     <ClInclude Include="badUtility.h">
-      <Filter>GENERIC_UTILITY</Filter>
-    </ClInclude>
-    <ClInclude Include="FrameTimer.h">
       <Filter>GENERIC_UTILITY</Filter>
     </ClInclude>
     <ClInclude Include="NumberGenerator.h">
@@ -52,17 +46,11 @@
     <ClInclude Include="Vec2M.h">
       <Filter>MATHY_GEOMETRY</Filter>
     </ClInclude>
-    <ClInclude Include="Transform.h">
-      <Filter>MATHY_GEOMETRY</Filter>
-    </ClInclude>
     <ClInclude Include="Camera.h">
       <Filter>RENDERING_STUFF</Filter>
     </ClInclude>
     <ClInclude Include="Color.h">
       <Filter>RENDERING_STUFF</Filter>
-    </ClInclude>
-    <ClInclude Include="Entity_Factory.h">
-      <Filter>Entity</Filter>
     </ClInclude>
     <ClInclude Include="Scripts.h">
       <Filter>Scripts</Filter>

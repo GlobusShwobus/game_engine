@@ -4,7 +4,6 @@
 #include "Rectangle.h"
 
 
-
 //TODO asserts for constructor
 
 namespace badEngine {
@@ -94,8 +93,8 @@ namespace badEngine {
 			starty = bad_clamp(starty, 0ull, mRows - 1);
 			endx = bad_clamp(endx + 1, 0ull, mColumns);
 			endy = bad_clamp(endy + 1, 0ull, mRows);
-
-
+		
+		
 			for (std::size_t y = starty; y < endy; ++y) {
 				for (std::size_t x = startx; x < endx; ++x) {
 					std::size_t index = y * mColumns + x;
@@ -106,6 +105,17 @@ namespace badEngine {
 			}
 		}
 
+		void query_ray() {
+
+		}
+		void query_neighbors() {
+
+		}
+		//if this function is called on a populated grid, it will remove elemnts
+		//intended usage: call it periodically IF there are a lot of moving objects on a cleared out grid
+		void maintain_uniform_memory(std::size_t cell_capacity_target) {
+
+		}
 
 		void clear()noexcept {
 			for (auto& cell : mCells) {
