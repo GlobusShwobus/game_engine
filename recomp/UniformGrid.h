@@ -40,37 +40,70 @@ namespace badEngine {
 				insert(begin_index_naming++, *first);
 			}
 		}
-		//insert does not check if box is within the bounds of the UniformGrid which means it will cause invalid memory access violations
-		//either check if insertable is within bounds manually and prune insertables assure otherwise your box is within bounds
-		//box right and bottom sides CAN be outside of the grid bounds but top left origin can not
+		//insert does not check if box top left is within the range of the grid
+		//if x or y aren't in range they will be inserted to the clamped index at x, y or both x and y axis
 		void insert(int user_index, const AABB& box)noexcept
 		{
 			//calculate the range of cells the box will be stored in
 			//box is potentially sotored is multiple cells
-			std::size_t startx = static_cast<std::size_t>((box.x - mBounds.x) * invCellW);
-			std::size_t starty = static_cast<std::size_t>((box.y - mBounds.y) * invCellH);
-			std::size_t endx = static_cast<std::size_t>((box.x + box.w - mBounds.x) * invCellW);
-			std::size_t endy = static_cast<std::size_t>((box.y + box.h - mBounds.y) * invCellH);
-
-			//box may be partially on the grid from any side. this has to be legal logically as collision with even a partial is correct
-			//to avoid accessing invalid indexes, clamp values
-			startx = bad_minV(startx, mColumns-1);
-			starty = bad_minV(starty, mRows-1);
-			endx   = bad_minV(endx, mColumns-1);
-			endy   = bad_minV(endy, mRows -1);
-
+			int startx = static_cast<int>((box.x - mBounds.x) * invCellW);
+			int starty = static_cast<int>((box.y - mBounds.y) * invCellH);
+			int endx = static_cast<int>((box.x + box.w - mBounds.x) * invCellW);
+			int endy = static_cast<int>((box.y + box.h - mBounds.y) * invCellH);
+		
+			//starting positions must be clamped to beginning edges of the screen or 1 before the last
+			startx = bad_clamp(startx, 0, mColumns - 1);
+			starty = bad_clamp(starty, 0, mRows - 1);
+			endx = bad_clamp(endx, 0, mColumns - 1);
+			endy = bad_clamp(endy, 0, mRows - 1);
+		
 			//insert user_data into all overlapping indexes
-			for (std::size_t y = starty; y < endy; ++y) {
-				for (std::size_t x = startx; x < endx; ++x) {
-					std::size_t index = y * mColumns + x;
-					mCells[index].emplace_back(user_index);
+			for (int y = starty; y <= endy; ++y) {
+				const int offset = y * mColumns;
+				for (int x = startx; x <= endx; ++x) {
+					mCells[static_cast<std::size_t>(offset + x)].emplace_back(user_index);
 				}
 			}
 		}
 
+
+		//void insert(int user_index, const AABB& box)noexcept
+		//{
+		//	//calculate the range of cells the box will be stored in
+		//	//box is potentially sotored is multiple cells
+		//	std::size_t startx = static_cast<std::size_t>((box.x - mBounds.x) * invCellW);
+		//	std::size_t starty = static_cast<std::size_t>((box.y - mBounds.y) * invCellH);
+		//	std::size_t endx = static_cast<std::size_t>((box.x + box.w - mBounds.x) * invCellW);
+		//	std::size_t endy = static_cast<std::size_t>((box.y + box.h - mBounds.y) * invCellH);
+		//
+		//	//box may be partially on the grid from any side. this has to be legal logically as collision with even a partial is correct
+		//	//to avoid accessing invalid indexes, clamp values
+		//	startx = bad_minV(startx, mColumns - 1);
+		//	starty = bad_minV(starty, mRows - 1);
+		//	endx = bad_minV(endx, mColumns - 1);
+		//	endy = bad_minV(endy, mRows - 1);
+		//
+		//	//insert user_data into all overlapping indexes
+		//	for (std::size_t y = starty; y < endy; ++y) {
+		//		for (std::size_t x = startx; x < endx; ++x) {
+		//			std::size_t index = y * mColumns + x;
+		//			mCells[index].emplace_back(user_index);
+		//		}
+		//	}
+		//}
+
+
+		std::size_t debug_elements_count()const {
+			std::size_t counter = 0;
+			for (auto& cell : mCells) {
+				counter += cell.size();
+			}
+			return counter;
+		}
+
 		//returns all potential collision candidates, includes duplicates
+		//doing basic intersecion tests with duplicates should be always be better than cache misses, otherwise sorting is left to the user
 		void query_pairs(SequenceM<std::pair<int, int>>& pairs)noexcept {
-			//duplicate entries are fine, tested it with unordered_set hashing bs, and it's night and day
 			//for every cell
 			for (const auto& cell : mCells) {
 				//collect all potential collisions
@@ -81,6 +114,8 @@ namespace badEngine {
 				}
 			}
 		}
+		//collects all elements within the reguion
+		//the rectangle can be partially intersecting the bounds of the grid but returns no results of the region is fully outside
 		void query_region(const AABB& region, SequenceM<int>& results)noexcept {
 			//calculate the range of cells region is within
 			int startx = static_cast<int>((region.x - mBounds.x) * invCellW);
@@ -97,11 +132,10 @@ namespace badEngine {
 			endx   = bad_clamp(endx + 1, 0, mColumns);
 			endy   = bad_clamp(endy + 1, 0, mRows);
 		
-		
 			for (int y = starty; y < endy; ++y) {
-				for (int x = startx; x < endx; ++x) {
-					std::size_t index = static_cast<std::size_t>(y) * mColumns + x;
-					for (int id : mCells[index]) {
+				const int offset = y * mColumns;
+				for (int x = startx; x < endx; ++x) {					
+					for (int id : mCells[static_cast<std::size_t>(offset + x)]) {
 						results.emplace_back(id);
 					}
 				}

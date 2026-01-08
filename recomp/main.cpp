@@ -58,15 +58,17 @@ int main() {
         myABBS.set_capacity(10000);
         Stopwatch vecT;
         for (int i = 0; i < myABBS.capacity(); i++) {
-            myABBS.emplace_back(gen.random_float(0,959), gen.random_float(0,639), gen.random_float(1,64), gen.random_float(1,64));
+            myABBS.emplace_back(gen.random_float(0,959), gen.random_float(0,639), 1, 1);
         }
         auto wtf = vecT.dt_nanosec();
         UniformGrid muhGrid(window, 32.0f, 32.0f);
 
         Stopwatch time;
-        muhGrid.insert(myABBS.begin(), myABBS.end(), 0);
+        muhGrid.insert(myABBS.begin(), myABBS.end(), 0ll);
         auto t = time.dt_nanosec();
         std::cout << t << '\n';
+
+        std::cout << "elements count vec: " << myABBS.size() << "\nelements in grid: " << muhGrid.debug_elements_count() << "\n";
 
 
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
