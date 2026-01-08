@@ -104,13 +104,22 @@ namespace badEngine {
 				}
 			}
 		}
+		//converts a point to a cell index, returns -1 if point is outside of the grid
+		inline int query_cell_index(const float2& point)const noexcept {
+			int x = static_cast<int>((point.x - mBounds.x) * invCellW);
+			int y = static_cast<int>((point.y - mBounds.y) * invCellH);
 
+			if (x < 0 || x >= mColumns || y < 0 || y >= mRows) {
+				return -1;
+			}
+
+			return y * mColumns + x;
+		}
+		
 		void query_ray() {
 
 		}
-		void query_neighbors() {
 
-		}
 		//if this function is called on a populated grid, it will remove elemnts
 		//intended usage: call it periodically IF there are a lot of moving objects on a cleared out grid
 		void maintain_uniform_memory(std::size_t cell_capacity_target) {
@@ -123,6 +132,9 @@ namespace badEngine {
 			}
 		}
 
+		const SequenceM<Cell>& get_cells()const noexcept {
+			return mCells;
+		}
 		const AABB& get_grid_bounds()noexcept {
 			return mBounds;
 		}

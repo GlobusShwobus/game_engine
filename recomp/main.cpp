@@ -63,24 +63,11 @@ int main() {
         auto wtf = vecT.dt_nanosec();
         UniformGrid muhGrid(window, 32.0f, 32.0f);
 
+        Stopwatch time;
+        muhGrid.insert(myABBS.begin(), myABBS.end(), 0);
+        auto t = time.dt_nanosec();
+        std::cout << t << '\n';
 
-        std::size_t some_time = 0;
-        while (some_time != 100000) {
-            muhGrid.insert(myABBS.begin(), myABBS.end(), 0);
-
-            AABB find = AABB(gen.random_float(0,959), gen.random_float(0,639), 64, 64);
-
-            SequenceM<int> list;
-            list.set_capacity(5000);
-
-            muhGrid.query_region(find, list);
-
-
-            muhGrid.clear();
-
-            some_time++;
-        }
-        return 1;
 
         //TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE TEST CODE 
         //#####################################################################################################################################################################
