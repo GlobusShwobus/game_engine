@@ -48,58 +48,24 @@ namespace badEngine {
 			//box is potentially sotored is multiple cells
 			int startx = static_cast<int>((box.x - mBounds.x) * invCellW);
 			int starty = static_cast<int>((box.y - mBounds.y) * invCellH);
-			int endx = static_cast<int>((box.x + box.w - mBounds.x) * invCellW);
-			int endy = static_cast<int>((box.y + box.h - mBounds.y) * invCellH);
+			int endx = static_cast<int>(std::ceil((box.x + box.w - mBounds.x) * invCellW));
+			int endy = static_cast<int>(std::ceil((box.y + box.h - mBounds.y) * invCellH));
 		
 			//starting positions must be clamped to beginning edges of the screen or 1 before the last
 			startx = bad_clamp(startx, 0, mColumns - 1);
 			starty = bad_clamp(starty, 0, mRows - 1);
-			endx = bad_clamp(endx, 0, mColumns - 1);
-			endy = bad_clamp(endy, 0, mRows - 1);
+			endx = bad_clamp(endx, 0, mColumns);
+			endy = bad_clamp(endy, 0, mRows);
 		
 			//insert user_data into all overlapping indexes
-			for (int y = starty; y <= endy; ++y) {
+			for (int y = starty; y < endy; ++y) {
 				const int offset = y * mColumns;
-				for (int x = startx; x <= endx; ++x) {
+				for (int x = startx; x < endx; ++x) {
 					mCells[static_cast<std::size_t>(offset + x)].emplace_back(user_index);
 				}
 			}
 		}
 
-
-		//void insert(int user_index, const AABB& box)noexcept
-		//{
-		//	//calculate the range of cells the box will be stored in
-		//	//box is potentially sotored is multiple cells
-		//	std::size_t startx = static_cast<std::size_t>((box.x - mBounds.x) * invCellW);
-		//	std::size_t starty = static_cast<std::size_t>((box.y - mBounds.y) * invCellH);
-		//	std::size_t endx = static_cast<std::size_t>((box.x + box.w - mBounds.x) * invCellW);
-		//	std::size_t endy = static_cast<std::size_t>((box.y + box.h - mBounds.y) * invCellH);
-		//
-		//	//box may be partially on the grid from any side. this has to be legal logically as collision with even a partial is correct
-		//	//to avoid accessing invalid indexes, clamp values
-		//	startx = bad_minV(startx, mColumns - 1);
-		//	starty = bad_minV(starty, mRows - 1);
-		//	endx = bad_minV(endx, mColumns - 1);
-		//	endy = bad_minV(endy, mRows - 1);
-		//
-		//	//insert user_data into all overlapping indexes
-		//	for (std::size_t y = starty; y < endy; ++y) {
-		//		for (std::size_t x = startx; x < endx; ++x) {
-		//			std::size_t index = y * mColumns + x;
-		//			mCells[index].emplace_back(user_index);
-		//		}
-		//	}
-		//}
-
-
-		std::size_t debug_elements_count()const {
-			std::size_t counter = 0;
-			for (auto& cell : mCells) {
-				counter += cell.size();
-			}
-			return counter;
-		}
 
 		//returns all potential collision candidates, includes duplicates
 		//doing basic intersecion tests with duplicates should be always be better than cache misses, otherwise sorting is left to the user
@@ -120,17 +86,14 @@ namespace badEngine {
 			//calculate the range of cells region is within
 			int startx = static_cast<int>((region.x - mBounds.x) * invCellW);
 			int starty = static_cast<int>((region.y - mBounds.y) * invCellH);
-			int endx   = static_cast<int>((region.x + region.w - mBounds.x) * invCellW);
-			int endy   = static_cast<int>((region.y + region.h - mBounds.y) * invCellH);
-			//unlike in insert, here a clamp is required
-			//in insert, it is assumed the user knows his box is within bounds of the grid system, plus it removes a branch
-			//here however it is required to allow the user to query a region that is partially or totally outside of the grid
+			int endx   = static_cast<int>(std::ceil((region.x + region.w - mBounds.x) * invCellW));
+			int endy   = static_cast<int>(std::ceil((region.y + region.h - mBounds.y) * invCellH));
+
 			
-			//TODO:: check if checking validity is better than clamps
 			startx = bad_clamp(startx, 0, mColumns - 1);
 			starty = bad_clamp(starty, 0, mRows - 1);
-			endx   = bad_clamp(endx + 1, 0, mColumns);
-			endy   = bad_clamp(endy + 1, 0, mRows);
+			endx   = bad_clamp(endx, 0, mColumns);
+			endy   = bad_clamp(endy, 0, mRows);
 		
 			for (int y = starty; y < endy; ++y) {
 				const int offset = y * mColumns;
@@ -174,6 +137,14 @@ namespace badEngine {
 		}
 		const AABB& get_grid_bounds()noexcept {
 			return mBounds;
+		}
+
+		std::size_t debug_elements_count()const {
+			std::size_t counter = 0;
+			for (auto& cell : mCells) {
+				counter += cell.size();
+			}
+			return counter;
 		}
 
 	private:
